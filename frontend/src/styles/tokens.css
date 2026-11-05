@@ -1,0 +1,92 @@
+/*
+ * MIRA Design-Tokens
+ * Alle Farben, Abstände, Radien und Schriftgrößen werden hier zentral definiert
+ * und in den übrigen Stylesheets ausschließlich über Variablen verwendet.
+ */
+:root {
+  color-scheme: dark;
+
+  /* Flächen */
+  --color-bg: #040817;
+  --color-bg-deep: #02050f;
+  --color-sidebar: #060b1d;
+  --color-surface: rgba(11, 18, 42, 0.82);
+  --color-surface-solid: #0b1229;
+  --color-surface-raised: #121a36;
+  --color-surface-input: rgba(17, 25, 52, 0.85);
+  --color-surface-hover: rgba(124, 58, 237, 0.12);
+
+  /* Linien */
+  --color-border: rgba(120, 130, 190, 0.3);
+  --color-border-strong: rgba(150, 160, 215, 0.42);
+  --color-divider: rgba(120, 130, 190, 0.2);
+
+  /* Text */
+  --color-text: #f3f4fb;
+  --color-text-muted: #c3c8dc;
+  --color-text-dim: #8a91ad;
+
+  /* Marke / Akzente */
+  --color-primary: #7a1ff0;
+  --color-primary-hover: #8b33f7;
+  --gradient-primary: linear-gradient(135deg, #9530fa 0%, #7419ec 100%);
+  --color-accent: #e35ef4;
+  --color-accent-strong: #f07bff;
+  --color-violet-soft: #b78cff;
+  --color-violet-bar: linear-gradient(90deg, #a637f6 0%, #c950f5 100%);
+
+  /* Status */
+  --color-green: #20d23c;
+  --color-green-bar: #22c53b;
+  --color-green-track: rgba(34, 197, 59, 0.25);
+  --color-online-bg: #18a52f;
+  --color-success-bg: #0f6a28;
+  --color-success-text: #d7ffdd;
+  --color-quant-bg: rgba(22, 163, 74, 0.18);
+  --color-quant-border: rgba(34, 197, 94, 0.55);
+  --color-quant-text: #6ee79a;
+  --color-cyan: #1fb6f5;
+  --color-cyan-track: rgba(31, 120, 220, 0.32);
+  --color-magenta-bar: linear-gradient(90deg, #e05cf5, #c64af0);
+  --color-magenta-track: rgba(150, 60, 200, 0.4);
+  --color-red: #f04646;
+  --color-red-bg: rgba(240, 70, 70, 0.12);
+
+  /* Leuchteffekte */
+  --glow-accent: drop-shadow(0 0 6px rgba(227, 94, 244, 0.55));
+  --glow-primary: 0 0 24px rgba(140, 45, 245, 0.45);
+
+  /* Typografie */
+  --font-sans: 'Inter Variable', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --fs-xs: 0.8125rem;   /* 13 */
+  --fs-sm: 0.875rem;    /* 14 */
+  --fs-base: 0.9375rem; /* 15 */
+  --fs-md: 1.0625rem;   /* 17 */
+  --fs-lg: 1.25rem;     /* 20 */
+  --fs-xl: 1.5rem;      /* 24 */
+  --fs-2xl: 1.875rem;   /* 30 */
+  --fs-3xl: 2.25rem;    /* 36 */
+
+  /* Abstände */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+
+  /* Radien */
+  --radius-sm: 8px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-pill: 999px;
+
+  /* Layout */
+  --sidebar-width: 292px;
+  --sidebar-width-collapsed: 88px;
+  --topbar-height: 74px;
+  --page-padding: 28px;
+
+  --transition: 160ms ease;
+}

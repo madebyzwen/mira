@@ -43,3 +43,11 @@ logs/
 *.tmp
 *.swp
 *.bak
+
+# TypeScript
+*.tsbuildinfo
+
+# Lokale Gerätefotos (nur ausdrücklich freigegebene Dateien werden versioniert)
+frontend/src/assets/devices/*
+!frontend/src/assets/devices/README.md
+!frontend/src/assets/devices/shelly-plug.png
