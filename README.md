@@ -21,11 +21,12 @@ auf dem NAS **Asgard** und verwaltet von dort den KI-Server **Odin**.
 | Stufe | Inhalt | Status |
 | --- | --- | --- |
 | 0 | Klickbare Weboberfläche nach Mockups | ✅ abgeschlossen |
-| 1 | Fundament: Backend, SQLite, echte Anmeldung, ein Container | 🔍 Abnahme ausstehend |
-| 2 | Odin-API: Live-Daten von Odin | ⏳ geplant |
+| 1 | Fundament: Backend, SQLite, echte Anmeldung, ein Container | ✅ abgeschlossen |
+| 2 | Odin-API: Live-Daten von Odin in der Odin-Ansicht | 🔍 Installation auf Odin ausstehend |
 
-Alle Stufen: [Roadmap](docs/entwicklung/roadmap.md). Die Anmeldung ist echt;
-alle übrigen Ansichten zeigen noch **Beispieldaten** und führen keine Aktionen aus.
+Alle Stufen: [Roadmap](docs/entwicklung/roadmap.md). Echt sind die Anmeldung und
+die Odin-Ansicht (ohne Verlaufsdiagramm); alle übrigen Ansichten zeigen noch
+**Beispieldaten** und führen keine Aktionen aus.
 
 ## Dokumentation
 
@@ -46,6 +47,7 @@ npm-Workspaces, eine Sprache (TypeScript) für alle Teile.
 | `frontend/` | Weboberfläche (React 19, Vite, React Router, Lucide) |
 | `backend/` | API und Hintergrunddienste (Node.js 22, Fastify, SQLite) – `core/` + `modules/` |
 | `shared/` | Gemeinsame API-Verträge (zod-Schemas und Typen) |
+| `odin-api/` | Odin-API: läuft auf Odin, liefert Systemdaten an MIRA (nur lesend) |
 | `deploy/` | Docker Compose für Asgard |
 | `docs/` | Dokumentation, Mockups |
 | `Dockerfile` | Ein Image für API und Oberfläche |
@@ -81,7 +83,8 @@ für einen Neuanfang `data/` löschen.
 
 | Befehl (Wurzelverzeichnis) | Zweck |
 | --- | --- |
-| `npm test` | Backend-Tests (Vitest) |
+| `npm test` | Tests von Backend und Odin-API (Vitest) |
+| `npm run package:odin-api` | Installationspaket für Odin bauen (`odin-api/release/`) |
 | `npm run typecheck` | TypeScript-Prüfung aller Pakete |
 | `npm run build` | Produktionsbuild von `shared`, `backend`, `frontend` |
 
@@ -109,6 +112,21 @@ docker compose -f deploy/docker-compose.yml up -d --build
 - Für einen festen Speicherort auf dem NAS das Volume durch einen Pfad ersetzen
   (z. B. `/volume1/docker/mira/data:/data`) und `chown 1000:1000` auf den Ordner setzen.
 
+### Verbindung zu Odin (Odin-API)
+
+1. Paket bauen und auf Odin installieren – Anleitung: [`odin-api/install/README.md`](odin-api/install/README.md).
+   Das Installationsskript gibt Adresse, Zertifikats-Fingerprint und Token aus.
+2. In der OPNsense Asgard → Odin, TCP 8443 erlauben.
+3. Auf Asgard das Token speichern und die Odin-Einträge in `deploy/docker-compose.yml`
+   aktivieren (`MIRA_ODIN_API_URL`, `MIRA_ODIN_CERT_FINGERPRINT`, Secret `mira_odin_api_token`):
+
+   ```bash
+   printf '<TOKEN>\n' > deploy/secrets/odin_api_token.txt && chmod 600 deploy/secrets/odin_api_token.txt
+   docker compose -f deploy/docker-compose.yml up -d
+   ```
+
+Den Verbindungsstatus zeigt Konfiguration › Systeme.
+
 ### Hinter dem Reverse Proxy (HTTPS)
 
 - Eigenen Hostnamen für MIRA verwenden (kein Unterpfad).
@@ -129,6 +147,10 @@ docker compose -f deploy/docker-compose.yml up -d --build
 | `MIRA_LOGIN_MAX_FAILURES` / `MIRA_LOGIN_WINDOW_MINUTES` | `5` / `15` | Login-Sperre |
 | `MIRA_AUDIT_RETENTION_DAYS` | `365` | Aufbewahrung des Audit-Logs |
 | `MIRA_LOG_LEVEL` | `info` | Protokollierungsstufe |
+| `MIRA_ODIN_API_URL` | – | Adresse der Odin-API, z. B. `https://<ODIN_IP>:8443` |
+| `MIRA_ODIN_CERT_FINGERPRINT` | – | SHA-256-Fingerprint des Odin-Zertifikats |
+| `MIRA_ODIN_TOKEN_FILE` | – | Datei mit dem Zugriffstoken |
+| `MIRA_ODIN_POLL_SECONDS` | `10` | Abfrageintervall |
 
 ## Lizenz
 

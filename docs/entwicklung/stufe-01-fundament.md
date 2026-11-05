@@ -1,6 +1,6 @@
 # Stufe 1 – Fundament
 
-- Status: 🔍 umgesetzt, Abnahme ausstehend
+- Status: ✅ abgeschlossen (Commit `6d628f5`, abgenommen 2026-11-05)
 - Freigabe: 2026-11-05
 - Entscheidungen: [ADR 0001](../adr/0001-modularer-monolith-typescript-fastify.md) bis [ADR 0004](../adr/0004-anmeldung-sessions-erstes-konto.md), [ADR 0006](../adr/0006-geheimnisse-als-dateien.md)
 

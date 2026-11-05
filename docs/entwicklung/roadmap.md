@@ -4,13 +4,13 @@ MIRA wird in kleinen, prüfbaren Stufen entwickelt – möglichst als vertikale
 Abschnitte (Oberfläche, Backend, Datenbank, ggf. Odin-API für genau eine
 Funktion). Jede Stufe wird nach menschlicher Prüfung abgeschlossen.
 
-Status: ✅ abgeschlossen · 🔍 umgesetzt, Abnahme ausstehend · ⏳ geplant
+Status: ✅ abgeschlossen · 🔍 umgesetzt, Abnahme ausstehend · 🚧 in Umsetzung · ⏳ geplant
 
 | Stufe | Inhalt | Eingriff in Odin/Asgard/Netz | Status |
 | --- | --- | --- | --- |
 | [0](stufe-00-weboberflaeche.md) | Klickbare Weboberfläche nach Mockups, Demo-Daten | nein | ✅ |
-| [1](stufe-01-fundament.md) | Fundament: Backend-Kern, SQLite + Migrationen, echte Anmeldung, ein Container, Tests | nein | 🔍 |
-| 2 | Odin lesen: Odin-API (`health`, `system/info`, `system/metrics`), Online-Zustand, Odin-View mit Live-Daten; zuerst gegen `odin-sim` | Odin: Dienst, Benutzer, Firewall · OPNsense-Regel | ⏳ |
+| [1](stufe-01-fundament.md) | Fundament: Backend-Kern, SQLite + Migrationen, echte Anmeldung, ein Container, Tests | nein | ✅ |
+| [2](stufe-02-odin-lesen.md) | Odin lesen: Odin-API (`health`, `system/info`, `system/metrics`), Online-Zustand, Odin-View mit Live-Daten; zuerst gegen `odin-sim` | Odin: Dienst, Benutzer, Firewall · OPNsense-Regel | 🔍 |
 | 3 | Messwert-Historie: Scheduler, Speicherung, Verdichtung, Aufbewahrung; echte Odin-Diagramme; Backup-Konzept | nein | ⏳ |
 | 4 | Shelly Plug: lokale API nur lesend, Verbrauch, Historie, Kosten; Dashboard-Widget „Verbrauch“ | OPNsense-Regel | ⏳ |
 | 5 | Energiesteuerung: Wake-on-LAN, Suspend, Herunterfahren, Neustart, Windows-Neustart, Verfügbarkeitsprüfung | Odin: sudo-Regeln, GRUB · OPNsense: os-wol | ⏳ |
@@ -35,8 +35,6 @@ Konfigurations-Widgets entstehen jeweils **mit ihrer Stufe** (z. B. Odin-Verbind
 
 | Thema | Benötigt bis |
 | --- | --- |
-| Sprache der Odin-API: TypeScript/Node oder Go | Stufe 2 |
-| API-Port und Zertifikat/Token-Erzeugung | Stufe 2 |
 | Shelly-Modell/Generation, IP, Passwort | Stufe 4 |
 | Wake-on-LAN über OPNsense ([ADR 0007](../adr/0007-wake-on-lan-ueber-opnsense.md)) | Stufe 5 |
 | MAC von `eno1`, WoL im BIOS, GRUB-Eintrag für Windows | Stufe 5 |

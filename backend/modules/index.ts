@@ -1,7 +1,10 @@
 import type { MiraModule } from '../core/module.ts';
+import { SystemsModule } from './systems/index.ts';
 
 /**
- * Registrierte Fachmodule. Stufe 1 enthält noch keine – das erste Modul
- * (`systems`) folgt mit Stufe 2. Reihenfolge = Reihenfolge der Registrierung.
+ * Registrierte Fachmodule (Reihenfolge = Reihenfolge der Registrierung).
+ * Neue Module werden hier eingetragen – bewusst statisch, kein Plugin-System.
  */
-export const modules: MiraModule[] = [];
+export function createModules(): MiraModule[] {
+  return [new SystemsModule()];
+}

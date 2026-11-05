@@ -22,9 +22,9 @@ Legende: ✅ umgesetzt · 🔜 geplant (Stufe)
 
 | Tabelle | Inhalt | Status |
 | --- | --- | --- |
-| `systems` | id, slug, name, kind (`server` \| `power_meter`), beschreibung, aktiv | 🔜 Stufe 2 |
-| `server_connections` | system_id, api_url, zertifikats-Fingerprint, token_ref (Datei), wol-Parameter | 🔜 Stufe 2/5 |
-| `system_state` | system_id, zustand (`online`/`sleeping`/`offline`/`windows`/`unknown`), seit, zuletzt_gesehen, letzter_fehler | 🔜 Stufe 2 |
+| `systems` | id, slug, name, kind (`server` \| `power_meter`), description, created_at – Odin als erster Eintrag | ✅ Stufe 2 |
+| `server_connections` | system_id, api_url, zertifikats-Fingerprint, token_ref (Datei), wol-Parameter – bis die Verbindung über die Oberfläche bearbeitbar ist, kommen die Werte aus `MIRA_ODIN_*` | 🔜 später |
+| `system_state` | system_id, state (`online`/`offline`/`unknown`; `sleeping`/`windows` ab Stufe 5), since, last_seen_at, last_error | ✅ Stufe 2 |
 | `server_samples` | system_id, ts, cpu, ram, gpu, vram, last, temperaturen | 🔜 Stufe 3 |
 | `power_meters` | system_id, host, modell/generation, auth_ref, misst_system_id | 🔜 Stufe 4 |
 | `power_samples` | meter_id, ts, watt, energie_wh | 🔜 Stufe 4 |

@@ -42,3 +42,52 @@ export function formatDateTime(iso: string): string {
 export function formatEuro(value: number): string {
   return `${formatNumber(value, 2)} €`;
 }
+
+const GIB = 1024 ** 3;
+const TIB = 1024 ** 4;
+
+/** Bytes in GB/TB (Basis 1024, wie `df -h`), deutsches Zahlenformat. */
+export function formatBytes(bytes: number): string {
+  if (bytes >= TIB) return `${formatNumber(bytes / TIB, 2, 2)} TB`;
+  const gb = bytes / GIB;
+  return `${formatNumber(gb, gb >= 100 ? 0 : 1, gb >= 100 ? 0 : 1)} GB`;
+}
+
+/** Installierter Arbeitsspeicher: Der Kernel meldet etwas weniger als verbaut ist – auf volle 4 GB aufrunden. */
+export function formatInstalledMemory(totalBytes: number): string {
+  return `${Math.ceil(totalBytes / GIB / 4) * 4} GB`;
+}
+
+export function formatGib(bytes: number, digits = 1): string {
+  return formatNumber(bytes / GIB, digits, digits);
+}
+
+/** Laufzeit wie „3 Tage, 14:27 h“. */
+export function formatUptime(seconds: number): string {
+  const days = Math.floor(seconds / 86400);
+  const hours = Math.floor((seconds % 86400) / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  const time = `${hours}:${String(minutes).padStart(2, '0')} h`;
+  if (days === 0) return time;
+  return `${days} ${days === 1 ? 'Tag' : 'Tage'}, ${time}`;
+}
+
+/** Relative Zeitangabe wie „vor 3 Min.“ */
+export function formatRelative(iso: string, now = Date.now()): string {
+  const diff = Math.max(0, Math.round((now - new Date(iso).getTime()) / 1000));
+  if (diff < 60) return 'gerade eben';
+  if (diff < 3600) return `vor ${Math.floor(diff / 60)} Min.`;
+  if (diff < 86400) return `vor ${Math.floor(diff / 3600)} Std.`;
+  const days = Math.floor(diff / 86400);
+  return `vor ${days} ${days === 1 ? 'Tag' : 'Tagen'}`;
+}
+
+/** „Intel(R) Core(TM) i7-14700“ → „i7-14700“ */
+export function shortCpuModel(model: string): string {
+  return model
+    .replace(/\((R|TM)\)/g, '')
+    .replace(/^Intel\s+Core\s+/i, '')
+    .replace(/^AMD\s+/i, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}

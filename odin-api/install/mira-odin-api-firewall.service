@@ -1,0 +1,13 @@
+[Unit]
+Description=MIRA Odin-API – Firewall-Regel (nur der API-Port, nur Asgard)
+After=nftables.service
+Before=mira-odin-api.service network-online.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/sbin/nft -f /etc/mira-odin-api/firewall.nft
+ExecStop=/usr/sbin/nft delete table inet mira_odin_api
+
+[Install]
+WantedBy=multi-user.target

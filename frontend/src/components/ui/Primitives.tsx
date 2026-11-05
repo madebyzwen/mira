@@ -3,14 +3,17 @@ import type { ChartRange, OnlineStatus } from '../../types/models';
 
 /* ---------- Pill / Badge ---------- */
 
-export type PillTone = 'online' | 'success' | 'neutral' | 'quant' | 'violet';
+export type PillTone = 'online' | 'offline' | 'success' | 'neutral' | 'quant' | 'violet';
 
 export function Pill({ tone = 'neutral', children }: { tone?: PillTone; children: ReactNode }) {
   return <span className={`pill pill--${tone}`}>{children}</span>;
 }
 
+const statusText: Record<OnlineStatus, string> = { online: 'Online', offline: 'Offline', unknown: 'Unbekannt' };
+
 export function OnlinePill({ status }: { status: OnlineStatus }) {
-  return <Pill tone={status === 'online' ? 'online' : 'neutral'}>{status === 'online' ? 'Online' : 'Offline'}</Pill>;
+  const tone: PillTone = status === 'online' ? 'online' : status === 'offline' ? 'offline' : 'neutral';
+  return <Pill tone={tone}>{statusText[status]}</Pill>;
 }
 
 /* ---------- Status-Punkt ---------- */

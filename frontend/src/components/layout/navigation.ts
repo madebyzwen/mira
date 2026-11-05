@@ -5,6 +5,8 @@ import type { OnlineStatus } from '../../types/models';
 export interface NavChild {
   to: string;
   label: string;
+  /** Kennung des Systems – für den Live-Status im Menü */
+  slug?: string;
   icon?: LucideIcon;
   status?: OnlineStatus;
 }
@@ -41,7 +43,7 @@ export function getNavigation(): NavItem[] {
       label: 'Systeme',
       icon: Server,
       basePath: '/systeme',
-      children: dataService.getSystems().map((s) => ({ to: s.path, label: s.label, status: s.status })),
+      children: dataService.getSystems().map((s) => ({ to: s.path, label: s.label, status: s.status, slug: s.id })),
     },
     { kind: 'link', id: 'agents', to: '/agents', label: 'Agents', icon: Box },
     { kind: 'link', id: 'llm', to: '/llm', label: 'LLM', icon: Layers },

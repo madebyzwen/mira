@@ -88,6 +88,15 @@
   box-shadow: 0 0 14px rgba(32, 210, 60, 0.25);
 }
 
+.pill--offline {
+  height: 30px;
+  padding: 0 18px;
+  background: rgba(240, 70, 70, 0.16);
+  border: 1px solid rgba(240, 70, 70, 0.55);
+  color: #ffc9c9;
+  font-size: var(--fs-md);
+}
+
 .pill--success {
   background: var(--color-success-bg);
   color: var(--color-success-text);
@@ -130,6 +139,11 @@
 }
 
 .status-dot--offline {
+  background: var(--color-red);
+  box-shadow: 0 0 8px rgba(240, 70, 70, 0.5);
+}
+
+.status-dot--unknown {
   background: #6b7280;
 }
 

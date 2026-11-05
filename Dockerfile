@@ -10,6 +10,7 @@ COPY package.json package-lock.json ./
 COPY shared/package.json shared/
 COPY backend/package.json backend/
 COPY frontend/package.json frontend/
+COPY odin-api/package.json odin-api/
 RUN npm ci --no-audit --no-fund
 COPY shared shared
 COPY backend backend
@@ -24,6 +25,7 @@ COPY package.json package-lock.json ./
 COPY shared/package.json shared/
 COPY backend/package.json backend/
 COPY frontend/package.json frontend/
+COPY odin-api/package.json odin-api/
 RUN npm ci --omit=dev --no-audit --no-fund -w @mira/backend -w @mira/shared \
  && rm -rf node_modules/better-sqlite3/deps node_modules/better-sqlite3/src \
            node_modules/better-sqlite3/build/Release/obj* node_modules/better-sqlite3/build/Release/.deps

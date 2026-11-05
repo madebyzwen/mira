@@ -13,7 +13,7 @@ import { registerFrontend } from './core/http/frontend.ts';
 import { registerHealth } from './core/http/health.ts';
 import { registerSecurity } from './core/http/security.ts';
 import type { CoreContext, MiraModule } from './core/module.ts';
-import { modules as registeredModules } from './modules/index.ts';
+import { createModules } from './modules/index.ts';
 
 const MAINTENANCE_INTERVAL_MS = 60 * 60 * 1000;
 
@@ -33,7 +33,7 @@ export interface MiraApp {
  * Wird von `server.ts` und von den Tests verwendet.
  */
 export async function buildApp(config: AppConfig, options: BuildOptions = {}): Promise<MiraApp> {
-  const modules = options.modules ?? registeredModules;
+  const modules = options.modules ?? createModules();
 
   const db = openDatabase(config.dbFile);
   runMigrations(db, [coreMigrations, ...modules.map((m) => ({ module: m.name, migrations: m.migrations }))]);

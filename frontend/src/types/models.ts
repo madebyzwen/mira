@@ -6,7 +6,7 @@
  * MIRA-Backend dieselben Strukturen über seine API.
  */
 
-export type OnlineStatus = 'online' | 'offline';
+export type OnlineStatus = 'online' | 'offline' | 'unknown';
 
 /* ---------- Zeitreihen / Diagramme ---------- */
 

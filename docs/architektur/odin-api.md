@@ -1,6 +1,6 @@
 # Odin-API (Konzept)
 
-Status: **Konzept, Umsetzung ab Stufe 2.** Entscheidung: [ADR 0005](../adr/0005-odin-http-api-statt-ssh.md).
+Status: **Stufe 2 umgesetzt** (lesende Endpunkte). Code: `odin-api/`, Installation: [`odin-api/install/README.md`](../../odin-api/install/README.md). Entscheidung: [ADR 0005](../adr/0005-odin-http-api-statt-ssh.md).
 
 Die Odin-API ist die einzige Schnittstelle zwischen MIRA und dem KI-Server Odin.
 Sie liefert Systeminformationen und führt ausdrücklich freigegebene Aktionen aus.
@@ -12,8 +12,8 @@ Entscheidungen (z. B. „nach 45 Minuten schlafen“) trifft ausschließlich MIR
   Hardwarewerte, Dateisystem, `systemctl`).
 - Eigener, unprivilegierter Benutzer `mira-agent` ohne Login-Shell und ohne sudo-Gruppe.
 - Programmdateien gehören root und sind für `mira-agent` nicht beschreibbar.
-- Sprache: **offen** – TypeScript/Node (gemeinsame Verträge aus `shared/`) oder Go
-  (ein Programm ohne Laufzeitumgebung). Entscheidung vor Stufe 2.
+- Sprache: **TypeScript auf Node.js 22** mit Fastify (entschieden, siehe ADR 0005);
+  gemeinsame Verträge aus `shared/`, Quellcode im Workspace `odin-api/`.
 
 ## Netzwerk
 
@@ -22,8 +22,12 @@ Entscheidungen (z. B. „nach 45 Minuten schlafen“) trifft ausschließlich MIR
   Fileshare und wird nicht verwendet.
 - Asgard (`<ASGARD_IP>`) liegt in einem anderen VLAN; der Verkehr läuft über die OPNsense.
 - Freigaben:
-  - OPNsense: `<ASGARD_IP>` → `<ODIN_IP>`, TCP, API-Port (wird in Stufe 2 festgelegt).
-  - Firewall auf Odin: API-Port nur von `<ASGARD_IP>`.
+  - OPNsense: `<ASGARD_IP>` → `<ODIN_IP>`, TCP **8443**.
+  - Auf Odin (ufw ist dort inaktiv und bleibt unverändert): eigene nftables-Tabelle
+    `inet mira_odin_api`, die **nur** Port 8443 betrifft und nur `<ASGARD_IP>` zulässt
+    (systemd-Unit `mira-odin-api-firewall`).
+  - Zusätzlich trennt die API selbst jede Verbindung von nicht erlaubten Adressen
+    noch vor dem TLS-Handshake – auch wenn die nftables-Regel fehlt.
 
 ## Absicherung
 
@@ -42,9 +46,9 @@ Der bestehende administrative SSH-Zugang zu Odin bleibt unverändert.
 
 | Endpunkt | Zweck | Stufe |
 | --- | --- | --- |
-| `GET /v1/health` | Erreichbarkeit, API-Version | 2 |
-| `GET /v1/system/info` | OS, Kernel, Hardware, Uptime | 2 |
-| `GET /v1/system/metrics` | CPU, RAM, GPU, VRAM, Last, Temperaturen, Datenträger, Mounts, Netzwerk | 2 |
+| `GET /v1/health` | Erreichbarkeit, API-Version | 2 ✅ |
+| `GET /v1/system/info` | OS, Kernel, CPU (inkl. P-/E-Kerne), RAM, GPU, Startzeit | 2 ✅ |
+| `GET /v1/system/metrics` | CPU, RAM, GPU, VRAM, Last, Temperaturen, Datenträger, NFS/CIFS-Mounts, Netzwerk | 2 ✅ |
 | `GET /v1/docker/containers` | Containerstatus (read-only) | 6 |
 | `POST /v1/power/suspend` · `/poweroff` · `/reboot` · `/reboot-windows` | Energiesteuerung | 5 |
 | `GET /v1/llm/models` · `DELETE /v1/llm/models/{id}` | Modellverzeichnis | 7 |
@@ -57,12 +61,30 @@ Nur HTTPS, private/interne Zieladressen werden abgelehnt (SSRF-Schutz), nur
 konfigurierte Zielverzeichnisse, Schreiben als `.partial` mit Umbenennen nach
 Abschluss, Abbruch über die Job-ID.
 
+## Datenquellen (nur lesend, ohne Root)
+
+| Wert | Quelle |
+| --- | --- |
+| CPU-Auslastung | `/proc/stat` (Differenz zweier Messungen) |
+| CPU-Modell, Kerne, Threads, P-/E-Kerne | `/proc/cpuinfo`, `/sys/devices/cpu_core\|cpu_atom/cpus` |
+| RAM | `/proc/meminfo` (genutzt = gesamt − verfügbar) |
+| GPU, VRAM | erste AMD-Karte unter `/sys/class/drm/card*/device` (`gpu_busy_percent`, `mem_info_vram_*`) |
+| Temperaturen | `/sys/class/hwmon`: coretemp „Package id 0“, amdgpu „edge“, nvme „Composite“ |
+| Datenträger | konfigurierte Einhängepunkte, `statfs` |
+| Netzlaufwerke | NFS/CIFS-Einträge aus `/proc/mounts` (mit Zeitlimit gegen hängende Mounts) |
+| Netzwerk | `/sys/class/net`, Adressen des Systems; ohne Docker-/Bridge-Netze |
+| RAM-Typ, GPU-Name | aus der Konfiguration (ohne Root nicht auslesbar) |
+
+Nicht ermittelbare Werte werden als `null` geliefert und in MIRA als „–“ angezeigt.
+
 ## Entwicklung ohne Risiko für Odin
 
-Ein Test-Container `odin-sim` stellt dieselbe API bereit. Protokoll,
-Authentifizierung und Fehlerfälle werden dort automatisiert geprüft, bevor
-irgendetwas auf Odin installiert wird. Die Installation auf Odin führt der
-Betreiber nach Anleitung selbst aus.
+- Unit-Tests mit nachgebildeten `/proc`-, `/sys`- und `/etc`-Dateien.
+- Integrationstests im MIRA-Backend gegen die echte Odin-API (in-process, mit TLS und Token).
+- `odin-api/dev/odin-sim`: Ubuntu-Container (gleiche Version wie Odin), in dem das
+  echte Installationspaket ausgeführt wird; MIRA verbindet sich als Container damit.
+
+Die Installation auf Odin führt der Betreiber nach Anleitung selbst aus.
 
 ## Wake-on-LAN
 

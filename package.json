@@ -10,14 +10,17 @@
   "workspaces": [
     "shared",
     "backend",
-    "frontend"
+    "frontend",
+    "odin-api"
   ],
   "scripts": {
     "dev:backend": "npm run dev -w @mira/backend",
     "dev:frontend": "npm run dev -w @mira/frontend",
     "build": "npm run build -w @mira/shared && npm run build -w @mira/backend && npm run build -w @mira/frontend",
     "typecheck": "npm run typecheck --workspaces",
-    "test": "npm test -w @mira/backend",
-    "start": "node backend/dist/server.js"
+    "test": "npm test -w @mira/backend -w @mira/odin-api",
+    "start": "node backend/dist/server.js",
+    "build:odin-api": "npm run build -w @mira/odin-api",
+    "package:odin-api": "npm run package -w @mira/odin-api"
   }
 }

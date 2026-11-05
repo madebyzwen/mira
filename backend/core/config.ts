@@ -24,6 +24,12 @@ const envSchema = z.object({
   MIRA_ADMIN_DISPLAY_NAME: z.string().trim().min(1).max(64).optional(),
   MIRA_ADMIN_PASSWORD_FILE: z.string().optional(),
   MIRA_AUDIT_RETENTION_DAYS: z.coerce.number().int().min(1).default(365),
+  /** Odin-API, z. B. `https://<ODIN_IP>:8443` */
+  MIRA_ODIN_API_URL: z.url({ protocol: /^https$/ }).optional(),
+  /** SHA-256-Fingerprint des Odin-Zertifikats (Ausgabe des Installationsskripts) */
+  MIRA_ODIN_CERT_FINGERPRINT: z.string().regex(/^[0-9A-Fa-f:]{64,95}$/).optional(),
+  MIRA_ODIN_TOKEN_FILE: z.string().optional(),
+  MIRA_ODIN_POLL_SECONDS: z.coerce.number().int().min(2).max(3600).default(10),
 });
 
 export interface AppConfig {
@@ -40,6 +46,7 @@ export interface AppConfig {
   loginWindowMs: number;
   admin: { username?: string; displayName?: string; passwordFile?: string };
   auditRetentionDays: number;
+  odin: { apiUrl?: string; certFingerprint?: string; tokenFile?: string; pollSeconds: number };
   version: string;
 }
 
@@ -65,6 +72,12 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env, version = '0.0.
       passwordFile: e.MIRA_ADMIN_PASSWORD_FILE ? path.resolve(e.MIRA_ADMIN_PASSWORD_FILE) : undefined,
     },
     auditRetentionDays: e.MIRA_AUDIT_RETENTION_DAYS,
+    odin: {
+      apiUrl: e.MIRA_ODIN_API_URL,
+      certFingerprint: e.MIRA_ODIN_CERT_FINGERPRINT,
+      tokenFile: e.MIRA_ODIN_TOKEN_FILE ? path.resolve(e.MIRA_ODIN_TOKEN_FILE) : undefined,
+      pollSeconds: e.MIRA_ODIN_POLL_SECONDS,
+    },
     version,
   };
 }

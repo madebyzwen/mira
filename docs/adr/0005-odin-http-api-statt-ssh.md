@@ -28,7 +28,12 @@ Auf Odin läuft eine kleine **HTTP-API als nativer systemd-Dienst** (nicht in Do
   ausschließlich über exakte sudo-Regeln.
 - Entscheidungslogik bleibt in MIRA; die API liefert Daten und führt aus.
 
-Details: [Odin-API](../architektur/odin-api.md). Offen: Sprache (TypeScript/Node oder Go).
+Details: [Odin-API](../architektur/odin-api.md).
+
+**Sprache (entschieden 2026-11-05): TypeScript auf Node.js 22**, Fastify wie im
+MIRA-Backend. Die API nutzt dieselben zod-Verträge aus `shared/`; Node.js wird
+direkt auf Odin installiert (nicht in Docker). Verworfen: Go – sparsamer und ohne
+Laufzeitumgebung, aber zweite Sprache und keine gemeinsamen Verträge.
 
 ## Alternativen
 

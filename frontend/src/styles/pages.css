@@ -1221,3 +1221,73 @@
     padding-right: 10px;
   }
 }
+
+/* ================================================================
+   Echte Systemdaten (ab Stufe 2)
+   ================================================================ */
+.status-line {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: -8px 0 16px;
+  color: #ffc9c9;
+  font-size: var(--fs-base);
+}
+
+.status-line svg {
+  color: var(--color-red);
+  flex-shrink: 0;
+}
+
+/* Letzte bekannte Werte, während ein System nicht erreichbar ist */
+.is-stale {
+  opacity: 0.55;
+  filter: saturate(0.6);
+  transition: opacity var(--transition);
+}
+
+.widget-note {
+  color: var(--color-text-muted);
+  font-size: var(--fs-md);
+  padding: 6px 0;
+}
+
+.share-block + .share-block {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--color-divider);
+}
+
+.card__title .pill--neutral {
+  height: 24px;
+  padding: 0 10px;
+  font-size: var(--fs-xs);
+  font-weight: 500;
+  color: var(--color-text-muted);
+}
+
+.connection-list > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--color-divider);
+  font-size: var(--fs-md);
+}
+
+.connection-list > div:last-child {
+  border-bottom: 0;
+}
+
+.connection-list dt {
+  color: var(--color-text-muted);
+}
+
+.connection-list dd {
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+
+.disk-list__usage > span {
+  white-space: nowrap;
+}

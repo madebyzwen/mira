@@ -54,3 +54,6 @@ frontend/src/assets/devices/*
 
 # Lokale Geheimnisse (Startpasswort, später Token/Zertifikate)
 deploy/secrets/
+
+# Odin-API: gebaute Installationspakete
+odin-api/release/

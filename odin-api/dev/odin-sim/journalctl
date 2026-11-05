@@ -1,0 +1,3 @@
+#!/bin/sh
+# Ersatz für journalctl im Test-Container
+tail -n 40 /var/log/mira-odin-api.log 2>/dev/null
