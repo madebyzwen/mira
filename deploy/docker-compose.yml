@@ -1,16 +1,40 @@
-# MIRA – Weboberfläche (Phase 1) für den Betrieb auf Asgard
-# Start:  docker compose -f deploy/docker-compose.yml up -d --build
+# MIRA auf Asgard
+#
+# Vor dem ersten Start:
+#   1. deploy/secrets/admin_password.txt anlegen (mind. 12 Zeichen, nur Startpasswort)
+#   2. docker compose -f deploy/docker-compose.yml up -d --build
+# Details: README.md, Abschnitt „Betrieb auf Asgard“.
 services:
-  mira-web:
+  mira:
     build:
-      context: ../frontend
-    image: mira-web:0.1.0
-    container_name: mira-web
+      context: ..
+    image: mira:0.2.0
+    container_name: mira
     ports:
       - "8080:8080"
+    environment:
+      MIRA_ADMIN_USER: admin
+      MIRA_ADMIN_DISPLAY_NAME: Admin
+      MIRA_ADMIN_PASSWORD_FILE: /run/secrets/mira_admin_password
+      # Hinter einem Reverse Proxy: dessen Adresse eintragen, damit HTTPS erkannt wird
+      MIRA_TRUST_PROXY: "false"
+      MIRA_LOG_LEVEL: info
+    secrets:
+      - mira_admin_password
+    volumes:
+      # Auf Asgard bevorzugt einen festen Pfad verwenden, z. B. /volume1/docker/mira/data:/data
+      # (Ordner muss UID 1000 gehören: chown 1000:1000 <pfad>)
+      - mira-data:/data
     restart: unless-stopped
     read_only: true
     tmpfs:
       - /tmp
     security_opt:
       - no-new-privileges:true
+
+secrets:
+  mira_admin_password:
+    file: ./secrets/admin_password.txt
+
+volumes:
+  mira-data:

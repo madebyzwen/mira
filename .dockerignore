@@ -1,0 +1,13 @@
+.git
+**/node_modules
+**/dist
+**/*.tsbuildinfo
+**/.env
+**/.env.*
+data
+deploy
+docs
+tests
+backend/test
+*.log
+.DS_Store

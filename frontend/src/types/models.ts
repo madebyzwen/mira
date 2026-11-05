@@ -8,11 +8,6 @@
 
 export type OnlineStatus = 'online' | 'offline';
 
-export interface UserProfile {
-  displayName: string;
-  username: string;
-}
-
 /* ---------- Zeitreihen / Diagramme ---------- */
 
 export type ChartRange = '24h' | '7d' | '30d';

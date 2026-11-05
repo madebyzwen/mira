@@ -51,3 +51,6 @@ logs/
 frontend/src/assets/devices/*
 !frontend/src/assets/devices/README.md
 !frontend/src/assets/devices/shelly-plug.png
+
+# Lokale Geheimnisse (Startpasswort, später Token/Zertifikate)
+deploy/secrets/

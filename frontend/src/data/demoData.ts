@@ -23,7 +23,6 @@ import type {
   Temperature,
   TimeSeries,
   UsageHistory,
-  UserProfile,
 } from '../types/models';
 
 /* ------------------------------------------------------------------ */
@@ -97,15 +96,6 @@ const ticksByRange: Record<ChartRange, ChartTick[]> = {
 };
 
 const pointsByRange: Record<ChartRange, number> = { '24h': 145, '7d': 168, '30d': 120 };
-
-/* ------------------------------------------------------------------ */
-/* Benutzer                                                            */
-/* ------------------------------------------------------------------ */
-
-export const demoUser: UserProfile = {
-  displayName: 'Sven',
-  username: 'sven',
-};
 
 /* ------------------------------------------------------------------ */
 /* Systeme                                                             */

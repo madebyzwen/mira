@@ -1,23 +1,58 @@
 import { useState, type FormEvent } from 'react';
-import { useNavigate } from 'react-router';
-import { Eye, EyeOff, Lock, LogIn, User } from 'lucide-react';
+import { Navigate, useLocation, useNavigate } from 'react-router';
+import { AlertCircle, Eye, EyeOff, Lock, LogIn, User } from 'lucide-react';
 import { MiraLogo } from '../components/brand/MiraLogo';
 import { GlowWave } from '../components/illustrations/GlowWaves';
+import { useAuth } from '../auth/AuthContext';
+import { ApiError } from '../services/apiClient';
 
-/**
- * Login – Phase 1: DEMO-Anmeldung.
- * Es findet keine Authentifizierung statt; die Eingaben werden weder geprüft
- * noch gespeichert oder übertragen. „Anmelden“ führt direkt zum Dashboard.
- */
+function errorMessage(err: unknown): string {
+  if (err instanceof ApiError) {
+    if (err.code === 'invalid_credentials') return 'Benutzername oder Passwort ist falsch.';
+    if (err.code === 'rate_limited') {
+      const seconds = Number(err.details?.retryAfterSeconds ?? 0);
+      const minutes = Math.max(1, Math.ceil(seconds / 60));
+      return `Zu viele Fehlversuche. Bitte in ${minutes} ${minutes === 1 ? 'Minute' : 'Minuten'} erneut versuchen.`;
+    }
+    if (err.code === 'validation_error') return 'Bitte Benutzername und Passwort eingeben.';
+    if (err.code === 'network_error') return 'MIRA ist nicht erreichbar.';
+  }
+  return 'Die Anmeldung ist fehlgeschlagen.';
+}
+
 export function LoginPage() {
+  const { state, login } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const onSubmit = (e: FormEvent) => {
+  const target = (location.state as { from?: string } | null)?.from ?? '/dashboard';
+
+  if (state.status === 'authenticated' && !submitting) {
+    return <Navigate to={target} replace />;
+  }
+
+  const onSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    navigate('/dashboard');
+    if (!username.trim() || !password) {
+      setError('Bitte Benutzername und Passwort eingeben.');
+      return;
+    }
+    setSubmitting(true);
+    setError(null);
+    try {
+      await login({ username: username.trim(), password });
+      navigate(target, { replace: true });
+    } catch (err) {
+      setError(errorMessage(err));
+      setPassword('');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -32,12 +67,18 @@ export function LoginPage() {
           <p className="login__tagline">Home Server Orchestrator</p>
         </div>
 
-        <form className="login__card" onSubmit={onSubmit}>
+        <form className="login__card" onSubmit={onSubmit} noValidate>
           <div className="login__card-head">
             <h2>Anmeldung</h2>
-            <span className="pill pill--violet">Demo</span>
           </div>
           <p className="login__hint">Bitte mit deinem MIRA-Account anmelden.</p>
+
+          {error && (
+            <div className="login__error" role="alert">
+              <AlertCircle size={22} aria-hidden />
+              <span>{error}</span>
+            </div>
+          )}
 
           <label className="field">
             <span className="visually-hidden">Benutzername</span>
@@ -47,9 +88,13 @@ export function LoginPage() {
               type="text"
               name="username"
               autoComplete="username"
+              autoCapitalize="none"
+              spellCheck={false}
               placeholder="Benutzername"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
+              disabled={submitting}
+              required
             />
           </label>
 
@@ -64,6 +109,8 @@ export function LoginPage() {
               placeholder="Passwort"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              disabled={submitting}
+              required
             />
             <button
               type="button"
@@ -75,15 +122,10 @@ export function LoginPage() {
             </button>
           </label>
 
-          <button type="submit" className="button button--primary button--block button--lg">
+          <button type="submit" className="button button--primary button--block button--lg" disabled={submitting}>
             <LogIn size={24} />
-            <span>Anmelden</span>
+            <span>{submitting ? 'Anmeldung läuft …' : 'Anmelden'}</span>
           </button>
-
-          <p className="login__demo-note">
-            Demo-Anmeldung: Es findet noch keine echte Authentifizierung statt. Die Eingaben werden nicht geprüft oder
-            gespeichert.
-          </p>
         </form>
       </div>
     </div>

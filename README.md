@@ -16,119 +16,119 @@ auf dem NAS **Asgard** und verwaltet von dort den KI-Server **Odin**.
 - Modulare Konfigurationsoberfläche
 - Sicherer webbasierter Zugriff
 
-## Projektstatus: Phase 1 – Weboberfläche
+## Projektstatus
 
-Phase 1 umfasst ausschließlich eine **klickbare Weboberfläche** auf Basis der
-freigegebenen Mockups in `docs/mockups/`.
+| Stufe | Inhalt | Status |
+| --- | --- | --- |
+| 0 | Klickbare Weboberfläche nach Mockups | ✅ abgeschlossen |
+| 1 | Fundament: Backend, SQLite, echte Anmeldung, ein Container | 🔍 Abnahme ausstehend |
+| 2 | Odin-API: Live-Daten von Odin | ⏳ geplant |
 
-- Alle Ansichten zeigen **Beispieldaten**; es finden keine Netzwerkanfragen statt.
-- Die Anmeldung ist eine **Demo-Anmeldung** ohne Authentifizierung.
-- Produktive Aktionen (Server schlafen legen/neustarten, Dienste neu starten,
-  Modell löschen, Download starten, Agent hinzufügen …) führen nichts aus und
-  zeigen stattdessen einen Hinweis an.
-- Es gibt noch kein Backend, keine SQLite-Datenbank und keine Anbindung an
-  Odin, Docker, Wake-on-LAN oder den Shelly Plug.
+Alle Stufen: [Roadmap](docs/entwicklung/roadmap.md). Die Anmeldung ist echt;
+alle übrigen Ansichten zeigen noch **Beispieldaten** und führen keine Aktionen aus.
 
-## Architektur
+## Dokumentation
 
-MIRA ist als modularer Monolith geplant.
+Konzepte, Architekturentscheidungen und Entwicklungsstufen liegen unter
+[`docs/`](docs/README.md):
 
-| Verzeichnis     | Inhalt                                                   |
-| --------------- | -------------------------------------------------------- |
-| `backend/`      | Kerndienste und Funktionsmodule (ab Phase 2)             |
-| `frontend/`     | Weboberfläche (React, TypeScript, Vite)                  |
-| `docs/mockups/` | Freigegebene UI-Entwürfe                                 |
-| `deploy/`       | Deployment (Docker Compose für Asgard)                   |
-| `tests/`        | Automatisierte Tests                                     |
+- [Zielarchitektur](docs/architektur/zielarchitektur.md) · [Datenmodell](docs/architektur/datenmodell.md) · [Odin-API](docs/architektur/odin-api.md) · [Sicherheit](docs/architektur/sicherheit.md)
+- [Architekturentscheidungen (ADR)](docs/adr/README.md)
+- [Roadmap und Stufen](docs/entwicklung/roadmap.md)
+- [Vorgaben im Original](docs/vorgaben/README.md) · [Mockups](docs/mockups/)
 
-Das Frontend kommuniziert später **ausschließlich mit dem MIRA-Backend**, nie
-direkt mit Odin oder dem Shelly Plug.
+## Aufbau
 
-### Aufbau des Frontends
+npm-Workspaces, eine Sprache (TypeScript) für alle Teile.
 
-```
-frontend/src/
-├── types/models.ts        Domänen-Typen (Server, LLM-Modelle, Shelly, …)
-├── data/demoData.ts       ALLE Demo-Daten zentral an einer Stelle
-├── services/dataService.ts  Einzige Datenschnittstelle der Oberfläche
-├── lib/format.ts          Zahlen-/Datumsformatierung (de-DE)
-├── components/
-│   ├── layout/            App-Rahmen, Sidebar, Kopfzeile, Menüstruktur
-│   ├── ui/                Karte, Pills, Fortschrittsbalken, Buttons, Dialog, Meldungen
-│   ├── charts/            SVG-Diagramme (Zeitreihe, Sparkline)
-│   ├── illustrations/     SVG-Grafiken (Server, Shelly Plug, Wellen)
-│   └── brand/             MIRA-Logo
-├── pages/                 Login, Dashboard, Systeme, Agents, LLM, Konfiguration
-└── styles/                Designsystem: tokens.css (Farben, Abstände, Schrift) + Stylesheets
-```
+| Verzeichnis | Inhalt |
+| --- | --- |
+| `frontend/` | Weboberfläche (React 19, Vite, React Router, Lucide) |
+| `backend/` | API und Hintergrunddienste (Node.js 22, Fastify, SQLite) – `core/` + `modules/` |
+| `shared/` | Gemeinsame API-Verträge (zod-Schemas und Typen) |
+| `deploy/` | Docker Compose für Asgard |
+| `docs/` | Dokumentation, Mockups |
+| `Dockerfile` | Ein Image für API und Oberfläche |
 
-**Demo-Daten durch Backend-Daten ersetzen:** Seiten und Komponenten lesen
-Daten nur über `services/dataService.ts`. Für das Backend werden dort die
-Rückgaben der Demo-Daten durch API-Aufrufe an das MIRA-Backend ersetzt
-(z. B. `GET /api/systems/odin`). Die Typen in `types/models.ts` beschreiben
-dabei das erwartete Datenformat.
+## Entwicklung (macOS)
 
-### Routen
-
-| Pfad                         | Ansicht                                   |
-| ---------------------------- | ----------------------------------------- |
-| `/login`                     | Login (Demo)                              |
-| `/dashboard`                 | Dashboard                                 |
-| `/systeme/odin`              | Systeme › Odin                            |
-| `/systeme/shelly-plug`       | Systeme › Shelly Plug                     |
-| `/agents`                    | Agentenübersicht                          |
-| `/llm`                       | Installierte LLMs und Download            |
-| `/konfiguration`             | Konfiguration (Bereichsauswahl)           |
-| `/konfiguration/systeme`     | Konfiguration der Systeme (ein Widget je System) |
-| `/konfiguration/{dashboard,agents,llm,mira}` | Platzhalter je Bereich   |
-
-## Lokale Entwicklung (macOS)
-
-Voraussetzung: **Node.js ≥ 22.22** (z. B. aktuelles Node 22 LTS).
+Voraussetzung: **Node.js ≥ 22.22**.
 
 ```bash
 # Node.js installieren (falls noch nicht vorhanden)
 brew install node@22
 echo 'export PATH="/opt/homebrew/opt/node@22/bin:$PATH"' >> ~/.zshrc && source ~/.zshrc
 
-# Abhängigkeiten installieren
-cd frontend
+# Abhängigkeiten für alle Pakete installieren (im Wurzelverzeichnis)
 npm ci
 
-# Entwicklungsserver starten → http://localhost:5173
-npm run dev
+# Erstes Konto für die lokale Entwicklung vorbereiten
+mkdir -p data
+printf 'mein-lokales-passwort\n' > data/admin_password.txt   # mind. 12 Zeichen
+cp backend/.env.example backend/.env                          # bei Bedarf anpassen
 ```
 
-Weitere Befehle im Ordner `frontend/`:
-
-| Befehl              | Zweck                                         |
-| ------------------- | --------------------------------------------- |
-| `npm run build`     | Typprüfung und Produktionsbuild nach `dist/`  |
-| `npm run typecheck` | Nur TypeScript-Prüfung                        |
-| `npm run preview`   | Produktionsbuild lokal ansehen                |
-
-## Docker-Build
-
-Das Image wird mehrstufig gebaut: Node baut die Oberfläche, ein
-unprivilegierter nginx liefert die statischen Dateien auf **Port 8080** aus
-(inkl. SPA-Fallback für React Router). Node.js muss dafür lokal nicht
-installiert sein.
+Zwei Terminals:
 
 ```bash
-# Image bauen und starten
-docker build -t mira-web:0.1.0 frontend
-docker run -d --name mira-web -p 8080:8080 mira-web:0.1.0
-# → http://localhost:8080
+npm run dev:backend    # API auf http://localhost:8080 (startet bei Änderungen neu)
+npm run dev:frontend   # Oberfläche auf http://localhost:5173 (leitet /api an das Backend weiter)
 ```
 
-### Betrieb auf Asgard (Docker Compose)
+Anmelden mit dem Benutzer aus `backend/.env` (Standard `admin`) und dem Passwort
+aus `data/admin_password.txt`. Das Konto wird nur beim allerersten Start angelegt;
+für einen Neuanfang `data/` löschen.
+
+| Befehl (Wurzelverzeichnis) | Zweck |
+| --- | --- |
+| `npm test` | Backend-Tests (Vitest) |
+| `npm run typecheck` | TypeScript-Prüfung aller Pakete |
+| `npm run build` | Produktionsbuild von `shared`, `backend`, `frontend` |
+
+## Betrieb auf Asgard (Docker)
+
+Ein Container liefert API und Oberfläche auf **Port 8080** aus. Er läuft als
+unprivilegierter Benutzer (UID 1000) mit schreibgeschütztem Dateisystem; alle
+Daten liegen im Volume `/data`.
 
 ```bash
+# 1. Startpasswort für das erste Konto anlegen (wird nicht versioniert)
+mkdir -p deploy/secrets
+printf 'ein-langes-startpasswort\n' > deploy/secrets/admin_password.txt
+chmod 600 deploy/secrets/admin_password.txt
+
+# 2. Bauen und starten
 docker compose -f deploy/docker-compose.yml up -d --build
+# → http://<ASGARD_IP>:8080
 ```
 
-Der Container läuft schreibgeschützt (`read_only`) ohne zusätzliche Rechte.
-Port anpassen: in `deploy/docker-compose.yml` z. B. `"8090:8080"`.
+- Benutzername und Anzeigename stehen in `deploy/docker-compose.yml`
+  (`MIRA_ADMIN_USER`, `MIRA_ADMIN_DISPLAY_NAME`).
+- Das Startpasswort wird **nur beim allerersten Start** gelesen. Danach kann die
+  Datei gelöscht werden; ein Neustart ändert das Passwort nie.
+- Für einen festen Speicherort auf dem NAS das Volume durch einen Pfad ersetzen
+  (z. B. `/volume1/docker/mira/data:/data`) und `chown 1000:1000` auf den Ordner setzen.
+
+### Hinter dem Reverse Proxy (HTTPS)
+
+- Eigenen Hostnamen für MIRA verwenden (kein Unterpfad).
+- `MIRA_TRUST_PROXY` auf die Adresse des Proxys setzen. Dann erkennt MIRA HTTPS
+  (Cookie mit `Secure`) und die echte Client-IP (Login-Sperre, Audit-Log).
+
+### Konfiguration (Umgebungsvariablen)
+
+| Variable | Standard | Bedeutung |
+| --- | --- | --- |
+| `MIRA_PORT` | `8080` | Port |
+| `MIRA_DATA_DIR` | `/data` | Datenverzeichnis (Datenbank `mira.db`) |
+| `MIRA_ADMIN_USER` / `MIRA_ADMIN_DISPLAY_NAME` | – | Erstes Konto (nur beim ersten Start) |
+| `MIRA_ADMIN_PASSWORD_FILE` | – | Datei mit dem Startpasswort (mind. 12 Zeichen) |
+| `MIRA_TRUST_PROXY` | `false` | `true` oder Adresse(n) des Reverse Proxys |
+| `MIRA_COOKIE_SECURE` | `auto` | `auto`, `true`, `false` |
+| `MIRA_SESSION_TTL_HOURS` | `168` | Gültigkeit einer Anmeldung ohne Nutzung |
+| `MIRA_LOGIN_MAX_FAILURES` / `MIRA_LOGIN_WINDOW_MINUTES` | `5` / `15` | Login-Sperre |
+| `MIRA_AUDIT_RETENTION_DAYS` | `365` | Aufbewahrung des Audit-Logs |
+| `MIRA_LOG_LEVEL` | `info` | Protokollierungsstufe |
 
 ## Lizenz
 

@@ -93,12 +93,48 @@
   margin-bottom: 4px;
 }
 
-.login__demo-note {
-  margin-top: -6px;
-  font-size: var(--fs-sm);
-  color: var(--color-text-dim);
-  text-align: center;
-  line-height: 1.5;
+.login__error {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border: 1px solid rgba(240, 70, 70, 0.55);
+  border-radius: var(--radius-md);
+  background: var(--color-red-bg);
+  color: #ffd2d2;
+  font-size: var(--fs-md);
+  line-height: 1.4;
+}
+
+.login__error svg {
+  color: var(--color-red);
+}
+
+.button:disabled {
+  opacity: 0.65;
+  cursor: progress;
+}
+
+/* Ladebildschirm während der Sessionprüfung */
+.auth-splash {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  color: var(--color-text-muted);
+  font-size: var(--fs-md);
+}
+
+.auth-splash > svg {
+  animation: auth-pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes auth-pulse {
+  50% {
+    opacity: 0.55;
+  }
 }
 
 @media (max-width: 600px) {

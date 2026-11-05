@@ -26,14 +26,11 @@ import type {
   Temperature,
   TimeSeries,
   UsageHistory,
-  UserProfile,
 } from '../types/models';
 
 export const isDemoMode = true;
 
 export const dataService = {
-  getCurrentUser: (): UserProfile => demo.demoUser,
-
   getSystems: (): SystemEntry[] => demo.demoSystems,
 
   getOdin: (): ServerInfo => demo.demoOdin,

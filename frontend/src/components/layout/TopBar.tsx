@@ -1,7 +1,7 @@
 import { Fragment, useEffect, useRef, useState, type ReactNode } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { ChevronDown, ChevronRight, LogOut } from 'lucide-react';
-import { dataService } from '../../services/dataService';
+import { useAuth, useCurrentUser } from '../../auth/AuthContext';
 
 export interface Crumb {
   label: string;
@@ -54,7 +54,8 @@ export function TopBar({ title, subtitle, icon, breadcrumb }: TopBarProps) {
 }
 
 function UserMenu() {
-  const user = dataService.getCurrentUser();
+  const user = useCurrentUser();
+  const { logout } = useAuth();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -92,10 +93,10 @@ function UserMenu() {
             <span className="avatar avatar--sm">{user.displayName.charAt(0).toUpperCase()}</span>
             <div>
               <strong>{user.displayName}</strong>
-              <span>Demo-Anmeldung</span>
+              <span>{user.username}</span>
             </div>
           </div>
-          <button type="button" role="menuitem" className="user-menu__item" onClick={() => navigate('/login')}>
+          <button type="button" role="menuitem" className="user-menu__item" onClick={() => void logout().then(() => navigate('/login', { replace: true }))}>
             <LogOut size={18} />
             Abmelden
           </button>

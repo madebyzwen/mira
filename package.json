@@ -1,0 +1,23 @@
+{
+  "name": "mira",
+  "private": true,
+  "version": "0.2.0",
+  "description": "MIRA – Management, Infrastructure, Resources & Automation",
+  "type": "module",
+  "engines": {
+    "node": ">=22.22"
+  },
+  "workspaces": [
+    "shared",
+    "backend",
+    "frontend"
+  ],
+  "scripts": {
+    "dev:backend": "npm run dev -w @mira/backend",
+    "dev:frontend": "npm run dev -w @mira/frontend",
+    "build": "npm run build -w @mira/shared && npm run build -w @mira/backend && npm run build -w @mira/frontend",
+    "typecheck": "npm run typecheck --workspaces",
+    "test": "npm test -w @mira/backend",
+    "start": "node backend/dist/server.js"
+  }
+}

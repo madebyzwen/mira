@@ -7,6 +7,7 @@ import { Sparkline } from '../components/charts/Sparkline';
 import { ServerTower } from '../components/illustrations/ServerTower';
 import { DevicePhoto } from '../components/illustrations/DevicePhoto';
 import { useNotice } from '../components/ui/Notice';
+import { useCurrentUser } from '../auth/AuthContext';
 import { dataService } from '../services/dataService';
 import { formatNumber, formatPercent, percentOf } from '../lib/format';
 import type { ContainerState } from '../types/models';
@@ -19,7 +20,7 @@ const containerStateLabel: Record<ContainerState, string> = {
 
 export function DashboardPage() {
   const { notAvailable } = useNotice();
-  const user = dataService.getCurrentUser();
+  const user = useCurrentUser();
   const odin = dataService.getOdin();
   const util = dataService.getOdinUtilization();
   const shelly = dataService.getShellyPlug();
