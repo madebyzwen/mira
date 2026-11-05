@@ -1,0 +1,45 @@
+# macOS
+.DS_Store
+.AppleDouble
+
+# IDE
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Node.js
+node_modules/
+.npm/
+dist/
+build/
+coverage/
+
+# Runtime data
+*.db
+*.db-*
+*.sqlite
+*.sqlite3
+data/
+logs/
+*.log
+
+# Temporary files
+*.tmp
+*.swp
+*.bak
