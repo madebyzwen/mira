@@ -1,7 +1,7 @@
 {
   "name": "@mira/shared",
   "private": true,
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "MIRA – gemeinsame API-Verträge (zod-Schemas und Typen) für Frontend, Backend und Odin-API",
   "type": "module",
   "exports": {

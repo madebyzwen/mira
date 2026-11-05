@@ -22,7 +22,7 @@ auf dem NAS **Asgard** und verwaltet von dort den KI-Server **Odin**.
 | --- | --- | --- |
 | 0 | Klickbare Weboberfläche nach Mockups | ✅ abgeschlossen |
 | 1 | Fundament: Backend, SQLite, echte Anmeldung, ein Container | ✅ abgeschlossen |
-| 2 | Odin-API: Live-Daten von Odin in der Odin-Ansicht | 🔍 Installation auf Odin ausstehend |
+| 2 | Odin-API: Live-Daten von Odin in der Odin-Ansicht | 🔍 Inbetriebnahme auf Asgard/Odin ausstehend |
 
 Alle Stufen: [Roadmap](docs/entwicklung/roadmap.md). Echt sind die Anmeldung und
 die Odin-Ansicht (ohne Verlaufsdiagramm); alle übrigen Ansichten zeigen noch
@@ -88,44 +88,69 @@ für einen Neuanfang `data/` löschen.
 | `npm run typecheck` | TypeScript-Prüfung aller Pakete |
 | `npm run build` | Produktionsbuild von `shared`, `backend`, `frontend` |
 
-## Betrieb auf Asgard (Docker)
+## Betrieb auf Asgard (Portainer)
 
-Ein Container liefert API und Oberfläche auf **Port 8080** aus. Er läuft als
-unprivilegierter Benutzer (UID 1000) mit schreibgeschütztem Dateisystem; alle
-Daten liegen im Volume `/data`.
+MIRA läuft als ein Container (API und Oberfläche, **Port 8080**) als
+unprivilegierter Benutzer (UID 1000) mit schreibgeschütztem Dateisystem. Das
+Image baut GitHub bei jedem Push automatisch (`ghcr.io/madebyzwen/mira`,
+[ADR 0008](docs/adr/0008-images-ueber-github-container-registry.md)).
+
+### 1. Ordner und Startpasswort anlegen (einmalig, per SSH)
 
 ```bash
-# 1. Startpasswort für das erste Konto anlegen (wird nicht versioniert)
-mkdir -p deploy/secrets
-printf 'ein-langes-startpasswort\n' > deploy/secrets/admin_password.txt
-chmod 600 deploy/secrets/admin_password.txt
-
-# 2. Bauen und starten
-docker compose -f deploy/docker-compose.yml up -d --build
-# → http://<ASGARD_IP>:8080
+APPDATA=<APPDATA_PFAD>/mira          # z. B. …/appdata/mira
+mkdir -p "$APPDATA/data" "$APPDATA/secrets"
+chmod 700 "$APPDATA/secrets"
+read -rs -p "Startpasswort (mind. 12 Zeichen): " PW; echo
+printf '%s\n' "$PW" > "$APPDATA/secrets/admin_password.txt"; unset PW
+chmod 600 "$APPDATA/secrets/admin_password.txt"
 ```
 
-- Benutzername und Anzeigename stehen in `deploy/docker-compose.yml`
-  (`MIRA_ADMIN_USER`, `MIRA_ADMIN_DISPLAY_NAME`).
-- Das Startpasswort wird **nur beim allerersten Start** gelesen. Danach kann die
-  Datei gelöscht werden; ein Neustart ändert das Passwort nie.
-- Für einen festen Speicherort auf dem NAS das Volume durch einen Pfad ersetzen
-  (z. B. `/volume1/docker/mira/data:/data`) und `chown 1000:1000` auf den Ordner setzen.
+Die Ordner müssen UID 1000 gehören (ggf. `sudo chown -R 1000 "$APPDATA"`).
+Das Startpasswort wird **nur beim allerersten Start** gelesen; danach kann die
+Datei gelöscht werden – ein Neustart ändert das Passwort nie.
+
+### 2. Stack in Portainer anlegen
+
+Stacks → Add stack → Name `mira` → Web editor: Inhalt von
+[`deploy/portainer-stack.yml`](deploy/portainer-stack.yml) einfügen und unter
+„Environment variables“ setzen:
+
+| Variable | Beispiel | Bedeutung |
+| --- | --- | --- |
+| `MIRA_APPDATA` | `<APPDATA_PFAD>/mira` | Ordner aus Schritt 1 (Pflicht) |
+| `MIRA_VERSION` | `0.3.0` | Image-Version (Standard `latest`) |
+| `MIRA_HTTP_PORT` | `8080` | Port auf Asgard |
+| `MIRA_ADMIN_USER` / `MIRA_ADMIN_DISPLAY_NAME` | `sven` / `Sven` | erstes Konto |
+| `MIRA_ODIN_API_URL` / `MIRA_ODIN_CERT_FINGERPRINT` | – | erst nach der Odin-Installation |
+
+Danach „Deploy the stack“ → `http://<ASGARD_IP>:8080`.
+
+### Update
+
+`MIRA_VERSION` auf die neue Version setzen → „Update the stack“ mit
+„Re-pull image“. Daten und Einstellungen bleiben in `MIRA_APPDATA` erhalten.
 
 ### Verbindung zu Odin (Odin-API)
 
-1. Paket bauen und auf Odin installieren – Anleitung: [`odin-api/install/README.md`](odin-api/install/README.md).
+1. Odin-API auf Odin installieren – Anleitung: [`odin-api/install/README.md`](odin-api/install/README.md).
    Das Installationsskript gibt Adresse, Zertifikats-Fingerprint und Token aus.
 2. In der OPNsense Asgard → Odin, TCP 8443 erlauben.
-3. Auf Asgard das Token speichern und die Odin-Einträge in `deploy/docker-compose.yml`
-   aktivieren (`MIRA_ODIN_API_URL`, `MIRA_ODIN_CERT_FINGERPRINT`, Secret `mira_odin_api_token`):
+3. Token auf Asgard ablegen und im Stack `MIRA_ODIN_API_URL` und
+   `MIRA_ODIN_CERT_FINGERPRINT` setzen, dann „Update the stack“:
 
    ```bash
-   printf '<TOKEN>\n' > deploy/secrets/odin_api_token.txt && chmod 600 deploy/secrets/odin_api_token.txt
-   docker compose -f deploy/docker-compose.yml up -d
+   read -rs -p "Token: " T; echo; printf '%s\n' "$T" > "$APPDATA/secrets/odin_api_token.txt"; unset T
+   chmod 600 "$APPDATA/secrets/odin_api_token.txt"
    ```
 
 Den Verbindungsstatus zeigt Konfiguration › Systeme.
+
+### Lokal testen (aus dem Quellcode)
+
+`deploy/docker-compose.yml` baut das Image lokal; Ordner `deploy/appdata/`
+(wird nicht versioniert) wie in Schritt 1 anlegen, dann
+`docker compose -f deploy/docker-compose.yml up -d --build`.
 
 ### Hinter dem Reverse Proxy (HTTPS)
 

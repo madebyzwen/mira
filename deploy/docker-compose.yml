@@ -1,47 +1,35 @@
-# MIRA auf Asgard
+# MIRA – lokal aus dem Quellcode bauen und starten (Entwicklung/Tests)
+#
+# Für den Betrieb auf Asgard über Portainer: deploy/portainer-stack.yml
 #
 # Vor dem ersten Start:
-#   1. deploy/secrets/admin_password.txt anlegen (mind. 12 Zeichen, nur Startpasswort)
-#   2. docker compose -f deploy/docker-compose.yml up -d --build
-# Details: README.md, Abschnitt „Betrieb auf Asgard“.
+#   mkdir -p deploy/appdata/data deploy/appdata/secrets
+#   printf 'ein-langes-startpasswort\n' > deploy/appdata/secrets/admin_password.txt
+#   docker compose -f deploy/docker-compose.yml up -d --build
+# Werte wie im Portainer-Stack können in deploy/.env gesetzt werden (wird nicht versioniert).
 services:
   mira:
     build:
       context: ..
-    image: mira:0.2.0
+    image: mira:local
     container_name: mira
     ports:
-      - "8080:8080"
+      - "${MIRA_HTTP_PORT:-8080}:8080"
     environment:
-      MIRA_ADMIN_USER: admin
-      MIRA_ADMIN_DISPLAY_NAME: Admin
-      MIRA_ADMIN_PASSWORD_FILE: /run/secrets/mira_admin_password
-      # Hinter einem Reverse Proxy: dessen Adresse eintragen, damit HTTPS erkannt wird
-      MIRA_TRUST_PROXY: "false"
-      MIRA_LOG_LEVEL: info
-      # Odin-API (Stufe 2) – Werte gibt install.sh auf Odin aus:
-      # MIRA_ODIN_API_URL: https://<ODIN_IP>:8443
-      # MIRA_ODIN_CERT_FINGERPRINT: "<SHA-256-Fingerprint>"
-      # MIRA_ODIN_TOKEN_FILE: /run/secrets/mira_odin_api_token
-    secrets:
-      - mira_admin_password
-      # - mira_odin_api_token
+      MIRA_ADMIN_USER: ${MIRA_ADMIN_USER:-admin}
+      MIRA_ADMIN_DISPLAY_NAME: ${MIRA_ADMIN_DISPLAY_NAME:-Admin}
+      MIRA_ADMIN_PASSWORD_FILE: /secrets/admin_password.txt
+      MIRA_TRUST_PROXY: ${MIRA_TRUST_PROXY:-false}
+      MIRA_LOG_LEVEL: ${MIRA_LOG_LEVEL:-info}
+      MIRA_ODIN_API_URL: ${MIRA_ODIN_API_URL:-}
+      MIRA_ODIN_CERT_FINGERPRINT: ${MIRA_ODIN_CERT_FINGERPRINT:-}
+      MIRA_ODIN_TOKEN_FILE: /secrets/odin_api_token.txt
     volumes:
-      # Auf Asgard bevorzugt einen festen Pfad verwenden, z. B. /volume1/docker/mira/data:/data
-      # (Ordner muss UID 1000 gehören: chown 1000:1000 <pfad>)
-      - mira-data:/data
+      - ${MIRA_APPDATA:-./appdata}/data:/data
+      - ${MIRA_APPDATA:-./appdata}/secrets:/secrets:ro
     restart: unless-stopped
     read_only: true
     tmpfs:
       - /tmp
     security_opt:
       - no-new-privileges:true
-
-secrets:
-  mira_admin_password:
-    file: ./secrets/admin_password.txt
-  # mira_odin_api_token:
-  #   file: ./secrets/odin_api_token.txt
-
-volumes:
-  mira-data:

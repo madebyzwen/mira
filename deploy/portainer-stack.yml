@@ -1,0 +1,34 @@
+# MIRA – Stack für Portainer (Asgard)
+#
+# Nutzt das fertige Image aus der GitHub Container Registry.
+# In Portainer: Stacks → Add stack → Web editor → diesen Inhalt einfügen,
+# darunter die Umgebungsvariablen setzen (siehe README, „Betrieb auf Asgard“).
+#
+# Erwartete Ordnerstruktur unter MIRA_APPDATA (gehört UID 1000):
+#   data/                       Datenbank (wird von MIRA angelegt)
+#   secrets/admin_password.txt  Startpasswort – nur für den allerersten Start
+#   secrets/odin_api_token.txt  Zugriffstoken der Odin-API (ab Stufe 2)
+services:
+  mira:
+    image: ghcr.io/madebyzwen/mira:${MIRA_VERSION:-latest}
+    container_name: mira
+    restart: unless-stopped
+    ports:
+      - "${MIRA_HTTP_PORT:-8080}:8080"
+    environment:
+      MIRA_ADMIN_USER: ${MIRA_ADMIN_USER:-admin}
+      MIRA_ADMIN_DISPLAY_NAME: ${MIRA_ADMIN_DISPLAY_NAME:-Admin}
+      MIRA_ADMIN_PASSWORD_FILE: /secrets/admin_password.txt
+      MIRA_TRUST_PROXY: ${MIRA_TRUST_PROXY:-false}
+      MIRA_LOG_LEVEL: ${MIRA_LOG_LEVEL:-info}
+      MIRA_ODIN_API_URL: ${MIRA_ODIN_API_URL:-}
+      MIRA_ODIN_CERT_FINGERPRINT: ${MIRA_ODIN_CERT_FINGERPRINT:-}
+      MIRA_ODIN_TOKEN_FILE: /secrets/odin_api_token.txt
+    volumes:
+      - ${MIRA_APPDATA:?MIRA_APPDATA setzen, z. B. /volume2/…/appdata/mira}/data:/data
+      - ${MIRA_APPDATA}/secrets:/secrets:ro
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true

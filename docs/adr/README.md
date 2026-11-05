@@ -13,6 +13,7 @@ eine neue ADR, die alte erhält den Status „ersetzt durch …“.
 | [0005](0005-odin-http-api-statt-ssh.md) | Odin-API als HTTP-Dienst statt SSH-Agent | angenommen | 2026-11-05 |
 | [0006](0006-geheimnisse-als-dateien.md) | Geheimnisse als Dateien, nicht in SQLite | angenommen | 2026-11-05 |
 | [0007](0007-wake-on-lan-ueber-opnsense.md) | Wake-on-LAN über die OPNsense-API | vorgeschlagen | 2026-11-05 |
+| [0008](0008-images-ueber-github-container-registry.md) | Images über GitHub Actions und die GitHub Container Registry | angenommen | 2026-11-06 |
 
 ## Vorlage
 

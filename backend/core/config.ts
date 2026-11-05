@@ -6,12 +6,16 @@ import { z } from 'zod';
  * Geheimnisse (Passwörter, Schlüssel) werden nie direkt als Variable übergeben,
  * sondern immer als Pfad auf eine Datei (`…_FILE`).
  */
+/** Leere Werte (z. B. nicht gesetzte Stack-Variablen in Portainer) gelten als „nicht gesetzt“. */
+const emptyAsUndefined = (value: unknown) => (typeof value === 'string' && value.trim() === '' ? undefined : value);
+const opt = <T extends z.ZodType>(schema: T) => z.preprocess(emptyAsUndefined, schema.optional());
+
 const envSchema = z.object({
   MIRA_HOST: z.string().default('0.0.0.0'),
   MIRA_PORT: z.coerce.number().int().min(1).max(65535).default(8080),
   MIRA_DATA_DIR: z.string().default('/data'),
-  MIRA_DB_FILE: z.string().optional(),
-  MIRA_STATIC_DIR: z.string().optional(),
+  MIRA_DB_FILE: opt(z.string()),
+  MIRA_STATIC_DIR: opt(z.string()),
   MIRA_LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent']).default('info'),
   /** `false`, `true` oder kommagetrennte Proxy-Adressen/Netze (z. B. `192.0.2.10`) */
   MIRA_TRUST_PROXY: z.string().default('false'),
@@ -20,15 +24,15 @@ const envSchema = z.object({
   MIRA_SESSION_TTL_HOURS: z.coerce.number().int().min(1).max(24 * 90).default(24 * 7),
   MIRA_LOGIN_MAX_FAILURES: z.coerce.number().int().min(1).default(5),
   MIRA_LOGIN_WINDOW_MINUTES: z.coerce.number().int().min(1).default(15),
-  MIRA_ADMIN_USER: z.string().trim().min(1).max(64).optional(),
-  MIRA_ADMIN_DISPLAY_NAME: z.string().trim().min(1).max(64).optional(),
-  MIRA_ADMIN_PASSWORD_FILE: z.string().optional(),
+  MIRA_ADMIN_USER: opt(z.string().trim().min(1).max(64)),
+  MIRA_ADMIN_DISPLAY_NAME: opt(z.string().trim().min(1).max(64)),
+  MIRA_ADMIN_PASSWORD_FILE: opt(z.string()),
   MIRA_AUDIT_RETENTION_DAYS: z.coerce.number().int().min(1).default(365),
   /** Odin-API, z. B. `https://<ODIN_IP>:8443` */
-  MIRA_ODIN_API_URL: z.url({ protocol: /^https$/ }).optional(),
+  MIRA_ODIN_API_URL: opt(z.url({ protocol: /^https$/ })),
   /** SHA-256-Fingerprint des Odin-Zertifikats (Ausgabe des Installationsskripts) */
-  MIRA_ODIN_CERT_FINGERPRINT: z.string().regex(/^[0-9A-Fa-f:]{64,95}$/).optional(),
-  MIRA_ODIN_TOKEN_FILE: z.string().optional(),
+  MIRA_ODIN_CERT_FINGERPRINT: opt(z.string().trim().regex(/^[0-9A-Fa-f:]{64,95}$/)),
+  MIRA_ODIN_TOKEN_FILE: opt(z.string()),
   MIRA_ODIN_POLL_SECONDS: z.coerce.number().int().min(2).max(3600).default(10),
 });
 

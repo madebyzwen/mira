@@ -5,6 +5,7 @@ import { Sidebar } from './Sidebar';
 import { TopBar, type TopBarProps } from './TopBar';
 import { Modal } from '../ui/Modal';
 import { MiraLogo } from '../brand/MiraLogo';
+import type { HealthResponse } from '@mira/shared';
 
 const STORAGE_KEY = 'mira.sidebar.collapsed';
 const MOBILE_QUERY = '(max-width: 900px)';
@@ -34,6 +35,16 @@ export function AppLayout() {
   const [collapsed, setCollapsed] = useState(readStoredCollapsed);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [aboutOpen, setAboutOpen] = useState(false);
+  const [version, setVersion] = useState<string | null>(null);
+
+  // Version des laufenden Backends (öffentlicher Health-Endpunkt), nur bei Bedarf laden
+  useEffect(() => {
+    if (!aboutOpen || version) return;
+    fetch('/health')
+      .then((r) => r.json() as Promise<HealthResponse>)
+      .then((h) => setVersion(h.version))
+      .catch(() => setVersion('unbekannt'));
+  }, [aboutOpen, version]);
   const { pathname } = useLocation();
 
   // Mobil: Overlay-Menü nach Navigation schließen
@@ -80,13 +91,12 @@ export function AppLayout() {
           <MiraLogo size={56} />
           <div>
             <p className="about__name">MIRA – Management, Infrastructure, Resources &amp; Automation</p>
-            <p className="about__meta">Version 0.1.0 · Phase 1 (Weboberfläche mit Demo-Daten)</p>
+            <p className="about__meta">Version {version ?? '…'}</p>
           </div>
         </div>
         <p className="about__text">
-          Selbst gehostete Weboberfläche zur Überwachung, Verwaltung und Automatisierung lokaler KI-Infrastruktur. In dieser
-          Phase werden ausschließlich Beispieldaten angezeigt; es bestehen keine Verbindungen zu Odin, dem Shelly Plug oder
-          anderen Diensten.
+          Selbst gehostete Weboberfläche zur Überwachung, Verwaltung und Automatisierung lokaler KI-Infrastruktur. MIRA wird
+          stufenweise ausgebaut: Bereiche, die noch nicht angebunden sind, zeigen Beispieldaten und führen keine Aktionen aus.
         </p>
       </Modal>
     </div>

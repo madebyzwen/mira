@@ -13,14 +13,18 @@ unprivilegierter Benutzer `mira-agent` und ist nur von Asgard aus erreichbar.
 ## Installation
 
 ```bash
-# Paket auf Odin kopieren (vom Rechner mit dem Repository aus)
-scp odin-api/release/mira-odin-api-*.tar.gz sven@<ODIN_IP>:~
+# Auf Odin: Paket aus dem GitHub-Release laden und prüfen
+VERSION=0.1.0
+BASE=https://github.com/madebyzwen/mira/releases/latest/download
+curl -fLO "$BASE/mira-odin-api-$VERSION.tar.gz" -fLO "$BASE/mira-odin-api-$VERSION.tar.gz.sha256"
+sha256sum -c "mira-odin-api-$VERSION.tar.gz.sha256"
 
-# Auf Odin
-tar xzf mira-odin-api-*.tar.gz
-cd mira-odin-api-*/
+tar xzf "mira-odin-api-$VERSION.tar.gz"
+cd "mira-odin-api-$VERSION"
 sudo ./install.sh --listen <ODIN_IP> --allow <ASGARD_IP>
 ```
+
+Alternativ das Paket lokal bauen (`npm run package:odin-api`) und per `scp` kopieren.
 
 Das Skript
 
@@ -30,20 +34,16 @@ Das Skript
 4. legt `/etc/mira-odin-api/` an: Konfiguration, Zertifikat, Hash des Tokens,
 5. richtet eine nftables-Regel ein, die **nur** Port 8443 betrifft und nur Asgard zulässt
    (ufw und andere Regeln bleiben unberührt),
-6. startet den gehärteten systemd-Dienst `mira-odin-api`.
+6. prüft die Konfiguration als `mira-agent` und startet den gehärteten systemd-Dienst `mira-odin-api`.
 
 Am Ende werden **Fingerprint** und **Token** angezeigt. Das Token erscheint nur
 dieses eine Mal – auf Odin bleibt nur sein Hash.
 
 ## Auf Asgard eintragen
 
-```bash
-printf '<TOKEN>\n' > deploy/secrets/odin_api_token.txt
-chmod 600 deploy/secrets/odin_api_token.txt
-```
-
-In `deploy/docker-compose.yml` die Odin-Einträge aktivieren:
-`MIRA_ODIN_API_URL`, `MIRA_ODIN_CERT_FINGERPRINT`, Secret `mira_odin_api_token`.
+Token unter `<APPDATA>/mira/secrets/odin_api_token.txt` ablegen und im
+Portainer-Stack `MIRA_ODIN_API_URL` und `MIRA_ODIN_CERT_FINGERPRINT` setzen –
+siehe Haupt-README, Abschnitt „Verbindung zu Odin“.
 
 ## Anpassen
 
