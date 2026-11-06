@@ -1,7 +1,7 @@
 {
   "name": "@mira/odin-api",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "MIRA – Odin-API: liefert Systemdaten von Odin an MIRA (nur lesend, HTTPS + Token)",
   "type": "module",
   "engines": {

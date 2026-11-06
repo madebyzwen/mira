@@ -7,7 +7,7 @@ und die [ADRs](../adr/).
 
 ```
  Browser (Heimnetz / WireGuard)
-     │  HTTPS über vorhandenen Reverse Proxy
+     │  HTTPS über vorhandenen Reverse Proxy → http://<MIRA_IP> (Port 80, macvlan, Server-Netz)
      ▼
 ┌──────────────── Asgard (NAS, Docker) ────────────────┐
 │  Container „mira“                                     │
@@ -23,7 +23,7 @@ und die [ADRs](../adr/).
   Odin: MIRA-Odin-API      Shelly Plug PM
   (systemd-Dienst)
         ▲
-        │ Wake-on-LAN über OPNsense-API (ab Stufe 5, vorgeschlagen)
+        │ Wake-on-LAN (ab Stufe 5) – MIRA liegt per macvlan im selben Netz
 ```
 
 ## Komponenten

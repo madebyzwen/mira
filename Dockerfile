@@ -49,6 +49,7 @@ RUN mkdir -p /data && chown node:node /data
 USER node
 VOLUME ["/data"]
 EXPOSE 8080
+# prüft den tatsächlich eingestellten Port (MIRA_PORT, Standard 8080)
 HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
-  CMD wget -q -O /dev/null http://127.0.0.1:8080/health || exit 1
+  CMD ["sh", "-c", "wget -q -O /dev/null http://127.0.0.1:${MIRA_PORT}/health || exit 1"]
 CMD ["node", "backend/dist/server.js"]

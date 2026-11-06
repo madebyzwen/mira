@@ -20,12 +20,14 @@ Entscheidungen (z. B. „nach 45 Minuten schlafen“) trifft ausschließlich MIR
 - Die API lauscht **nur auf der LAN-Schnittstelle** von Odin im Server-VLAN
   (`<ODIN_IP>`). Die 10-GbE-Direktverbindung ist ausschließlich für den
   Fileshare und wird nicht verwendet.
-- Asgard (`<ASGARD_IP>`) liegt in einem anderen VLAN; der Verkehr läuft über die OPNsense.
+- Der MIRA-Container hat über macvlan eine **eigene IP im Server-Netz** (`<MIRA_IP>`)
+  und spricht Odin direkt an – ohne Umweg über die OPNsense (Stand 2026-11-06;
+  ursprünglich war Asgards Adresse in einem anderen VLAN vorgesehen).
 - Freigaben:
-  - OPNsense: `<ASGARD_IP>` → `<ODIN_IP>`, TCP **8443**.
   - Auf Odin (ufw ist dort inaktiv und bleibt unverändert): eigene nftables-Tabelle
-    `inet mira_odin_api`, die **nur** Port 8443 betrifft und nur `<ASGARD_IP>` zulässt
+    `inet mira_odin_api`, die **nur** Port 8443 betrifft und nur `<MIRA_IP>` zulässt
     (systemd-Unit `mira-odin-api-firewall`).
+  - Eine OPNsense-Regel ist nur nötig, wenn MIRA und Odin in verschiedenen Netzen liegen.
   - Zusätzlich trennt die API selbst jede Verbindung von nicht erlaubten Adressen
     noch vor dem TLS-Handshake – auch wenn die nftables-Regel fehlt.
 
@@ -88,6 +90,7 @@ Die Installation auf Odin führt der Betreiber nach Anleitung selbst aus.
 
 ## Wake-on-LAN
 
-Ein schlafender Odin hat keine API. Wake-on-LAN ist daher ein eigener Weg –
-vorgeschlagen über das OPNsense-Plugin `os-wol` und einen API-Benutzer, der
-ausschließlich WoL auslösen darf ([ADR 0007](../adr/0007-wake-on-lan-ueber-opnsense.md), Status: vorgeschlagen).
+Ein schlafender Odin hat keine API. Wake-on-LAN ist daher ein eigener Weg. Da
+MIRA per macvlan im selben Netz wie Odin liegt, kann es das Magic Packet direkt
+senden; der Umweg über die OPNsense ([ADR 0007](../adr/0007-wake-on-lan-ueber-opnsense.md))
+wird vor Stufe 5 neu bewertet.

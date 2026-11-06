@@ -90,10 +90,16 @@ für einen Neuanfang `data/` löschen.
 
 ## Betrieb auf Asgard (Portainer)
 
-MIRA läuft als ein Container (API und Oberfläche, **Port 8080**) als
+MIRA läuft als ein Container (API und Oberfläche, im Stack auf **Port 80**) als
 unprivilegierter Benutzer (UID 1000) mit schreibgeschütztem Dateisystem. Das
 Image baut GitHub bei jedem Push automatisch (`ghcr.io/madebyzwen/mira`,
 [ADR 0008](docs/adr/0008-images-ueber-github-container-registry.md)).
+
+Netzwerk: MIRA erhält über ein vorhandenes **macvlan-Netz eine eigene IP im
+Server-Netz** (`<MIRA_IP>`), in dem auch Odin liegt. Aufgerufen wird MIRA über
+den Reverse Proxy (`https://<MIRA_HOSTNAME>` → `http://<MIRA_IP>`); direkt im
+Server-Netz unter `http://<MIRA_IP>`. Port 80 ist ohne Root-Rechte möglich, weil
+der Stack ihn nur im Netzwerk-Namensraum des Containers freigibt.
 
 ### 1. Ordner und Startpasswort anlegen (einmalig, per SSH)
 
@@ -119,12 +125,15 @@ Stacks → Add stack → Name `mira` → Web editor: Inhalt von
 | Variable | Beispiel | Bedeutung |
 | --- | --- | --- |
 | `MIRA_APPDATA` | `<APPDATA_PFAD>/mira` | Ordner aus Schritt 1 (Pflicht) |
-| `MIRA_VERSION` | `0.3.0` | Image-Version (Standard `latest`) |
-| `MIRA_HTTP_PORT` | `8080` | Port auf Asgard |
+| `MIRA_IP` | `<MIRA_IP>` | feste Adresse im Server-Netz (Pflicht) |
+| `MIRA_NETWORK` | `macvlan_server` | Name des vorhandenen macvlan-Netzes |
+| `MIRA_VERSION` | `0.3.1` | Image-Version (Standard `latest`) |
+| `MIRA_PORT` | `80` | Port von MIRA (Standard 80) |
+| `MIRA_TRUST_PROXY` | `<PROXY_IP>` | Adresse des Reverse Proxys |
 | `MIRA_ADMIN_USER` / `MIRA_ADMIN_DISPLAY_NAME` | `sven` / `Sven` | erstes Konto |
 | `MIRA_ODIN_API_URL` / `MIRA_ODIN_CERT_FINGERPRINT` | – | erst nach der Odin-Installation |
 
-Danach „Deploy the stack“ → `http://<ASGARD_IP>:8080`.
+Danach „Deploy the stack“ → `http://<MIRA_IP>` bzw. über den Reverse Proxy.
 
 ### Update
 
@@ -133,9 +142,10 @@ Danach „Deploy the stack“ → `http://<ASGARD_IP>:8080`.
 
 ### Verbindung zu Odin (Odin-API)
 
-1. Odin-API auf Odin installieren – Anleitung: [`odin-api/install/README.md`](odin-api/install/README.md).
-   Das Installationsskript gibt Adresse, Zertifikats-Fingerprint und Token aus.
-2. In der OPNsense Asgard → Odin, TCP 8443 erlauben.
+1. Odin-API auf Odin installieren – Anleitung: [`odin-api/install/README.md`](odin-api/install/README.md),
+   dabei `--allow <MIRA_IP>`. Das Skript gibt Adresse, Zertifikats-Fingerprint und Token aus.
+2. Liegen MIRA und Odin im selben Netz, ist keine Firewall-Regel zwischen VLANs nötig;
+   sonst `<MIRA_IP>` → `<ODIN_IP>`, TCP 8443 freigeben.
 3. Token auf Asgard ablegen und im Stack `MIRA_ODIN_API_URL` und
    `MIRA_ODIN_CERT_FINGERPRINT` setzen, dann „Update the stack“:
 
@@ -154,7 +164,9 @@ Den Verbindungsstatus zeigt Konfiguration › Systeme.
 
 ### Hinter dem Reverse Proxy (HTTPS)
 
-- Eigenen Hostnamen für MIRA verwenden (kein Unterpfad).
+- Eigenen Hostnamen für MIRA verwenden (kein Unterpfad), Ziel `http://<MIRA_IP>` (Port 80).
+- Der Proxy muss das macvlan-Netz erreichen (z. B. selbst mit macvlan-Adresse);
+  der Docker-Host selbst erreicht macvlan-Container nicht.
 - `MIRA_TRUST_PROXY` auf die Adresse des Proxys setzen. Dann erkennt MIRA HTTPS
   (Cookie mit `Secure`) und die echte Client-IP (Login-Sperre, Audit-Log).
 
@@ -162,7 +174,7 @@ Den Verbindungsstatus zeigt Konfiguration › Systeme.
 
 | Variable | Standard | Bedeutung |
 | --- | --- | --- |
-| `MIRA_PORT` | `8080` | Port |
+| `MIRA_PORT` | `8080` | Port im Container (Portainer-Stack: `80`) |
 | `MIRA_DATA_DIR` | `/data` | Datenverzeichnis (Datenbank `mira.db`) |
 | `MIRA_ADMIN_USER` / `MIRA_ADMIN_DISPLAY_NAME` | – | Erstes Konto (nur beim ersten Start) |
 | `MIRA_ADMIN_PASSWORD_FILE` | – | Datei mit dem Startpasswort (mind. 12 Zeichen) |

@@ -192,12 +192,13 @@ else
 fi
 cat <<EOF
 
- Auf Asgard (MIRA) eintragen:
+ In MIRA (Portainer-Stack) eintragen:
    MIRA_ODIN_API_URL=https://$CONF_LISTEN:$CONF_PORT
    MIRA_ODIN_CERT_FINGERPRINT=$FINGERPRINT
-   Token in deploy/secrets/odin_api_token.txt speichern (MIRA_ODIN_TOKEN_FILE)
+   Token in <MIRA_APPDATA>/secrets/odin_api_token.txt speichern
 
- OPNsense: Zugriff von Asgard auf $CONF_LISTEN, TCP $CONF_PORT erlauben.
+ Liegt MIRA ($CONF_ALLOW) in einem anderen Netz als Odin, zusätzlich in der
+ Firewall $CONF_ALLOW → $CONF_LISTEN, TCP $CONF_PORT erlauben.
  Status:   systemctl status $SERVICE   ·   Protokoll: journalctl -u $SERVICE -f
 ────────────────────────────────────────────────────────────────────
 EOF

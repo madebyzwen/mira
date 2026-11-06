@@ -8,20 +8,22 @@ unprivilegierter Benutzer `mira-agent` und ist nur von Asgard aus erreichbar.
 
 - Ubuntu Server (getestet mit 26.04), Node.js ≥ 22 – wird bei Bedarf aus den
   Ubuntu-Paketquellen installiert (`apt install nodejs`).
-- OPNsense-Regel: Asgard → Odin, TCP 8443.
+- `<MIRA_IP>`: Adresse, mit der MIRA Odin anspricht (bei macvlan die eigene IP des
+  MIRA-Containers). Liegt sie in einem anderen Netz als Odin, ist zusätzlich eine
+  Firewall-Regel `<MIRA_IP>` → `<ODIN_IP>`, TCP 8443 nötig.
 
 ## Installation
 
 ```bash
 # Auf Odin: Paket aus dem GitHub-Release laden und prüfen
-VERSION=0.1.0
+VERSION=0.1.1
 BASE=https://github.com/madebyzwen/mira/releases/latest/download
 curl -fLO "$BASE/mira-odin-api-$VERSION.tar.gz" -fLO "$BASE/mira-odin-api-$VERSION.tar.gz.sha256"
 sha256sum -c "mira-odin-api-$VERSION.tar.gz.sha256"
 
 tar xzf "mira-odin-api-$VERSION.tar.gz"
 cd "mira-odin-api-$VERSION"
-sudo ./install.sh --listen <ODIN_IP> --allow <ASGARD_IP>
+sudo ./install.sh --listen <ODIN_IP> --allow <MIRA_IP>
 ```
 
 Alternativ das Paket lokal bauen (`npm run package:odin-api`) und per `scp` kopieren.
@@ -32,7 +34,7 @@ Das Skript
 2. legt den Benutzer `mira-agent` an (ohne Login-Shell, ohne sudo),
 3. kopiert das Programm nach `/opt/mira-odin-api/` (gehört root),
 4. legt `/etc/mira-odin-api/` an: Konfiguration, Zertifikat, Hash des Tokens,
-5. richtet eine nftables-Regel ein, die **nur** Port 8443 betrifft und nur Asgard zulässt
+5. richtet eine nftables-Regel ein, die **nur** Port 8443 betrifft und nur MIRA zulässt
    (ufw und andere Regeln bleiben unberührt),
 6. prüft die Konfiguration als `mira-agent` und startet den gehärteten systemd-Dienst `mira-odin-api`.
 

@@ -3,6 +3,10 @@
 - Status: **vorgeschlagen** (Entscheidung vor Stufe 5)
 - Datum: 2026-11-05
 
+> **Nachtrag 2026-11-06:** MIRA erhält per macvlan eine eigene IP im Server-Netz
+> von Odin. Damit ist WoL direkt aus dem Container möglich; diese ADR wird vor
+> Stufe 5 neu bewertet und voraussichtlich durch eine direkte Lösung ersetzt.
+
 ## Kontext
 
 Ein schlafender Odin ist nur per Wake-on-LAN erreichbar. Das Magic Packet ist ein
