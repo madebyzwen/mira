@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { DEFAULT_HISTORY_RANGE } from '@mira/shared';
 import { AlarmClock, CalendarDays, ChartColumn, Cpu, Database, Info, Layers, Link as LinkIcon, Monitor, Plug, Wifi, Zap } from 'lucide-react';
 import { Page } from '../../components/layout/AppLayout';
 import { Card } from '../../components/ui/Card';
@@ -12,7 +13,7 @@ import { historyPointLabels, historyTicks } from '../../lib/historyTicks';
 import type { ChartRange } from '../../types/models';
 
 export function ShellyPlugPage() {
-  const [range, setRange] = useState<ChartRange>('24h');
+  const [range, setRange] = useState<ChartRange>(DEFAULT_HISTORY_RANGE);
   const plug = dataService.getShellyPlug();
   const history = dataService.getShellyPowerHistory(range);
 

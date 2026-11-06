@@ -11,7 +11,7 @@ Status: ✅ abgeschlossen · 🔍 umgesetzt, Abnahme ausstehend · 🚧 in Umset
 | [0](stufe-00-weboberflaeche.md) | Klickbare Weboberfläche nach Mockups, Demo-Daten | nein | ✅ |
 | [1](stufe-01-fundament.md) | Fundament: Backend-Kern, SQLite + Migrationen, echte Anmeldung, ein Container, Tests | nein | ✅ |
 | [2](stufe-02-odin-lesen.md) | Odin lesen: Odin-API (`health`, `system/info`, `system/metrics`), Online-Zustand, Odin-View mit Live-Daten; zuerst gegen `odin-sim` | Odin: Dienst, Benutzer, Firewall · Asgard: macvlan-IP für MIRA | ✅ |
-| [3](stufe-03-messwert-historie.md) | Messwert-Historie: Scheduler, Speicherung, Verdichtung, Aufbewahrung; echte Odin-Diagramme; Backup-Konzept | nein | 🧪 |
+| [3](stufe-03-messwert-historie.md) | Messwert-Historie: Scheduler, Speicherung, Verdichtung, Aufbewahrung; echte Odin-Diagramme; Backup-Konzept | nein | ✅ |
 | 4 | Shelly Plug: lokale API nur lesend, Verbrauch, Historie, Kosten; Dashboard-Widget „Verbrauch“ | OPNsense-Regel | ⏳ |
 | 5 | Energiesteuerung: Wake-on-LAN, Suspend, Herunterfahren, Neustart, Windows-Neustart, Verfügbarkeitsprüfung | Odin: sudo-Regeln, GRUB · OPNsense: os-wol | ⏳ |
 | 6 | Dashboard mit echten Daten: Docker-Status, Ressourcen, Strom, LLMs | Odin: sudo-Regel `docker ps` | ⏳ |
@@ -41,5 +41,3 @@ Konfigurations-Widgets entstehen jeweils **mit ihrer Stufe** (z. B. Odin-Verbind
 | Modellverzeichnis, Aufbau von llama.cpp/Containern auf Odin | Stufe 6–8 |
 | Automatisches Aufwecken bei Anfragen aus Open WebUI (neue Funktion) | vor Stufe 9 |
 | Datenquelle „Verfügbare LLMs“: Open WebUI oder Dateien auf Odin | Stufe 6 |
-| Verdichtung/Aufbewahrung der Messwerte | Stufe 3 |
-| Hostname von MIRA hinter dem Reverse Proxy | Inbetriebnahme auf Asgard |

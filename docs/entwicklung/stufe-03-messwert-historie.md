@@ -1,6 +1,6 @@
 # Stufe 3 – Messwert-Historie
 
-- Status: 🧪 umgesetzt, Abnahme auf Asgard ausstehend (freigegeben 2026-11-06, MIRA 0.4.0 / Odin-API 0.1.3)
+- Status: ✅ abgeschlossen (abgenommen 2026-11-06, MIRA 0.5.0 / Odin-API 0.1.3)
 - Grundlage: [Datenmodell](../architektur/datenmodell.md), Stufe 2 (Odin-Monitor)
 
 ## Ziel
@@ -135,12 +135,14 @@ hängendes Netzlaufwerk (nur ein `statfs`).
 
 Die Verlaufs-API liefert je Punkt zusätzlich `tempCpu` und `tempGpu`.
 
+0.5.0: Alle Verlaufsdiagramme (Odin, Shelly) starten mit „1 h“ (`DEFAULT_HISTORY_RANGE` in `shared`); auch die API nimmt ohne Angabe `1h`.
+
 ### Inbetriebnahme
 
 1. Stack in Portainer aktualisieren: neuen Inhalt von `deploy/portainer-stack.yml`
    (neu: `TZ`) einfügen, `MIRA_VERSION` auf `0.4.0` → „Update the stack“ mit „Re-pull image“.
 2. Nach einigen Minuten zeigt das 24-h-Diagramm die ersten Werte; 7/30 Tage nach spätestens 10 Minuten.
-3. Am Folgetag prüfen: `MIRA_APPDATA/data/backups/` enthält `mira-JJJJ-MM-TT.db`.
+3. Am Folgetag prüfen: `MIRA_APPDATA/data/backups/` enthält `mira-JJJJ-MM-TT.db`. *(Bei der Abnahme noch offen – als Aufgabe nachgereicht.)*
 4. Optional (empfohlen): Odin-API auf 0.1.3 aktualisieren (gleiches Verfahren wie 0.1.1 → 0.1.2).
 
 ## Nicht enthalten

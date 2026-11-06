@@ -18,6 +18,7 @@ import {
   Terminal,
   Thermometer,
 } from 'lucide-react';
+import { DEFAULT_HISTORY_RANGE } from '@mira/shared';
 import type { NetworkShare, OdinStatusResponse, SystemInfo, SystemMetrics, Temperature } from '@mira/shared';
 import { Page } from '../../components/layout/AppLayout';
 import { Card } from '../../components/ui/Card';
@@ -92,7 +93,7 @@ function tempScaleMax(values: (number | null)[]): number {
  * gemeinsame Zeitachse und Werteanzeige. Lücken (keine Messung) bleiben sichtbar.
  */
 function UsageHistoryCard() {
-  const [range, setRange] = useState<ChartRange>('24h');
+  const [range, setRange] = useState<ChartRange>(DEFAULT_HISTORY_RANGE);
   const { data, error } = usePolling(() => systemsService.getOdinHistory(range), HISTORY_POLL_MS, range);
   const points = data?.points ?? [];
   const timestamps = points.map((p) => p.ts);

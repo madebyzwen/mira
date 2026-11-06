@@ -68,7 +68,10 @@ export const HISTORY_GRID: Record<HistoryRange, { points: number; stepSeconds: n
   '30d': { points: 180, stepSeconds: 4 * 3600 },
 };
 
-export const historyQuerySchema = z.object({ range: z.enum(HISTORY_RANGES).default('24h') });
+/** Zeitraum, mit dem alle Verlaufsdiagramme beim Öffnen starten */
+export const DEFAULT_HISTORY_RANGE: HistoryRange = '1h';
+
+export const historyQuerySchema = z.object({ range: z.enum(HISTORY_RANGES).default(DEFAULT_HISTORY_RANGE) });
 
 export const historyPointSchema = z.object({
   /** Beginn des Zeitabschnitts (ISO, UTC) */
