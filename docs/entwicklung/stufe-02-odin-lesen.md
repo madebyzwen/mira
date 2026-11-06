@@ -1,6 +1,6 @@
 # Stufe 2 – Odin lesen
 
-- Status: 🔍 umgesetzt, Installation auf Odin und Abnahme ausstehend (freigegeben 2026-11-05: Port 8443, Verbindungsdaten per Konfiguration)
+- Status: ✅ abgeschlossen (abgenommen 2026-11-06, MIRA 0.3.2 / Odin-API 0.1.2)
 - Grundlage: [Odin-API](../architektur/odin-api.md), [ADR 0005](../adr/0005-odin-http-api-statt-ssh.md)
 
 ## Ziel
@@ -116,6 +116,5 @@ Abnahme gegen den echten Odin: Werte plausibel; Härtung bestätigt (`mira-agent
 
 ## Offen
 
-- Update auf MIRA 0.3.2 / Odin-API 0.1.2 und Prüfung der NAS-Anzeige.
 - Verbindungsdaten über die Oberfläche bearbeitbar (Folgeaufgabe).
 - Dashboard nutzt die echten Odin-Werte erst ab Stufe 6.

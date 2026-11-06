@@ -22,7 +22,8 @@ auf dem NAS **Asgard** und verwaltet von dort den KI-Server **Odin**.
 | --- | --- | --- |
 | 0 | Klickbare Weboberfläche nach Mockups | ✅ abgeschlossen |
 | 1 | Fundament: Backend, SQLite, echte Anmeldung, ein Container | ✅ abgeschlossen |
-| 2 | Odin-API: Live-Daten von Odin in der Odin-Ansicht | 🔍 Inbetriebnahme auf Asgard/Odin ausstehend |
+| 2 | Odin-API: Live-Daten von Odin in der Odin-Ansicht | ✅ abgeschlossen |
+| 3 | Messwert-Historie: echte Verlaufsdiagramme | ⏳ als Nächstes |
 
 Alle Stufen: [Roadmap](docs/entwicklung/roadmap.md). Echt sind die Anmeldung und
 die Odin-Ansicht (ohne Verlaufsdiagramm); alle übrigen Ansichten zeigen noch
