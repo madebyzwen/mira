@@ -5,7 +5,7 @@ import type { AddressInfo } from 'node:net';
 import { afterEach, describe, expect, it } from 'vitest';
 import type { FastifyInstance } from 'fastify';
 import { buildServer, Host } from '@mira/odin-api';
-import { odinStatusResponseSchema } from '@mira/shared';
+import { historyResponseSchema, odinStatusResponseSchema } from '@mira/shared';
 import { buildApp } from '../app.ts';
 import { SystemsModule } from '../modules/systems/index.ts';
 import { createFixtureRoot, fixtureAddresses, fixtureConfig, fixtureStatFs } from '../../odin-api/test/fixtureHost.ts';
@@ -32,8 +32,12 @@ async function startOdin(options: { certName?: TestCertName; token?: string } = 
     logger: false,
   });
   let requests = 0;
+  let tlsConnections = 0;
   app.addHook('onRequest', async () => {
     requests += 1;
+  });
+  app.server.on('secureConnection', () => {
+    tlsConnections += 1;
   });
   await app.listen({ host: '127.0.0.1', port: 0 });
   const port = (app.server.address() as AddressInfo).port;
@@ -45,11 +49,11 @@ async function startOdin(options: { certName?: TestCertName; token?: string } = 
     }
   };
   cleanup.push(close);
-  return { port, close, requests: () => requests };
+  return { port, close, requests: () => requests, tlsConnections: () => tlsConnections };
 }
 
 /** Startet MIRA mit Verbindung zur Odin-API. */
-async function startMira(odin: { port: number; fingerprint?: string; token?: string } | null) {
+async function startMira(odin: { port: number; fingerprint?: string; token?: string; offlineSeconds?: number } | null) {
   const env: Record<string, string> = { MIRA_ODIN_POLL_SECONDS: '3600' };
   const config = testConfig(env);
   if (odin) {
@@ -60,6 +64,7 @@ async function startMira(odin: { port: number; fingerprint?: string; token?: str
       certFingerprint: odin.fingerprint ?? (await testTls('odin-sim')).fingerprint256,
       tokenFile,
       pollSeconds: 3600,
+      offlineSeconds: odin.offlineSeconds ?? 10,
     };
   }
   const systems = new SystemsModule();
@@ -120,16 +125,17 @@ describe('Systeme › Odin', () => {
     expect((await odinStatus(app, cookie)).system.status).toMatchObject({ state: 'offline', lastError: 'unauthorized' });
   });
 
-  it('wechselt nach zwei Fehlversuchen auf „offline“ und behält die letzten Werte', async () => {
+  it('wechselt erst nach Ablauf der Frist ohne Antwort auf „offline“ und behält die letzten Werte', async () => {
     const odin = await startOdin();
-    const { app, monitor, cookie } = await startMira({ port: odin.port });
+    const { app, monitor, cookie } = await startMira({ port: odin.port, offlineSeconds: 0.3 });
     await monitor.poll();
     const online = await odinStatus(app, cookie);
     expect(online.system.status.state).toBe('online');
 
     await odin.close();
     await monitor.poll();
-    expect((await odinStatus(app, cookie)).system.status.state).toBe('online'); // ein Aussetzer ist noch kein Ausfall
+    expect((await odinStatus(app, cookie)).system.status.state).toBe('online'); // kurzer Aussetzer ist noch kein Ausfall
+    await new Promise((r) => setTimeout(r, 350));
     await monitor.poll();
     const offline = await odinStatus(app, cookie);
     expect(offline.system.status).toMatchObject({ state: 'offline', lastError: 'unreachable' });
@@ -145,5 +151,28 @@ describe('Systeme › Odin', () => {
     expect(res.json().systems).toEqual([
       expect.objectContaining({ slug: 'odin', name: 'Odin', kind: 'server', description: 'KI-Server', status: expect.objectContaining({ state: 'online' }) }),
     ]);
+  });
+
+  it('hält die TLS-Verbindung offen und nutzt sie für jede Abfrage erneut', async () => {
+    const odin = await startOdin();
+    const { monitor } = await startMira({ port: odin.port });
+    for (let i = 0; i < 3; i++) await monitor.poll();
+    expect(odin.requests()).toBeGreaterThanOrEqual(4); // Info + 3 × Messwerte
+    expect(odin.tlsConnections()).toBe(1);
+  }, 15_000);
+
+  it('liefert den Verlauf nur angemeldet und mit gültigem Zeitraum', async () => {
+    const odin = await startOdin();
+    const { app, monitor, cookie } = await startMira({ port: odin.port });
+    await monitor.poll();
+    const url = '/api/v1/systems/odin/history';
+    expect((await app.inject({ method: 'GET', url })).statusCode).toBe(401);
+    expect((await app.inject({ method: 'GET', url: `${url}?range=1y`, cookies: { mira_session: cookie } })).statusCode).toBe(400);
+
+    const res = await app.inject({ method: 'GET', url: `${url}?range=7d`, cookies: { mira_session: cookie } });
+    expect(res.statusCode).toBe(200);
+    const body = historyResponseSchema.parse(res.json());
+    expect(body).toMatchObject({ range: '7d', stepSeconds: 3600 });
+    expect(body.points).toHaveLength(168);
   });
 });

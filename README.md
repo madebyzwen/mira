@@ -23,11 +23,11 @@ auf dem NAS **Asgard** und verwaltet von dort den KI-Server **Odin**.
 | 0 | Klickbare Weboberfläche nach Mockups | ✅ abgeschlossen |
 | 1 | Fundament: Backend, SQLite, echte Anmeldung, ein Container | ✅ abgeschlossen |
 | 2 | Odin-API: Live-Daten von Odin in der Odin-Ansicht | ✅ abgeschlossen |
-| 3 | Messwert-Historie: echte Verlaufsdiagramme | ⏳ als Nächstes |
+| 3 | Messwert-Historie: echte Verlaufsdiagramme, tägliche Sicherung | 🧪 umgesetzt, Abnahme ausstehend |
 
 Alle Stufen: [Roadmap](docs/entwicklung/roadmap.md). Echt sind die Anmeldung und
-die Odin-Ansicht (ohne Verlaufsdiagramm); alle übrigen Ansichten zeigen noch
-**Beispieldaten** und führen keine Aktionen aus.
+die Odin-Ansicht (Live-Werte alle 2 s und Verlauf über 24 h / 7 / 30 Tage); alle
+übrigen Ansichten zeigen noch **Beispieldaten** und führen keine Aktionen aus.
 
 ## Dokumentation
 
@@ -134,6 +134,7 @@ Stacks → Add stack → Name `mira` → Web editor: Inhalt von
 | `MIRA_TRUST_PROXY` | `<PROXY_SUBNETZ>` | Subnetz des Proxy-Netzes, z. B. `172.20.0.0/16` |
 | `MIRA_ADMIN_USER` / `MIRA_ADMIN_DISPLAY_NAME` | `sven` / `Sven` | erstes Konto |
 | `MIRA_ODIN_API_URL` / `MIRA_ODIN_CERT_FINGERPRINT` | – | erst nach der Odin-Installation |
+| `TZ` | `Europe/Berlin` | Zeitzone (Uhrzeit der Sicherung, Dateinamen) |
 
 Danach „Deploy the stack“ → `http://<MIRA_IP>` bzw. über den Reverse Proxy.
 
@@ -157,6 +158,28 @@ Danach „Deploy the stack“ → `http://<MIRA_IP>` bzw. über den Reverse Prox
    ```
 
 Den Verbindungsstatus zeigt Konfiguration › Systeme.
+
+### Sicherung und Wiederherstellung
+
+MIRA sichert die Datenbank täglich um 03:30 Uhr (Ortszeit, `TZ`) im laufenden
+Betrieb nach `MIRA_APPDATA/data/backups/mira-JJJJ-MM-TT.db` und behält die
+letzten 7 Sicherungen. Jede Sicherung ist eine einzelne, vollständige
+SQLite-Datei. Für zusätzliche Sicherheit den Ordner `backups/` in die
+Sicherung von Asgard (Hyper Backup o. Ä.) aufnehmen.
+
+Wiederherstellen (per SSH auf Asgard):
+
+1. Stack in Portainer stoppen.
+2. Im Ordner `MIRA_APPDATA/data` die aktuelle Datenbank beiseitelegen und die
+   gewünschte Sicherung zurückkopieren:
+
+   ```bash
+   cd "$APPDATA/data"
+   mkdir -p defekt && mv mira.db mira.db-wal mira.db-shm defekt/ 2>/dev/null
+   cp backups/mira-JJJJ-MM-TT.db mira.db && chown 1000:1000 mira.db
+   ```
+
+3. Stack starten. Anmeldungen, Einstellungen und Verlauf entsprechen dem Stand der Sicherung.
 
 ### Lokal testen (aus dem Quellcode)
 
@@ -192,7 +215,13 @@ Den Verbindungsstatus zeigt Konfiguration › Systeme.
 | `MIRA_ODIN_API_URL` | – | Adresse der Odin-API, z. B. `https://<ODIN_IP>:8443` |
 | `MIRA_ODIN_CERT_FINGERPRINT` | – | SHA-256-Fingerprint des Odin-Zertifikats |
 | `MIRA_ODIN_TOKEN_FILE` | – | Datei mit dem Zugriffstoken |
-| `MIRA_ODIN_POLL_SECONDS` | `10` | Abfrageintervall |
+| `MIRA_ODIN_POLL_SECONDS` | `2` | Abfrageintervall der Odin-API (läuft im Backend, auch ohne geöffnete Weboberfläche) |
+| `MIRA_ODIN_OFFLINE_SECONDS` | `10` | Ohne Antwort seit so vielen Sekunden gilt Odin als „offline“ |
+| `MIRA_HISTORY_RAW_DAYS` | `7` | Aufbewahrung der Minutenwerte |
+| `MIRA_HISTORY_HOURLY_DAYS` | `365` | Aufbewahrung der Stundenwerte |
+| `MIRA_BACKUP_TIME` | `03:30` | Uhrzeit der täglichen Sicherung (Ortszeit, `HH:MM`) |
+| `MIRA_BACKUP_KEEP` | `7` | Anzahl aufbewahrter Sicherungen |
+| `TZ` | – (Stack: `Europe/Berlin`) | Zeitzone des Containers |
 
 ## Lizenz
 

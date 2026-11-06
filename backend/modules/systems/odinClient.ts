@@ -1,5 +1,6 @@
 import https from 'node:https';
 import net from 'node:net';
+import type { Duplex } from 'node:stream';
 import tls from 'node:tls';
 import type { z } from 'zod';
 import {
@@ -33,22 +34,60 @@ export interface OdinClientOptions {
 }
 
 /**
- * Client für die Odin-API mit **Zertifikats-Pinning**: Die TLS-Verbindung wird
- * zuerst aufgebaut und der SHA-256-Fingerprint geprüft. Erst danach wird die
- * HTTP-Anfrage samt Token über genau diese Verbindung gesendet – ein fremder
- * Server bekommt das Token nie zu sehen.
+ * HTTPS-Agent mit **Zertifikats-Pinning** und offener Verbindung (Keep-Alive).
+ * Eine neue TLS-Verbindung wird erst an Anfragen übergeben, nachdem der
+ * SHA-256-Fingerprint des Servers geprüft wurde – ein fremder Server bekommt
+ * daher nie ein Token zu sehen. Danach wird die Verbindung wiederverwendet.
  */
+class PinnedAgent extends https.Agent {
+  private readonly fingerprint: string;
+
+  constructor(fingerprint: string) {
+    super({ keepAlive: true, keepAliveMsecs: 10_000, maxSockets: 1, maxFreeSockets: 1, timeout: 30_000 });
+    this.fingerprint = fingerprint;
+  }
+
+  override createConnection(options: https.RequestOptions, callback?: (err: Error | null, stream: Duplex) => void): undefined {
+    const done = callback ?? (() => {});
+    const host = (options.hostname ?? options.host ?? '').replace(/^\[|\]$/g, '');
+    const socket = tls.connect({
+      host,
+      port: Number(options.port ?? 443),
+      // Vertrauen entsteht ausschließlich über den festgelegten Fingerprint (unten)
+      rejectUnauthorized: false,
+      servername: net.isIP(host) ? undefined : host,
+      ALPNProtocols: ['http/1.1'],
+    });
+    const onError = (err: Error) => done(new OdinClientError('unreachable', err.message), socket);
+    socket.once('error', onError);
+    socket.once('secureConnect', () => {
+      socket.off('error', onError);
+      const actual = normalizeFingerprint(socket.getPeerCertificate().fingerprint256 ?? '');
+      if (actual !== this.fingerprint) {
+        socket.destroy();
+        done(new OdinClientError('certificate_mismatch', 'Zertifikat von Odin stimmt nicht mit dem hinterlegten Fingerprint überein'), socket);
+        return;
+      }
+      done(null, socket);
+    });
+    return undefined;
+  }
+}
+
+/** Client für die Odin-API (HTTPS, festgelegtes Zertifikat, Token). */
 export class OdinClient {
   private readonly url: URL;
   private readonly fingerprint: string;
   private readonly token: string;
   private readonly timeoutMs: number;
+  private readonly agent: PinnedAgent;
 
   constructor(options: OdinClientOptions) {
     this.url = new URL(options.url);
     this.fingerprint = normalizeFingerprint(options.certFingerprint);
     this.token = options.token;
     this.timeoutMs = options.timeoutMs ?? 5000;
+    this.agent = new PinnedAgent(this.fingerprint);
   }
 
   get endpoint(): string {
@@ -67,39 +106,15 @@ export class OdinClient {
     return this.get('/v1/system/metrics', systemMetricsSchema);
   }
 
-  private async connect(signal: AbortSignal): Promise<tls.TLSSocket> {
-    const host = this.url.hostname.replace(/^\[|\]$/g, '');
-    return new Promise((resolve, reject) => {
-      const socket = tls.connect({
-        host,
-        port: Number(this.url.port || 443),
-        // Vertrauen entsteht ausschließlich über den festgelegten Fingerprint (unten)
-        rejectUnauthorized: false,
-        servername: net.isIP(host) ? undefined : host,
-        ALPNProtocols: ['http/1.1'],
-      });
-      const fail = (err: Error) => {
-        socket.destroy();
-        reject(err);
-      };
-      signal.addEventListener('abort', () => fail(new OdinClientError('timeout', 'Zeitüberschreitung beim Verbindungsaufbau')), { once: true });
-      socket.once('error', (err) => fail(new OdinClientError('unreachable', err.message)));
-      socket.once('secureConnect', () => {
-        const actual = normalizeFingerprint(socket.getPeerCertificate().fingerprint256 ?? '');
-        if (actual !== this.fingerprint) {
-          fail(new OdinClientError('certificate_mismatch', 'Zertifikat von Odin stimmt nicht mit dem hinterlegten Fingerprint überein'));
-          return;
-        }
-        resolve(socket);
-      });
-    });
+  /** Offene Verbindung schließen (z. B. beim Beenden von MIRA). */
+  close(): void {
+    this.agent.destroy();
   }
 
   private async get<S extends z.ZodType>(path: string, schema: S): Promise<z.infer<S>> {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), this.timeoutMs);
     try {
-      const socket = await this.connect(controller.signal);
       const { status, body } = await new Promise<{ status: number; body: string }>((resolve, reject) => {
         const req = https.request(
           {
@@ -107,8 +122,7 @@ export class OdinClient {
             port: Number(this.url.port || 443),
             path,
             method: 'GET',
-            // Ohne `agent` nutzt Node genau diese – bereits geprüfte – Verbindung
-            createConnection: () => socket,
+            agent: this.agent,
             headers: { authorization: `Bearer ${this.token}`, accept: 'application/json' },
             signal: controller.signal,
           },

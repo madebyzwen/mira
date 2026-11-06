@@ -10,9 +10,10 @@ interface PollingState<T> {
 /**
  * Lädt Daten sofort und danach in festem Intervall neu.
  * Pausiert, solange der Browser-Tab im Hintergrund ist, und lädt beim
- * Zurückkehren sofort neu.
+ * Zurückkehren sofort neu. Ändert sich `key` (z. B. der gewählte Zeitraum),
+ * wird sofort neu geladen.
  */
-export function usePolling<T>(fetcher: () => Promise<T>, intervalMs: number): PollingState<T> {
+export function usePolling<T>(fetcher: () => Promise<T>, intervalMs: number, key?: string): PollingState<T> {
   const [data, setData] = useState<T | null>(null);
   const [error, setError] = useState<unknown>(null);
   const [loading, setLoading] = useState(true);
@@ -48,7 +49,7 @@ export function usePolling<T>(fetcher: () => Promise<T>, intervalMs: number): Po
       window.clearInterval(timer);
       document.removeEventListener('visibilitychange', onVisible);
     };
-  }, [load, intervalMs]);
+  }, [load, intervalMs, key]);
 
   return { data, error, loading, refresh: () => void load() };
 }

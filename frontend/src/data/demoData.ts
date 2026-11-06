@@ -22,7 +22,6 @@ import type {
   SystemEntry,
   Temperature,
   TimeSeries,
-  UsageHistory,
 } from '../types/models';
 
 /* ------------------------------------------------------------------ */
@@ -137,88 +136,6 @@ export const demoOdinUtilization: ServerUtilization = {
   gpuPercent: 2,
   vramUsedGb: 19.4,
   systemLoad: 0.1,
-};
-
-export const demoOdinUsageHistory: Record<ChartRange, UsageHistory> = {
-  '24h': {
-    cpu: {
-      ticks: ticksByRange['24h'],
-      values: generateSeries({
-        count: pointsByRange['24h'],
-        base: 19,
-        noise: 2.2,
-        seed: 11,
-        bumps: [{ at: 0.52, width: 0.035, height: 13 }],
-      }),
-    },
-    gpu: {
-      ticks: ticksByRange['24h'],
-      values: generateSeries({
-        count: pointsByRange['24h'],
-        base: 5.5,
-        noise: 1.4,
-        seed: 12,
-        bumps: [{ at: 0.52, width: 0.04, height: 3 }],
-      }),
-    },
-  },
-  '7d': {
-    cpu: {
-      ticks: ticksByRange['7d'],
-      values: generateSeries({
-        count: pointsByRange['7d'],
-        base: 17,
-        noise: 4,
-        seed: 21,
-        bumps: [
-          { at: 0.22, width: 0.02, height: 22 },
-          { at: 0.58, width: 0.03, height: 30 },
-          { at: 0.86, width: 0.02, height: 15 },
-        ],
-      }),
-    },
-    gpu: {
-      ticks: ticksByRange['7d'],
-      values: generateSeries({
-        count: pointsByRange['7d'],
-        base: 6,
-        noise: 2.5,
-        seed: 22,
-        bumps: [
-          { at: 0.22, width: 0.02, height: 35 },
-          { at: 0.58, width: 0.03, height: 48 },
-        ],
-      }),
-    },
-  },
-  '30d': {
-    cpu: {
-      ticks: ticksByRange['30d'],
-      values: generateSeries({
-        count: pointsByRange['30d'],
-        base: 18,
-        noise: 5,
-        seed: 31,
-        bumps: [
-          { at: 0.3, width: 0.03, height: 20 },
-          { at: 0.7, width: 0.04, height: 25 },
-        ],
-      }),
-    },
-    gpu: {
-      ticks: ticksByRange['30d'],
-      values: generateSeries({
-        count: pointsByRange['30d'],
-        base: 7,
-        noise: 3,
-        seed: 32,
-        bumps: [
-          { at: 0.3, width: 0.03, height: 28 },
-          { at: 0.7, width: 0.04, height: 40 },
-        ],
-      }),
-    },
-  },
 };
 
 export const demoOdinDisks: Disk[] = [

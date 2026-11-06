@@ -3,24 +3,35 @@ import type { ConnectionError, SystemInfo, SystemMetrics, SystemState } from '@m
 import type { Db } from '../../core/db/database.ts';
 import { nowIso } from '../../core/db/database.ts';
 import { OdinClientError, type OdinClient } from './odinClient.ts';
+import type { SampleAggregator } from './sampleAggregator.ts';
 
 /** Info (Hardware, OS) ändert sich selten – nur nach Wiederverbindung bzw. alle 10 Minuten neu laden. */
 const INFO_REFRESH_MS = 10 * 60 * 1000;
 /** „Zuletzt gesehen“ höchstens einmal pro Minute in die Datenbank schreiben. */
 const LAST_SEEN_WRITE_MS = 60 * 1000;
-/** Aus „online“ erst nach so vielen Fehlversuchen in Folge auf „offline“ wechseln. */
-const FAILURES_BEFORE_OFFLINE = 2;
 
 interface StateRow {
-  state: SystemState['state'];
-  since: string | null;
   last_seen_at: string | null;
-  last_error: string | null;
+}
+
+export interface OdinMonitorOptions {
+  db: Db;
+  systemId: number;
+  client: OdinClient | null;
+  log: FastifyBaseLogger;
+  intervalMs: number;
+  /** Ohne Antwort seit so vielen ms gilt Odin als nicht erreichbar */
+  offlineAfterMs: number;
+  aggregator?: SampleAggregator;
+  /** Für Tests: Uhr ersetzen */
+  now?: () => number;
 }
 
 /**
- * Fragt Odin in festem Intervall ab und hält den aktuellen Zustand vor.
- * Nur Zustandswechsel werden protokolliert – keine Log-Flut, wenn Odin schläft.
+ * Fragt Odin im festen Intervall ab – im Backend, unabhängig davon, ob die
+ * Weboberfläche offen ist – und hält den aktuellen Zustand für die Live-Anzeige
+ * vor. Jede Messung fließt in die Minuten-Verdichtung für den Verlauf.
+ * Nur Zustandswechsel werden protokolliert.
  */
 export class OdinMonitor {
   private readonly db: Db;
@@ -28,26 +39,30 @@ export class OdinMonitor {
   private readonly client: OdinClient | null;
   private readonly log: FastifyBaseLogger;
   private readonly intervalMs: number;
+  private readonly offlineAfterMs: number;
+  private readonly aggregator: SampleAggregator | undefined;
+  private readonly now: () => number;
 
   private status: SystemState;
   private info: SystemInfo | null = null;
   private infoLoadedAt = 0;
   private metrics: SystemMetrics | null = null;
-  private failures = 0;
+  private lastSuccessAt: number | null = null;
   private lastSeenWrittenAt = 0;
   private timer: NodeJS.Timeout | undefined;
   private inFlight: Promise<void> | null = null;
 
-  constructor(options: { db: Db; systemId: number; client: OdinClient | null; log: FastifyBaseLogger; intervalMs: number }) {
+  constructor(options: OdinMonitorOptions) {
     this.db = options.db;
     this.systemId = options.systemId;
     this.client = options.client;
     this.log = options.log;
     this.intervalMs = options.intervalMs;
+    this.offlineAfterMs = options.offlineAfterMs;
+    this.aggregator = options.aggregator;
+    this.now = options.now ?? Date.now;
 
-    const row = this.db
-      .prepare<[number], StateRow>('SELECT state, since, last_seen_at, last_error FROM system_state WHERE system_id = ?')
-      .get(this.systemId);
+    const row = this.db.prepare<[number], StateRow>('SELECT last_seen_at FROM system_state WHERE system_id = ?').get(this.systemId);
     // Nach einem Neustart von MIRA ist der Zustand zunächst unbekannt; „zuletzt gesehen“ bleibt erhalten.
     this.status = {
       state: 'unknown',
@@ -75,6 +90,8 @@ export class OdinMonitor {
   stop(): void {
     if (this.timer) clearInterval(this.timer);
     this.timer = undefined;
+    this.aggregator?.flush();
+    this.client?.close();
   }
 
   /** Eine Abfrage; parallele Aufrufe teilen sich dieselbe laufende Abfrage. */
@@ -89,12 +106,13 @@ export class OdinMonitor {
   private async doPoll(): Promise<void> {
     const client = this.client!;
     try {
-      const needsInfo = !this.info || this.status.state !== 'online' || Date.now() - this.infoLoadedAt > INFO_REFRESH_MS;
+      const needsInfo = !this.info || this.status.state !== 'online' || this.now() - this.infoLoadedAt > INFO_REFRESH_MS;
       if (needsInfo) {
         this.info = await client.info();
-        this.infoLoadedAt = Date.now();
+        this.infoLoadedAt = this.now();
       }
       this.metrics = await client.metrics();
+      this.aggregator?.add(this.metrics, new Date(this.now()));
       this.onSuccess();
     } catch (err) {
       this.onFailure(err instanceof OdinClientError ? err.code : 'unreachable', err);
@@ -102,8 +120,8 @@ export class OdinMonitor {
   }
 
   private onSuccess(): void {
-    this.failures = 0;
-    const now = nowIso();
+    this.lastSuccessAt = this.now();
+    const now = new Date(this.lastSuccessAt).toISOString();
     const changed = this.status.state !== 'online';
     this.status = { state: 'online', since: changed ? now : this.status.since, lastSeenAt: now, lastError: null };
     if (changed) this.log.info({ system: 'odin' }, 'Odin ist erreichbar');
@@ -111,10 +129,10 @@ export class OdinMonitor {
   }
 
   private onFailure(code: ConnectionError, err: unknown): void {
-    this.failures += 1;
     const previous = this.status;
-    const goOffline = previous.state !== 'online' || this.failures >= FAILURES_BEFORE_OFFLINE;
-    if (!goOffline) return;
+    // Aus „online“ erst nach der Frist ohne Antwort wechseln – kurze Aussetzer überbrücken.
+    const silentFor = this.lastSuccessAt === null ? Infinity : this.now() - this.lastSuccessAt;
+    if (previous.state === 'online' && silentFor < this.offlineAfterMs) return;
 
     const changed = previous.state !== 'offline' || previous.lastError !== code;
     this.status = {
@@ -130,8 +148,9 @@ export class OdinMonitor {
   }
 
   private persist(force: boolean): void {
-    const now = Date.now();
+    const now = this.now();
     if (!force && now - this.lastSeenWrittenAt < LAST_SEEN_WRITE_MS) return;
+    if (!this.db.open) return;
     this.lastSeenWrittenAt = now;
     this.db
       .prepare(

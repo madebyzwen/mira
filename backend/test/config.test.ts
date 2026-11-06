@@ -12,7 +12,7 @@ describe('Konfiguration', () => {
       MIRA_ODIN_TOKEN_FILE: '',
     });
     expect(config.admin).toEqual({ username: undefined, displayName: undefined, passwordFile: undefined });
-    expect(config.odin).toEqual({ apiUrl: undefined, certFingerprint: undefined, tokenFile: undefined, pollSeconds: 10 });
+    expect(config.odin).toEqual({ apiUrl: undefined, certFingerprint: undefined, tokenFile: undefined, pollSeconds: 2, offlineSeconds: 10 });
   });
 
   it('übernimmt gesetzte Odin-Werte', () => {

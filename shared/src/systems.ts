@@ -51,3 +51,29 @@ export const odinStatusResponseSchema = z.object({
   metrics: systemMetricsSchema.nullable(),
 });
 export type OdinStatusResponse = z.infer<typeof odinStatusResponseSchema>;
+
+/* ---------- Verlauf (ab Stufe 3) ---------- */
+
+export const HISTORY_RANGES = ['24h', '7d', '30d'] as const;
+export type HistoryRange = (typeof HISTORY_RANGES)[number];
+
+export const historyQuerySchema = z.object({ range: z.enum(HISTORY_RANGES).default('24h') });
+
+export const historyPointSchema = z.object({
+  /** Beginn des Zeitabschnitts (ISO, UTC) */
+  ts: z.string(),
+  /** Mittlere Auslastung in Prozent; `null` = keine Messwerte (Odin aus/schlafend) */
+  cpu: z.number().nullable(),
+  gpu: z.number().nullable(),
+});
+export type HistoryPoint = z.infer<typeof historyPointSchema>;
+
+/** Antwort von `GET /api/v1/systems/odin/history?range=…` */
+export const historyResponseSchema = z.object({
+  range: z.enum(HISTORY_RANGES),
+  from: z.string(),
+  to: z.string(),
+  stepSeconds: z.number(),
+  points: z.array(historyPointSchema),
+});
+export type HistoryResponse = z.infer<typeof historyResponseSchema>;

@@ -45,14 +45,38 @@ const defaultStatFs: StatFs = async (p) => {
   return { blocks: Number(s.blocks), bfree: Number(s.bfree), bsize: Number(s.bsize) };
 };
 
-/** statfs mit Zeitlimit – ein hängendes Netzlaufwerk darf die API nicht blockieren. */
-async function statWithTimeout(statfs: StatFs, mount: string, ms: number) {
+type StatResult = Awaited<ReturnType<StatFs>>;
+
+/** Laufende statfs-Aufrufe je Einhängepunkt (pro statfs-Funktion, damit Tests getrennt bleiben). */
+const pendingStats = new WeakMap<StatFs, Map<string, Promise<StatResult | null>>>();
+
+/**
+ * statfs mit Zeitlimit – ein hängendes Netzlaufwerk darf die API nicht blockieren.
+ * Hängt ein Aufruf, belegt er dauerhaft einen Thread des libuv-Pools (Standard: 4).
+ * Deshalb läuft je Einhängepunkt höchstens EIN Aufruf; weitere Anfragen warten auf
+ * denselben, statt bei jeder Abfrage (alle 2 s) einen neuen Thread zu blockieren.
+ */
+async function statWithTimeout(statfs: StatFs, mount: string, ms: number): Promise<StatResult | null> {
+  let pending = pendingStats.get(statfs);
+  if (!pending) {
+    pending = new Map();
+    pendingStats.set(statfs, pending);
+  }
+  let call = pending.get(mount);
+  if (!call) {
+    const map = pending;
+    call = statfs(mount)
+      .catch(() => null)
+      .finally(() => map.delete(mount));
+    pending.set(mount, call);
+  }
+
   let timer: NodeJS.Timeout | undefined;
   const timeout = new Promise<null>((resolve) => {
     timer = setTimeout(() => resolve(null), ms);
   });
   try {
-    return await Promise.race([statfs(mount).catch(() => null), timeout]);
+    return await Promise.race([call, timeout]);
   } finally {
     clearTimeout(timer);
   }

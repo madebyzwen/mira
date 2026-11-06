@@ -25,7 +25,6 @@ import type {
   SystemEntry,
   Temperature,
   TimeSeries,
-  UsageHistory,
 } from '../types/models';
 
 export const isDemoMode = true;
@@ -35,7 +34,6 @@ export const dataService = {
 
   getOdin: (): ServerInfo => demo.demoOdin,
   getOdinUtilization: (): ServerUtilization => demo.demoOdinUtilization,
-  getOdinUsageHistory: (range: ChartRange): UsageHistory => demo.demoOdinUsageHistory[range],
   getOdinDisks: (): Disk[] => demo.demoOdinDisks,
   getOdinNetworkShare: (): NetworkShare => demo.demoOdinNas,
   getOdinNetworkInterfaces: (): NetworkInterface[] => demo.demoOdinNetwork,

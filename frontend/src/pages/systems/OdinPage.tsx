@@ -21,13 +21,13 @@ import {
 import type { NetworkShare, OdinStatusResponse, SystemInfo, SystemMetrics, Temperature } from '@mira/shared';
 import { Page } from '../../components/layout/AppLayout';
 import { Card } from '../../components/ui/Card';
-import { IconTile, OnlinePill, Pill, ProgressBar, RangeTabs, Stat, rangeTitleSuffix } from '../../components/ui/Primitives';
+import { IconTile, OnlinePill, ProgressBar, RangeTabs, Stat, rangeTitleSuffix } from '../../components/ui/Primitives';
 import { TimeSeriesChart } from '../../components/charts/TimeSeriesChart';
 import { ServerTower } from '../../components/illustrations/ServerTower';
 import { DevicePhoto } from '../../components/illustrations/DevicePhoto';
-import { dataService } from '../../services/dataService';
 import { connectionErrorText, systemsService } from '../../services/systemsService';
 import { usePolling } from '../../lib/usePolling';
+import { historyTicks } from '../../lib/historyTicks';
 import {
   formatBytes,
   formatGib,
@@ -41,7 +41,10 @@ import {
 } from '../../lib/format';
 import type { ChartRange } from '../../types/models';
 
-const POLL_MS = 5000;
+/** Live-Werte: alle 2 s, solange die Seite sichtbar ist (MIRA fragt Odin selbst ebenfalls alle 2 s ab). */
+const POLL_MS = 2000;
+/** Verlauf: neue Minutenwerte kommen einmal pro Minute hinzu. */
+const HISTORY_POLL_MS = 60_000;
 const DASH = '–';
 
 const tempIcon: Record<Temperature['sensor'], typeof Cpu> = { cpu: Cpu, gpu: Gpu, nvme: HardDrive };
@@ -77,11 +80,44 @@ function StatusLine({ data }: { data: OdinStatusResponse }) {
   );
 }
 
-export function OdinPage() {
+/** Verlauf CPU/GPU aus der Datenbank – Lücken (keine Messung) bleiben sichtbar. */
+function UsageHistoryCard() {
   const [range, setRange] = useState<ChartRange>('24h');
+  const { data, error } = usePolling(() => systemsService.getOdinHistory(range), HISTORY_POLL_MS, range);
+  const points = data?.points ?? [];
+  const emptyText = error
+    ? 'Verlauf konnte nicht geladen werden'
+    : !data
+      ? 'Verlauf wird geladen …'
+      : 'Verlauf wird aufgebaut – die ersten Werte erscheinen nach einigen Minuten';
+
+  return (
+    <Card
+      title={`Auslastung (${rangeTitleSuffix[range]})`}
+      icon={<ChartColumn size={28} />}
+      actions={<RangeTabs value={range} onChange={setRange} />}
+      className="chart-card"
+    >
+      <TimeSeriesChart
+        ariaLabel={`CPU- und GPU-Auslastung, ${rangeTitleSuffix[range]}`}
+        series={[
+          { label: 'CPU', values: points.map((p) => p.cpu), color: 'violet' },
+          { label: 'GPU', values: points.map((p) => p.gpu), color: 'cyan' },
+        ]}
+        ticks={data ? historyTicks(data) : []}
+        yMax={100}
+        yStep={20}
+        formatY={(v) => `${v} %`}
+        height={150}
+        legend
+        emptyText={emptyText}
+      />
+    </Card>
+  );
+}
+
+export function OdinPage() {
   const { data } = usePolling(systemsService.getOdin, POLL_MS);
-  // Verlaufsdiagramm bleibt bis Stufe 3 bei Beispieldaten
-  const history = dataService.getOdinUsageHistory(range);
 
   const info: SystemInfo | null = data?.info ?? null;
   const metrics: SystemMetrics | null = data?.metrics ?? null;
@@ -201,30 +237,7 @@ export function OdinPage() {
         ))}
       </div>
 
-      <Card
-        title={
-          <>
-            {`Auslastung (${rangeTitleSuffix[range]})`} <Pill tone="neutral">Beispieldaten</Pill>
-          </>
-        }
-        icon={<ChartColumn size={28} />}
-        actions={<RangeTabs value={range} onChange={setRange} />}
-        className="chart-card"
-      >
-        <TimeSeriesChart
-          ariaLabel={`CPU- und GPU-Auslastung, ${rangeTitleSuffix[range]} (Beispieldaten)`}
-          series={[
-            { label: 'CPU', values: history.cpu.values, color: 'violet' },
-            { label: 'GPU', values: history.gpu.values, color: 'cyan' },
-          ]}
-          ticks={history.cpu.ticks}
-          yMax={100}
-          yStep={20}
-          formatY={(v) => `${v} %`}
-          height={150}
-          legend
-        />
-      </Card>
+      <UsageHistoryCard />
 
       {/* Reihenfolge gemäß Vorgabe: Datenträger, Netzlaufwerk (NAS), Netzwerk, Temperaturen */}
       <div className={['detail-grid', stale && 'is-stale'].filter(Boolean).join(' ')}>

@@ -33,7 +33,14 @@ const envSchema = z.object({
   /** SHA-256-Fingerprint des Odin-Zertifikats (Ausgabe des Installationsskripts) */
   MIRA_ODIN_CERT_FINGERPRINT: opt(z.string().trim().regex(/^[0-9A-Fa-f:]{64,95}$/)),
   MIRA_ODIN_TOKEN_FILE: opt(z.string()),
-  MIRA_ODIN_POLL_SECONDS: z.coerce.number().int().min(2).max(3600).default(10),
+  MIRA_ODIN_POLL_SECONDS: z.coerce.number().min(1).max(3600).default(2),
+  /** Odin gilt als nicht erreichbar, wenn so lange keine Antwort kam */
+  MIRA_ODIN_OFFLINE_SECONDS: z.coerce.number().int().min(2).max(3600).default(10),
+  MIRA_HISTORY_RAW_DAYS: z.coerce.number().int().min(1).max(90).default(7),
+  MIRA_HISTORY_HOURLY_DAYS: z.coerce.number().int().min(7).max(3650).default(365),
+  MIRA_BACKUP_KEEP: z.coerce.number().int().min(1).max(365).default(7),
+  /** Uhrzeit der täglichen Sicherung (Ortszeit des Containers, TZ) */
+  MIRA_BACKUP_TIME: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/).default('03:30'),
 });
 
 export interface AppConfig {
@@ -50,7 +57,9 @@ export interface AppConfig {
   loginWindowMs: number;
   admin: { username?: string; displayName?: string; passwordFile?: string };
   auditRetentionDays: number;
-  odin: { apiUrl?: string; certFingerprint?: string; tokenFile?: string; pollSeconds: number };
+  odin: { apiUrl?: string; certFingerprint?: string; tokenFile?: string; pollSeconds: number; offlineSeconds: number };
+  history: { rawDays: number; hourlyDays: number };
+  backup: { keep: number; time: string };
   version: string;
 }
 
@@ -81,7 +90,10 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env, version = '0.0.
       certFingerprint: e.MIRA_ODIN_CERT_FINGERPRINT,
       tokenFile: e.MIRA_ODIN_TOKEN_FILE ? path.resolve(e.MIRA_ODIN_TOKEN_FILE) : undefined,
       pollSeconds: e.MIRA_ODIN_POLL_SECONDS,
+      offlineSeconds: e.MIRA_ODIN_OFFLINE_SECONDS,
     },
+    history: { rawDays: e.MIRA_HISTORY_RAW_DAYS, hourlyDays: e.MIRA_HISTORY_HOURLY_DAYS },
+    backup: { keep: e.MIRA_BACKUP_KEEP, time: e.MIRA_BACKUP_TIME },
     version,
   };
 }

@@ -11,6 +11,7 @@
 #
 # Erwartete Ordnerstruktur unter MIRA_APPDATA (gehört UID 1000):
 #   data/                       Datenbank (wird von MIRA angelegt)
+#   data/backups/               tägliche Sicherungen der Datenbank (die letzten 7)
 #   secrets/admin_password.txt  Startpasswort – nur für den allerersten Start
 #   secrets/odin_api_token.txt  Zugriffstoken der Odin-API
 services:
@@ -26,6 +27,8 @@ services:
     sysctls:
       net.ipv4.ip_unprivileged_port_start: ${MIRA_PORT:-80}
     environment:
+      # Ortszeit für die tägliche Sicherung (03:30) und die Dateinamen der Sicherungen
+      TZ: ${TZ:-Europe/Berlin}
       MIRA_PORT: ${MIRA_PORT:-80}
       MIRA_ADMIN_USER: ${MIRA_ADMIN_USER:-admin}
       MIRA_ADMIN_DISPLAY_NAME: ${MIRA_ADMIN_DISPLAY_NAME:-Admin}

@@ -54,11 +54,6 @@ export interface ServerUtilization {
   systemLoad: number;
 }
 
-export interface UsageHistory {
-  cpu: TimeSeries;
-  gpu: TimeSeries;
-}
-
 export interface Disk {
   name: string;
   usedGb: number;

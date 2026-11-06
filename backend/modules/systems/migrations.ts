@@ -27,4 +27,51 @@ export const systemsMigrations: Migration[] = [
       VALUES ('odin', 'Odin', 'server', 'KI-Server', strftime('%Y-%m-%dT%H:%M:%fZ', 'now'));
     `,
   },
+  {
+    version: 2,
+    name: 'server_samples',
+    sql: `
+      -- Minutenwerte (Mittel/Höchstwert der Abfragen einer Minute); ts = Minutenbeginn (UTC, ISO)
+      CREATE TABLE server_samples (
+        system_id        INTEGER NOT NULL REFERENCES systems(id) ON DELETE CASCADE,
+        ts               TEXT    NOT NULL,
+        samples          INTEGER NOT NULL,
+        cpu_avg          REAL,
+        cpu_max          REAL,
+        gpu_avg          REAL,
+        gpu_max          REAL,
+        ram_used_bytes   REAL,
+        vram_used_bytes  REAL,
+        load1            REAL,
+        temp_cpu_avg     REAL,
+        temp_cpu_max     REAL,
+        temp_gpu_avg     REAL,
+        temp_gpu_max     REAL,
+        temp_nvme_avg    REAL,
+        temp_nvme_max    REAL,
+        PRIMARY KEY (system_id, ts)
+      ) WITHOUT ROWID;
+
+      -- Stundenwerte, verdichtet aus den Minutenwerten; ts = Stundenbeginn (UTC, ISO)
+      CREATE TABLE server_samples_hourly (
+        system_id        INTEGER NOT NULL REFERENCES systems(id) ON DELETE CASCADE,
+        ts               TEXT    NOT NULL,
+        samples          INTEGER NOT NULL,
+        cpu_avg          REAL,
+        cpu_max          REAL,
+        gpu_avg          REAL,
+        gpu_max          REAL,
+        ram_used_bytes   REAL,
+        vram_used_bytes  REAL,
+        load1            REAL,
+        temp_cpu_avg     REAL,
+        temp_cpu_max     REAL,
+        temp_gpu_avg     REAL,
+        temp_gpu_max     REAL,
+        temp_nvme_avg    REAL,
+        temp_nvme_max    REAL,
+        PRIMARY KEY (system_id, ts)
+      ) WITHOUT ROWID;
+    `,
+  },
 ];

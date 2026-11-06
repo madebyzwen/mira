@@ -25,10 +25,11 @@ Legende: ✅ umgesetzt · 🔜 geplant (Stufe)
 | `systems` | id, slug, name, kind (`server` \| `power_meter`), description, created_at – Odin als erster Eintrag | ✅ Stufe 2 |
 | `server_connections` | system_id, api_url, zertifikats-Fingerprint, token_ref (Datei), wol-Parameter – bis die Verbindung über die Oberfläche bearbeitbar ist, kommen die Werte aus `MIRA_ODIN_*` | 🔜 später |
 | `system_state` | system_id, state (`online`/`offline`/`unknown`; `sleeping`/`windows` ab Stufe 5), since, last_seen_at, last_error | ✅ Stufe 2 |
-| `server_samples` | system_id, ts, cpu, ram, gpu, vram, last, temperaturen | 🔜 Stufe 3 |
+| `server_samples` | system_id, ts (Minutenbeginn, UTC), samples, cpu/gpu Mittel + Max, ram/vram, load1, Temperaturen CPU/GPU/NVMe Mittel + Max – 1 Datensatz je Minute, 7 Tage | ✅ Stufe 3 |
 | `power_meters` | system_id, host, modell/generation, auth_ref, misst_system_id | 🔜 Stufe 4 |
 | `power_samples` | meter_id, ts, watt, energie_wh | 🔜 Stufe 4 |
-| `*_samples_hourly` | verdichtete Werte für Langzeit-Diagramme | 🔜 Stufe 3/4 |
+| `server_samples_hourly` | wie `server_samples`, je Stunde (nach Messungen gewichtet), 365 Tage | ✅ Stufe 3 |
+| `power_samples_hourly` | verdichtete Stromwerte für Langzeit-Diagramme | 🔜 Stufe 4 |
 | `sleep_inhibits` | system_id, grund, bis, erstellt_von – sperrt automatischen Schlafmodus | 🔜 Stufe 9 |
 
 ## Modul `llm`

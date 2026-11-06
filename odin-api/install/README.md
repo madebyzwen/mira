@@ -16,7 +16,7 @@ unprivilegierter Benutzer `mira-agent` und ist nur von Asgard aus erreichbar.
 
 ```bash
 # Auf Odin: Paket aus dem GitHub-Release laden und prüfen
-VERSION=0.1.2
+VERSION=0.1.3
 BASE=https://github.com/madebyzwen/mira/releases/latest/download
 curl -fLO "$BASE/mira-odin-api-$VERSION.tar.gz" -fLO "$BASE/mira-odin-api-$VERSION.tar.gz.sha256"
 sha256sum -c "mira-odin-api-$VERSION.tar.gz.sha256"

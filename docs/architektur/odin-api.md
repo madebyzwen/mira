@@ -73,7 +73,7 @@ Abschluss, Abbruch über die Job-ID.
 | GPU, VRAM | erste AMD-Karte unter `/sys/class/drm/card*/device` (`gpu_busy_percent`, `mem_info_vram_*`) |
 | Temperaturen | `/sys/class/hwmon`: coretemp „Package id 0“, amdgpu „edge“, nvme „Composite“ |
 | Datenträger | konfigurierte Einhängepunkte, `statfs` |
-| Netzlaufwerke | NFS/CIFS-Einträge aus `/proc/mounts` (mit Zeitlimit gegen hängende Mounts) |
+| Netzlaufwerke | NFS/CIFS-Einträge aus `/proc/mounts` (mit Zeitlimit gegen hängende Mounts; je Einhängepunkt höchstens ein laufender `statfs`, damit ein hängendes Laufwerk den Thread-Pool nicht aufbraucht) |
 | Netzwerk | `/sys/class/net`, Adressen des Systems; ohne Docker-/Bridge-Netze |
 | RAM-Typ, GPU-Name | aus der Konfiguration (ohne Root nicht auslesbar) |
 

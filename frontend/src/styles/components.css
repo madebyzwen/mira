@@ -687,6 +687,17 @@
   filter: drop-shadow(0 0 3px rgba(31, 182, 245, 0.8));
 }
 
+.ts-chart__empty {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 0 16px;
+  text-align: center;
+  color: var(--color-text-dim);
+  font-size: var(--fs-base);
+}
+
 .ts-chart__x {
   position: relative;
   grid-row: 2;

@@ -128,6 +128,20 @@ describe('Datenträger, Netzlaufwerke und Netzwerk', () => {
     expect(touched).not.toContain('/mnt/backup');
   });
 
+  it('startet für ein hängendes Netzlaufwerk keinen weiteren statfs-Aufruf (Thread-Pool bleibt frei)', async () => {
+    const root = createFixtureRoot();
+    let smbCalls = 0;
+    const statfs = async (mount: string) => {
+      if (mount === '/mnt/smb') smbCalls += 1;
+      return fixtureStatFs(mount);
+    };
+    for (let i = 0; i < 3; i++) {
+      const result = await readStorage(`${root}/proc`, [], statfs, `${root}/etc`);
+      expect(result.networkShares.find((s) => s.mount === '/mnt/smb')).toMatchObject({ state: 'mounted', totalBytes: null });
+    }
+    expect(smbCalls).toBe(1);
+  }, 10_000);
+
   it('meldet einen Automount nach dem ersten Zugriff als eingehängt – mit Belegung', async () => {
     const root = createFixtureRoot({
       'proc/mounts': [

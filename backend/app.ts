@@ -12,10 +12,11 @@ import { registerErrorHandling } from './core/errors.ts';
 import { registerFrontend } from './core/http/frontend.ts';
 import { registerHealth } from './core/http/health.ts';
 import { registerSecurity } from './core/http/security.ts';
+import { backupDatabase } from './core/backup.ts';
+import { Scheduler } from './core/scheduler.ts';
 import type { CoreContext, MiraModule } from './core/module.ts';
 import { createModules } from './modules/index.ts';
 
-const MAINTENANCE_INTERVAL_MS = 60 * 60 * 1000;
 
 export interface BuildOptions {
   modules?: MiraModule[];
@@ -59,7 +60,8 @@ export async function buildApp(config: AppConfig, options: BuildOptions = {}): P
   registerHealth(app, db, config.version);
   registerAuth(app, { config, users, sessions, audit });
 
-  const ctx: CoreContext = { config, db, audit };
+  const scheduler = new Scheduler(app.log);
+  const ctx: CoreContext = { config, db, audit, scheduler };
   for (const module of modules) {
     await module.registerRoutes(app, ctx);
   }
@@ -67,19 +69,28 @@ export async function buildApp(config: AppConfig, options: BuildOptions = {}): P
   await registerFrontend(app, config.staticDir);
 
   // Wartung: abgelaufene Sessions und alte Audit-Einträge entfernen
-  const maintenance = () => {
-    const expiredSessions = sessions.pruneExpired();
-    const oldAudit = audit.pruneOlderThan(config.auditRetentionDays);
-    if (expiredSessions || oldAudit) app.log.info({ expiredSessions, oldAudit }, 'Wartung durchgeführt');
-  };
-  let timer: NodeJS.Timeout | undefined;
-  app.addHook('onReady', async () => {
-    maintenance();
-    timer = setInterval(maintenance, MAINTENANCE_INTERVAL_MS);
-    timer.unref();
-  });
+  scheduler.every(
+    'core.wartung',
+    60 * 60 * 1000,
+    () => {
+      const expiredSessions = sessions.pruneExpired();
+      const oldAudit = audit.pruneOlderThan(config.auditRetentionDays);
+      if (expiredSessions || oldAudit) app.log.info({ expiredSessions, oldAudit }, 'Wartung durchgeführt');
+    },
+    { runNow: true },
+  );
+
+  // Tägliche Sicherung der Datenbank (nicht für In-Memory-Datenbanken in Tests)
+  if (config.dbFile !== ':memory:') {
+    scheduler.dailyAt('core.sicherung', config.backup.time, async () => {
+      const result = await backupDatabase(db, config.dataDir, config.backup.keep);
+      app.log.info({ file: result.file, bytes: result.bytes, removed: result.removed }, 'Datenbank gesichert');
+    });
+  }
+
+  app.addHook('onReady', async () => scheduler.start());
   app.addHook('onClose', async () => {
-    if (timer) clearInterval(timer);
+    scheduler.stop();
     db.close();
   });
 

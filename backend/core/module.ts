@@ -3,12 +3,15 @@ import type { AuditLog } from './audit.ts';
 import type { AppConfig } from './config.ts';
 import type { Db } from './db/database.ts';
 import type { Migration } from './db/migrations.ts';
+import type { Scheduler } from './scheduler.ts';
 
 /** Dienste des Core, die Fachmodule nutzen dürfen. */
 export interface CoreContext {
   config: AppConfig;
   db: Db;
   audit: AuditLog;
+  /** Hintergrundaufgaben – laufen erst, wenn MIRA vollständig bereit ist */
+  scheduler: Scheduler;
 }
 
 /**
