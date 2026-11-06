@@ -2,8 +2,9 @@
 #
 # Nutzt das fertige Image aus der GitHub Container Registry. MIRA erhält über
 # ein vorhandenes macvlan-Netz eine eigene IP im Server-Netz (dort liegt auch
-# Odin) und ist unter http://<MIRA_IP> (Port 80) erreichbar – HTTPS übernimmt
-# der Reverse Proxy.
+# Odin) und ist unter http://<MIRA_IP> (Port 80) erreichbar. HTTPS übernimmt der
+# Reverse Proxy (Nginx Proxy Manager): Er erreicht MIRA über sein Backend-Netz
+# unter http://mira:80 – macvlan-Adressen sind für Bridge-Container nicht erreichbar.
 #
 # In Portainer: Stacks → Add stack → Web editor → diesen Inhalt einfügen,
 # darunter die Umgebungsvariablen setzen (siehe README, „Betrieb auf Asgard“).
@@ -20,6 +21,7 @@ services:
     networks:
       server:
         ipv4_address: ${MIRA_IP:?MIRA_IP setzen (feste Adresse im Server-Netz)}
+      proxy: {}
     # Port 80 ohne Root-Rechte: erlaubt nur im Netzwerk-Namensraum dieses Containers
     sysctls:
       net.ipv4.ip_unprivileged_port_start: ${MIRA_PORT:-80}
@@ -28,7 +30,7 @@ services:
       MIRA_ADMIN_USER: ${MIRA_ADMIN_USER:-admin}
       MIRA_ADMIN_DISPLAY_NAME: ${MIRA_ADMIN_DISPLAY_NAME:-Admin}
       MIRA_ADMIN_PASSWORD_FILE: /secrets/admin_password.txt
-      # Adresse des Reverse Proxys, damit MIRA HTTPS und die echte Client-IP erkennt
+      # Subnetz des Proxy-Netzes (z. B. 172.20.0.0/16), damit MIRA HTTPS und die echte Client-IP erkennt
       MIRA_TRUST_PROXY: ${MIRA_TRUST_PROXY:-false}
       MIRA_LOG_LEVEL: ${MIRA_LOG_LEVEL:-info}
       MIRA_ODIN_API_URL: ${MIRA_ODIN_API_URL:-}
@@ -47,4 +49,8 @@ networks:
   server:
     # vorhandenes macvlan-Netz des Server-VLANs (in Docker angelegt, nicht durch diesen Stack)
     name: ${MIRA_NETWORK:-macvlan_server}
+    external: true
+  proxy:
+    # vorhandenes Backend-Netz des Reverse Proxys (Nginx Proxy Manager)
+    name: ${MIRA_PROXY_NETWORK:-npm-server_npm_backend}
     external: true

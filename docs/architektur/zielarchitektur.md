@@ -7,7 +7,7 @@ und die [ADRs](../adr/).
 
 ```
  Browser (Heimnetz / WireGuard)
-     │  HTTPS über vorhandenen Reverse Proxy → http://<MIRA_IP> (Port 80, macvlan, Server-Netz)
+     │  HTTPS über vorhandenen Reverse Proxy (NPM, Backend-Netz) → http://mira:80 · direkt: http://<MIRA_IP> (macvlan, Server-Netz)
      ▼
 ┌──────────────── Asgard (NAS, Docker) ────────────────┐
 │  Container „mira“                                     │

@@ -127,9 +127,10 @@ Stacks → Add stack → Name `mira` → Web editor: Inhalt von
 | `MIRA_APPDATA` | `<APPDATA_PFAD>/mira` | Ordner aus Schritt 1 (Pflicht) |
 | `MIRA_IP` | `<MIRA_IP>` | feste Adresse im Server-Netz (Pflicht) |
 | `MIRA_NETWORK` | `macvlan_server` | Name des vorhandenen macvlan-Netzes |
+| `MIRA_PROXY_NETWORK` | `npm-server_npm_backend` | Backend-Netz des Reverse Proxys |
 | `MIRA_VERSION` | `0.3.1` | Image-Version (Standard `latest`) |
 | `MIRA_PORT` | `80` | Port von MIRA (Standard 80) |
-| `MIRA_TRUST_PROXY` | `<PROXY_IP>` | Adresse des Reverse Proxys |
+| `MIRA_TRUST_PROXY` | `<PROXY_SUBNETZ>` | Subnetz des Proxy-Netzes, z. B. `172.20.0.0/16` |
 | `MIRA_ADMIN_USER` / `MIRA_ADMIN_DISPLAY_NAME` | `sven` / `Sven` | erstes Konto |
 | `MIRA_ODIN_API_URL` / `MIRA_ODIN_CERT_FINGERPRINT` | – | erst nach der Odin-Installation |
 
@@ -164,11 +165,14 @@ Den Verbindungsstatus zeigt Konfiguration › Systeme.
 
 ### Hinter dem Reverse Proxy (HTTPS)
 
-- Eigenen Hostnamen für MIRA verwenden (kein Unterpfad), Ziel `http://<MIRA_IP>` (Port 80).
-- Der Proxy muss das macvlan-Netz erreichen (z. B. selbst mit macvlan-Adresse);
-  der Docker-Host selbst erreicht macvlan-Container nicht.
-- `MIRA_TRUST_PROXY` auf die Adresse des Proxys setzen. Dann erkennt MIRA HTTPS
+- Eigenen Hostnamen für MIRA verwenden (kein Unterpfad).
+- MIRA hängt zusätzlich im Backend-Netz des Proxys (`MIRA_PROXY_NETWORK`); Ziel im
+  Nginx Proxy Manager: `http://mira:80`. Die macvlan-Adresse ist für Container im
+  Bridge-Netz (und für den Docker-Host) nicht erreichbar.
+- `MIRA_TRUST_PROXY` auf das **Subnetz** des Proxy-Netzes setzen (die Adresse des
+  Proxys darin kann wechseln; mehrere Einträge durch Komma). Dann erkennt MIRA HTTPS
   (Cookie mit `Secure`) und die echte Client-IP (Login-Sperre, Audit-Log).
+  Weiterleitungs-Header von anderen Absendern werden ignoriert.
 
 ### Konfiguration (Umgebungsvariablen)
 
