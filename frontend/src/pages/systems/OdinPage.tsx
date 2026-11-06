@@ -22,12 +22,12 @@ import type { NetworkShare, OdinStatusResponse, SystemInfo, SystemMetrics, Tempe
 import { Page } from '../../components/layout/AppLayout';
 import { Card } from '../../components/ui/Card';
 import { IconTile, OnlinePill, ProgressBar, RangeTabs, Stat, rangeTitleSuffix } from '../../components/ui/Primitives';
-import { TimeSeriesChart } from '../../components/charts/TimeSeriesChart';
+import { MultiPanelChart } from '../../components/charts/TimeSeriesChart';
 import { ServerTower } from '../../components/illustrations/ServerTower';
 import { DevicePhoto } from '../../components/illustrations/DevicePhoto';
 import { connectionErrorText, systemsService } from '../../services/systemsService';
 import { usePolling } from '../../lib/usePolling';
-import { historyTicks } from '../../lib/historyTicks';
+import { historyPointLabels, historyTicks } from '../../lib/historyTicks';
 import {
   formatBytes,
   formatGib,
@@ -81,10 +81,23 @@ function StatusLine({ data }: { data: OdinStatusResponse }) {
 }
 
 /** Verlauf CPU/GPU aus der Datenbank – Lücken (keine Messung) bleiben sichtbar. */
+/** Verlauf der Temperaturen: Skala bis 100 °C, bei höheren Werten in 25er-Schritten erweitert. */
+function tempScaleMax(values: (number | null)[]): number {
+  const max = Math.max(0, ...values.filter((v): v is number => v !== null));
+  return Math.max(100, Math.ceil(max / 25) * 25);
+}
+
+/**
+ * Verlauf aus der Datenbank: oben Auslastung (%), darunter Temperaturen (°C) –
+ * gemeinsame Zeitachse und Werteanzeige. Lücken (keine Messung) bleiben sichtbar.
+ */
 function UsageHistoryCard() {
   const [range, setRange] = useState<ChartRange>('24h');
   const { data, error } = usePolling(() => systemsService.getOdinHistory(range), HISTORY_POLL_MS, range);
   const points = data?.points ?? [];
+  const timestamps = points.map((p) => p.ts);
+  const tempCpu = points.map((p) => p.tempCpu);
+  const tempGpu = points.map((p) => p.tempGpu);
   const emptyText = error
     ? 'Verlauf konnte nicht geladen werden'
     : !data
@@ -93,22 +106,42 @@ function UsageHistoryCard() {
 
   return (
     <Card
-      title={`Auslastung (${rangeTitleSuffix[range]})`}
+      title={`Auslastung & Temperaturen (${rangeTitleSuffix[range]})`}
       icon={<ChartColumn size={28} />}
       actions={<RangeTabs value={range} onChange={setRange} />}
       className="chart-card"
     >
-      <TimeSeriesChart
-        ariaLabel={`CPU- und GPU-Auslastung, ${rangeTitleSuffix[range]}`}
-        series={[
-          { label: 'CPU', values: points.map((p) => p.cpu), color: 'violet' },
-          { label: 'GPU', values: points.map((p) => p.gpu), color: 'cyan' },
+      <MultiPanelChart
+        ariaLabel={`CPU- und GPU-Auslastung sowie Temperaturen, ${rangeTitleSuffix[range]}`}
+        panels={[
+          {
+            label: 'Auslastung',
+            series: [
+              { label: 'CPU', values: points.map((p) => p.cpu), color: 'violet' },
+              { label: 'GPU', values: points.map((p) => p.gpu), color: 'cyan' },
+            ],
+            yMax: 100,
+            yStep: 20,
+            formatY: (v) => `${v} %`,
+            formatValue: (v) => `${formatNumber(v, 1, 1)} %`,
+            height: 120,
+          },
+          {
+            label: 'Temperatur',
+            series: [
+              { label: 'CPU', values: tempCpu, color: 'violet' },
+              { label: 'GPU', values: tempGpu, color: 'cyan' },
+            ],
+            yMax: tempScaleMax([...tempCpu, ...tempGpu]),
+            yStep: 25,
+            formatY: (v) => `${v} °C`,
+            formatValue: (v) => `${formatNumber(v, 1, 1)} °C`,
+            height: 90,
+            area: 'none',
+          },
         ]}
-        ticks={data ? historyTicks(data) : []}
-        yMax={100}
-        yStep={20}
-        formatY={(v) => `${v} %`}
-        height={150}
+        ticks={data ? historyTicks(data.range, timestamps) : []}
+        pointLabels={data ? historyPointLabels(data.range, data.stepSeconds, timestamps) : undefined}
         legend
         emptyText={emptyText}
       />

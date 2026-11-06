@@ -1,3 +1,4 @@
+import { HISTORY_GRID } from '@mira/shared';
 /**
  * Datenzugriffsschicht der Weboberfläche.
  *
@@ -42,7 +43,14 @@ export const dataService = {
   getDockerContainers: (): DockerContainer[] => demo.demoDockerContainers,
 
   getShellyPlug: (): PowerMeterInfo => demo.demoShellyPlug,
-  getShellyPowerHistory: (range: ChartRange): TimeSeries => demo.demoShellyPowerHistory[range],
+  /** Beispielwerte, auf das einheitliche Zeitraster bis jetzt gelegt */
+  getShellyPowerHistory: (range: ChartRange): TimeSeries => {
+    const { points, stepSeconds } = HISTORY_GRID[range];
+    const step = stepSeconds * 1000;
+    const last = Math.floor(Date.now() / step) * step;
+    const timestamps = Array.from({ length: points }, (_, i) => new Date(last - (points - 1 - i) * step).toISOString());
+    return { range, stepSeconds, timestamps, values: demo.demoShellyPowerHistory[range] };
+  },
 
   getAgents: (): Agent[] => demo.demoAgents,
 

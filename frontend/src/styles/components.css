@@ -640,7 +640,7 @@
   position: relative;
   display: grid;
   grid-template-columns: 58px 1fr;
-  grid-template-rows: 1fr 30px;
+  /* Zeilen (Ebenen + Zeitachse) setzt das Diagramm selbst */
   box-sizing: content-box;
   padding-top: 8px;
 }
@@ -685,6 +685,93 @@
 
 .ts-chart__line--cyan {
   filter: drop-shadow(0 0 3px rgba(31, 182, 245, 0.8));
+}
+
+/* Liegt über allen Ebenen: Zeigerposition, Werteanzeige, Hinweise */
+.ts-chart__overlay {
+  position: relative;
+  z-index: 1;
+  grid-column: 2;
+}
+
+.ts-chart__overlay.is-interactive {
+  cursor: crosshair;
+  /* senkrechtes Scrollen bleibt möglich, waagerechtes Wischen zeigt die Werte */
+  touch-action: pan-y;
+}
+
+.ts-chart__cursor {
+  position: absolute;
+  top: 0;
+  width: 1px;
+  background: var(--color-border-strong);
+  pointer-events: none;
+}
+
+.ts-chart__dot {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  margin: -5px 0 0 -5px;
+  border-radius: 50%;
+  border: 2px solid var(--color-surface-solid);
+  pointer-events: none;
+}
+
+.ts-chart__dot--violet {
+  background: #c04cf5;
+}
+
+.ts-chart__dot--cyan {
+  background: var(--color-cyan);
+}
+
+.ts-chart__tooltip {
+  position: absolute;
+  top: 0;
+  z-index: 2;
+  min-width: 170px;
+  padding: 8px 12px;
+  transform: translateX(12px);
+  border-radius: var(--radius-sm);
+  background: rgba(30, 36, 72, 0.96);
+  border: 1px solid var(--color-border);
+  font-size: var(--fs-base);
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.ts-chart__tooltip.is-left {
+  transform: translateX(calc(-100% - 12px));
+}
+
+.ts-chart__tooltip-time {
+  margin-bottom: 4px;
+  color: var(--color-text-muted);
+}
+
+.ts-chart__tooltip-group + .ts-chart__tooltip-group {
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px solid var(--color-border);
+}
+
+.ts-chart__tooltip-heading {
+  margin-bottom: 2px;
+  font-size: var(--fs-sm);
+  color: var(--color-text-dim);
+}
+
+.ts-chart__tooltip-row {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 8px;
+}
+
+.ts-chart__tooltip-row .ts-chart__legend-dot {
+  width: 10px;
+  height: 10px;
 }
 
 .ts-chart__empty {

@@ -6,10 +6,10 @@
  * `src/services/dataService.ts`. Dadurch lässt sich die Datenquelle später
  * durch das MIRA-Backend ersetzen, ohne Seiten oder Komponenten anzupassen.
  */
+import { HISTORY_GRID } from '@mira/shared';
 import type {
   Agent,
   ChartRange,
-  ChartTick,
   Disk,
   DockerContainer,
   LlmDownload,
@@ -21,7 +21,6 @@ import type {
   ServerUtilization,
   SystemEntry,
   Temperature,
-  TimeSeries,
 } from '../types/models';
 
 /* ------------------------------------------------------------------ */
@@ -75,26 +74,7 @@ function generateSeries(options: {
   return values;
 }
 
-/** Achsenbeschriftung: 24 h-Fenster bis jetzt, alle 4 Stunden ab 20:00. */
-const ticks24h: ChartTick[] = ['20:00', '00:00', '04:00', '08:00', '12:00', '16:00'].map(
-  (label, i) => ({ label, at: (4 / 3 + i * 4) / 24 }),
-);
-
-const ticks7d: ChartTick[] = ['30.10.', '31.10.', '01.11.', '02.11.', '03.11.', '04.11.', '05.11.'].map(
-  (label, i) => ({ label, at: (i + 0.5) / 7 }),
-);
-
-const ticks30d: ChartTick[] = ['07.10.', '12.10.', '17.10.', '22.10.', '27.10.', '01.11.'].map(
-  (label, i) => ({ label, at: (i * 5 + 2) / 30 }),
-);
-
-const ticksByRange: Record<ChartRange, ChartTick[]> = {
-  '24h': ticks24h,
-  '7d': ticks7d,
-  '30d': ticks30d,
-};
-
-const pointsByRange: Record<ChartRange, number> = { '24h': 145, '7d': 168, '30d': 120 };
+const pointsByRange = (range: ChartRange) => HISTORY_GRID[range].points;
 
 /* ------------------------------------------------------------------ */
 /* Systeme                                                             */
@@ -193,55 +173,56 @@ export const demoShellyPlug: PowerMeterInfo = {
   host: 'Odin',
 };
 
-export const demoShellyPowerHistory: Record<ChartRange, TimeSeries> = {
-  '24h': {
-    ticks: ticksByRange['24h'],
-    values: generateSeries({
-      count: pointsByRange['24h'],
-      base: 69,
-      noise: 3.2,
-      seed: 41,
-      min: 40,
-      last: demoShellyPlug.currentPowerW,
-      bumps: [
-        { at: 0.47, width: 0.06, height: 20 },
-        { at: 0.66, width: 0.035, height: 18 },
-        { at: 0.8, width: 0.05, height: 12 },
-        { at: 0.6, width: 0.06, height: 8 },
-      ],
-    }),
-  },
-  '7d': {
-    ticks: ticksByRange['7d'],
-    values: generateSeries({
-      count: pointsByRange['7d'],
-      base: 72,
-      noise: 6,
-      seed: 42,
-      min: 40,
-      last: demoShellyPlug.currentPowerW,
-      bumps: [
-        { at: 0.22, width: 0.02, height: 35 },
-        { at: 0.58, width: 0.03, height: 42 },
-        { at: 0.86, width: 0.02, height: 20 },
-      ],
-    }),
-  },
-  '30d': {
-    ticks: ticksByRange['30d'],
-    values: generateSeries({
-      count: pointsByRange['30d'],
-      base: 70,
-      noise: 7,
-      seed: 43,
-      min: 40,
-      last: demoShellyPlug.currentPowerW,
-      bumps: [
-        { at: 0.3, width: 0.03, height: 30 },
-        { at: 0.7, width: 0.04, height: 38 },
-      ],
-    }),
-  },
+/** Beispielwerte im einheitlichen Zeitraster (Zeitpunkte setzt der dataService) */
+export const demoShellyPowerHistory: Record<ChartRange, number[]> = {
+  '1h': generateSeries({
+    count: pointsByRange('1h'),
+    base: 70,
+    noise: 2.5,
+    seed: 40,
+    min: 40,
+    last: demoShellyPlug.currentPowerW,
+    bumps: [{ at: 0.55, width: 0.05, height: 16 }],
+  }),
+  '24h': generateSeries({
+    count: pointsByRange('24h'),
+    base: 69,
+    noise: 3.2,
+    seed: 41,
+    min: 40,
+    last: demoShellyPlug.currentPowerW,
+    bumps: [
+      { at: 0.47, width: 0.06, height: 20 },
+      { at: 0.66, width: 0.035, height: 18 },
+      { at: 0.8, width: 0.05, height: 12 },
+      { at: 0.6, width: 0.06, height: 8 },
+    ],
+  }),
+  '7d': generateSeries({
+    count: pointsByRange('7d'),
+    base: 72,
+    noise: 6,
+    seed: 42,
+    min: 40,
+    last: demoShellyPlug.currentPowerW,
+    bumps: [
+      { at: 0.22, width: 0.02, height: 35 },
+      { at: 0.58, width: 0.03, height: 42 },
+      { at: 0.86, width: 0.02, height: 20 },
+    ],
+  }),
+  '30d': generateSeries({
+    count: pointsByRange('30d'),
+    base: 70,
+    noise: 7,
+    seed: 43,
+    min: 40,
+    last: demoShellyPlug.currentPowerW,
+    bumps: [
+      { at: 0.3, width: 0.03, height: 30 },
+      { at: 0.7, width: 0.04, height: 38 },
+    ],
+  }),
 };
 
 /* ------------------------------------------------------------------ */

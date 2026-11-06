@@ -104,9 +104,10 @@ export function IconButton({ label, tone = 'default', children, className, type 
 
 /* ---------- Zeitraum-Reiter ---------- */
 
-const rangeLabels: Record<ChartRange, string> = { '24h': '24 h', '7d': '7 Tage', '30d': '30 Tage' };
+const rangeLabels: Record<ChartRange, string> = { '1h': '1 h', '24h': '24 h', '7d': '7 Tage', '30d': '30 Tage' };
 
 export const rangeTitleSuffix: Record<ChartRange, string> = {
+  '1h': 'letzte Stunde',
   '24h': 'letzten 24 Stunden',
   '7d': 'letzte 7 Tage',
   '30d': 'letzte 30 Tage',

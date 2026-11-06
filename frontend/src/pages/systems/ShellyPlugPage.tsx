@@ -8,6 +8,7 @@ import { ShellyPlugIllustration } from '../../components/illustrations/ShellyPlu
 import { DevicePhoto } from '../../components/illustrations/DevicePhoto';
 import { dataService } from '../../services/dataService';
 import { formatEuro, formatNumber } from '../../lib/format';
+import { historyPointLabels, historyTicks } from '../../lib/historyTicks';
 import type { ChartRange } from '../../types/models';
 
 export function ShellyPlugPage() {
@@ -76,10 +77,12 @@ export function ShellyPlugPage() {
         <TimeSeriesChart
           ariaLabel={`Leistungsaufnahme, ${rangeTitleSuffix[range]}`}
           series={[{ label: 'Leistung', values: history.values, color: 'violet' }]}
-          ticks={history.ticks}
+          ticks={historyTicks(history.range, history.timestamps)}
+          pointLabels={historyPointLabels(history.range, history.stepSeconds, history.timestamps)}
           yMax={125}
           yStep={25}
           formatY={(v) => `${v} W`}
+          formatValue={(v) => `${formatNumber(v, 1, 1)} W`}
           area="strong"
           endLabel={`${formatNumber(history.values[history.values.length - 1], 1, 1)} W`}
           height={145}

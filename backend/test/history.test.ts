@@ -33,10 +33,10 @@ function metrics(cpu: number, gpu: number | null, tempCpu = 40): SystemMetrics {
 const rows = (db: Db, table = 'server_samples') => db.prepare(`SELECT * FROM ${table} ORDER BY ts`).all() as Record<string, number | string | null>[];
 
 /** Minutenwert direkt einfügen (für Abfrage-Tests). */
-function insertMinute(db: Db, ts: string, cpu: number | null, gpu: number | null, samples = 30) {
-  db.prepare('INSERT INTO server_samples (system_id, ts, samples, cpu_avg, cpu_max, gpu_avg, gpu_max) VALUES (?, ?, ?, ?, ?, ?, ?)').run(
-    SYSTEM_ID, ts, samples, cpu, cpu, gpu, gpu,
-  );
+function insertMinute(db: Db, ts: string, cpu: number | null, gpu: number | null, samples = 30, temps: [number | null, number | null] = [null, null]) {
+  db.prepare(
+    'INSERT INTO server_samples (system_id, ts, samples, cpu_avg, cpu_max, gpu_avg, gpu_max, temp_cpu_avg, temp_gpu_avg) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+  ).run(SYSTEM_ID, ts, samples, cpu, cpu, gpu, gpu, temps[0], temps[1]);
 }
 
 describe('Minuten-Verdichtung', () => {
@@ -79,8 +79,8 @@ describe('Verlauf', () => {
 
   it('liefert 24 h als 288 Fünf-Minuten-Punkte mit Lücken statt erfundener Werte', () => {
     const db = setupDb();
-    insertMinute(db, '2026-11-06T12:05:00.000Z', 10, 5, 30);
-    insertMinute(db, '2026-11-06T12:06:00.000Z', 40, null, 10);
+    insertMinute(db, '2026-11-06T12:05:00.000Z', 10, 5, 30, [50, 40]);
+    insertMinute(db, '2026-11-06T12:06:00.000Z', 40, null, 10, [70, null]);
     insertMinute(db, '2026-11-06T11:00:00.000Z', 20, 2);
     const res = new ServerHistory(db, SYSTEM_ID).query('24h', now);
 
@@ -90,8 +90,23 @@ describe('Verlauf', () => {
     expect(last.ts).toBe('2026-11-06T12:05:00.000Z');
     expect(last.cpu).toBe(17.5); // gewichtet: (10·30 + 40·10) / 40
     expect(last.gpu).toBe(5);
-    expect(res.points.find((p) => p.ts === '2026-11-06T11:00:00.000Z')).toEqual({ ts: '2026-11-06T11:00:00.000Z', cpu: 20, gpu: 2 });
-    expect(res.points.find((p) => p.ts === '2026-11-06T11:30:00.000Z')).toEqual({ ts: '2026-11-06T11:30:00.000Z', cpu: null, gpu: null });
+    expect(last.tempCpu).toBe(55); // (50·30 + 70·10) / 40
+    expect(last.tempGpu).toBe(40);
+    expect(res.points.find((p) => p.ts === '2026-11-06T11:00:00.000Z')).toEqual({ ts: '2026-11-06T11:00:00.000Z', cpu: 20, gpu: 2, tempCpu: null, tempGpu: null });
+    expect(res.points.find((p) => p.ts === '2026-11-06T11:30:00.000Z')).toEqual({ ts: '2026-11-06T11:30:00.000Z', cpu: null, gpu: null, tempCpu: null, tempGpu: null });
+  });
+
+  it('liefert die letzte Stunde als 60 Minutenwerte bis zur letzten abgeschlossenen Minute', () => {
+    const db = setupDb();
+    insertMinute(db, '2026-11-06T12:06:00.000Z', 33, 7, 30, [55.5, 48]);
+    insertMinute(db, '2026-11-06T11:07:00.000Z', 11, 1);
+    insertMinute(db, '2026-11-06T11:06:00.000Z', 99, 99); // liegt vor dem Fenster
+    const res = new ServerHistory(db, SYSTEM_ID).query('1h', now);
+    expect(res.points).toHaveLength(60);
+    expect(res.stepSeconds).toBe(60);
+    expect(res.points[0]).toEqual({ ts: '2026-11-06T11:07:00.000Z', cpu: 11, gpu: 1, tempCpu: null, tempGpu: null });
+    expect(res.points.at(-1)).toEqual({ ts: '2026-11-06T12:06:00.000Z', cpu: 33, gpu: 7, tempCpu: 55.5, tempGpu: 48 }); // 12:07 läuft noch
+    expect(res.points.filter((p) => p.cpu === null)).toHaveLength(58);
   });
 
   it('verdichtet Minuten- zu Stundenwerten (gewichtet) und ist wiederholbar', () => {

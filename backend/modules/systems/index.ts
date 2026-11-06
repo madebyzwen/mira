@@ -20,7 +20,7 @@ interface SystemRow {
  * Fachmodul „Systeme“: Odin lesend überwachen (Stufe 2) und den Verlauf
  * speichern (Stufe 3).
  * Routen: `GET /api/v1/systems`, `GET /api/v1/systems/odin`,
- * `GET /api/v1/systems/odin/history?range=24h|7d|30d`.
+ * `GET /api/v1/systems/odin/history?range=1h|24h|7d|30d`.
  */
 export class SystemsModule implements MiraModule {
   readonly name = 'systems';

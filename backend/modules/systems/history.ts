@@ -1,26 +1,31 @@
-import type { HistoryPoint, HistoryRange, HistoryResponse } from '@mira/shared';
+import { HISTORY_GRID, type HistoryPoint, type HistoryRange, type HistoryResponse } from '@mira/shared';
 import type { Db } from '../../core/db/database.ts';
 
 const MINUTE = 60_000;
 const HOUR = 60 * MINUTE;
 const DAY = 24 * HOUR;
 
-/** Zeitraum → Quelle und Auflösung der Punkte. */
-const RANGES: Record<HistoryRange, { span: number; step: number; table: 'server_samples' | 'server_samples_hourly' }> = {
-  '24h': { span: DAY, step: 5 * MINUTE, table: 'server_samples' },
-  '7d': { span: 7 * DAY, step: HOUR, table: 'server_samples_hourly' },
-  '30d': { span: 30 * DAY, step: 4 * HOUR, table: 'server_samples_hourly' },
+/**
+ * Zeitraum → Quelle der Punkte (Raster aus `HISTORY_GRID`).
+ * `completeOnly`: die laufende Minute liegt erst nach ihrem Ende in der Datenbank –
+ * bei Minutenauflösung endet der Verlauf daher mit der letzten abgeschlossenen Minute
+ * (sonst stünde rechts immer eine Lücke).
+ */
+const SOURCES: Record<HistoryRange, { table: 'server_samples' | 'server_samples_hourly'; completeOnly: boolean }> = {
+  '1h': { table: 'server_samples', completeOnly: true },
+  '24h': { table: 'server_samples', completeOnly: false },
+  '7d': { table: 'server_samples_hourly', completeOnly: false },
+  '30d': { table: 'server_samples_hourly', completeOnly: false },
 };
 
 /** Gewichteter Mittelwert (nach Anzahl der Messungen) – NULL-Werte zählen nicht. */
 const weighted = (col: string) => `SUM(${col} * samples) / NULLIF(SUM(CASE WHEN ${col} IS NOT NULL THEN samples END), 0)`;
 
-interface Row {
-  ts: string;
-  samples: number;
-  cpu: number | null;
-  gpu: number | null;
-}
+/** Felder des Verlaufs: Name im Ergebnis → Spalte (Mittelwert) */
+const FIELDS = { cpu: 'cpu_avg', gpu: 'gpu_avg', tempCpu: 'temp_cpu_avg', tempGpu: 'temp_gpu_avg' } as const;
+type Field = keyof typeof FIELDS;
+
+type Row = { ts: string; samples: number } & Record<Field, number | null>;
 
 const round1 = (v: number) => Math.round(v * 10) / 10;
 
@@ -70,36 +75,38 @@ export class ServerHistory {
 
   /** Verlauf für die Diagramme: feste Anzahl Punkte, fehlende Zeiträume als `null`. */
   query(range: HistoryRange, now = new Date()): HistoryResponse {
-    const { span, step, table } = RANGES[range];
-    const count = Math.round(span / step);
-    const lastBucket = Math.floor(now.getTime() / step) * step;
+    const { table, completeOnly } = SOURCES[range];
+    const step = HISTORY_GRID[range].stepSeconds * 1000;
+    const count = HISTORY_GRID[range].points;
+    const lastBucket = Math.floor(now.getTime() / step) * step - (completeOnly ? step : 0);
     const first = lastBucket - (count - 1) * step;
 
+    const columns = (Object.entries(FIELDS) as [Field, string][]).map(([name, col]) => `${col} AS ${name}`).join(', ');
     const rows = this.db
-      .prepare<[number, string], Row>(
-        `SELECT ts, samples, cpu_avg AS cpu, gpu_avg AS gpu FROM ${table} WHERE system_id = ? AND ts >= ? ORDER BY ts`,
-      )
+      .prepare<[number, string], Row>(`SELECT ts, samples, ${columns} FROM ${table} WHERE system_id = ? AND ts >= ? ORDER BY ts`)
       .all(this.systemId, new Date(first).toISOString());
 
-    const acc = Array.from({ length: count }, () => ({ cpuSum: 0, cpuN: 0, gpuSum: 0, gpuN: 0 }));
+    // Je Punkt gewichteter Mittelwert (nach Anzahl der Messungen) der enthaltenen Datensätze
+    const fields = Object.keys(FIELDS) as Field[];
+    const acc = Array.from({ length: count }, () => fields.map(() => ({ sum: 0, n: 0 })));
     for (const r of rows) {
       const i = Math.floor((new Date(r.ts).getTime() - first) / step);
       if (i < 0 || i >= count) continue;
-      if (r.cpu !== null) {
-        acc[i].cpuSum += r.cpu * r.samples;
-        acc[i].cpuN += r.samples;
-      }
-      if (r.gpu !== null) {
-        acc[i].gpuSum += r.gpu * r.samples;
-        acc[i].gpuN += r.samples;
-      }
+      fields.forEach((f, k) => {
+        const v = r[f];
+        if (v === null) return;
+        acc[i][k].sum += v * r.samples;
+        acc[i][k].n += r.samples;
+      });
     }
 
-    const points: HistoryPoint[] = acc.map((a, i) => ({
-      ts: new Date(first + i * step).toISOString(),
-      cpu: a.cpuN ? round1(a.cpuSum / a.cpuN) : null,
-      gpu: a.gpuN ? round1(a.gpuSum / a.gpuN) : null,
-    }));
+    const points = acc.map((a, i) => {
+      const point = { ts: new Date(first + i * step).toISOString() } as HistoryPoint;
+      fields.forEach((f, k) => {
+        point[f] = a[k].n ? round1(a[k].sum / a[k].n) : null;
+      });
+      return point;
+    });
 
     return {
       range,

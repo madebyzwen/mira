@@ -26,7 +26,7 @@ auf dem NAS **Asgard** und verwaltet von dort den KI-Server **Odin**.
 | 3 | Messwert-Historie: echte Verlaufsdiagramme, tägliche Sicherung | 🧪 umgesetzt, Abnahme ausstehend |
 
 Alle Stufen: [Roadmap](docs/entwicklung/roadmap.md). Echt sind die Anmeldung und
-die Odin-Ansicht (Live-Werte alle 2 s und Verlauf über 24 h / 7 / 30 Tage); alle
+die Odin-Ansicht (Live-Werte alle 2 s und Verlauf von Auslastung und Temperaturen über 1 h / 24 h / 7 / 30 Tage); alle
 übrigen Ansichten zeigen noch **Beispieldaten** und führen keine Aktionen aus.
 
 ## Dokumentation

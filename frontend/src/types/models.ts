@@ -1,3 +1,5 @@
+import type { HistoryRange } from '@mira/shared';
+
 /**
  * Domänen-Typen der MIRA-Weboberfläche.
  *
@@ -10,7 +12,8 @@ export type OnlineStatus = 'online' | 'offline' | 'unknown';
 
 /* ---------- Zeitreihen / Diagramme ---------- */
 
-export type ChartRange = '24h' | '7d' | '30d';
+/** Zeiträume der Verlaufsdiagramme – einheitlich für alle Systeme (Raster: `HISTORY_GRID`) */
+export type ChartRange = HistoryRange;
 
 export interface ChartTick {
   label: string;
@@ -18,9 +21,12 @@ export interface ChartTick {
   at: number;
 }
 
+/** Verlauf im einheitlichen Zeitraster (wie die Verlaufs-API) */
 export interface TimeSeries {
-  ticks: ChartTick[];
-  /** Gleichmäßig verteilte Messwerte von links nach rechts */
+  range: ChartRange;
+  stepSeconds: number;
+  /** Beginn je Zeitabschnitt (ISO) */
+  timestamps: string[];
   values: number[];
 }
 

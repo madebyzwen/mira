@@ -56,15 +56,16 @@ Konfigurierbar: `MIRA_HISTORY_RAW_DAYS` (7), `MIRA_HISTORY_HOURLY_DAYS` (365),
 
 ### 3. API
 
-`GET /api/v1/systems/odin/history?range=24h|7d|30d`
+`GET /api/v1/systems/odin/history?range=1h|24h|7d|30d`
 
 | Zeitraum | Quelle | Punkte |
 | --- | --- | --- |
+| 1 h | Minutenwerte (bis zur letzten abgeschlossenen Minute) | 60 |
 | 24 h | Minutenwerte, zu 5-Minuten-Werten zusammengefasst | 288 |
 | 7 Tage | Stundenwerte | 168 |
 | 30 Tage | Stundenwerte, zu 4-Stunden-Werten zusammengefasst | 180 |
 
-Je Punkt: Zeitpunkt, CPU- und GPU-Auslastung (Mittelwert); fehlende Zeiträume als Lücke.
+Je Punkt: Zeitpunkt, CPU- und GPU-Auslastung sowie CPU- und GPU-Temperatur (Mittelwerte); fehlende Zeiträume als Lücke.
 
 ### 4. Oberfläche
 
@@ -123,6 +124,16 @@ Stunden-Verdichtung, Aufbewahrung, Scheduler (Tagestermin, Start erst nach `star
 Fehler), Sicherung (konsistente Kopie, Rotation, gleicher Tag ersetzt), Wiederverwendung
 der TLS-Verbindung, History-Endpunkt (Anmeldung, ungültiger Zeitraum, Punktzahl),
 hängendes Netzlaufwerk (nur ein `statfs`).
+
+### Nachtrag 0.4.1 (Wünsche nach erster Ansicht)
+
+| Wunsch | Umsetzung |
+| --- | --- |
+| Zeitraum „letzte Stunde“ | `1h`: 60 Minutenwerte direkt aus `server_samples`, endet mit der letzten abgeschlossenen Minute. Raster aller Zeiträume zentral in `HISTORY_GRID` (`shared`) – Odin, Shelly und später Stufe 4 nutzen dasselbe. |
+| Werte beim Überfahren mit der Maus | senkrechte Linie, Punkte auf den Linien, Box mit Zeitabschnitt („von – bis“, da Mittelwert) und allen Werten; auch per Touch. Einheitlich für Odin und Shelly. |
+| Temperaturen im selben Diagramm | Zwei Ebenen in einer Karte mit gemeinsamer Zeitachse und Werteanzeige: oben Auslastung (%), unten Temperatur CPU/GPU (°C). Bewusst keine gemeinsame Skala für % und °C (eine Einheit je Achse). NVMe wird gespeichert, aber nicht angezeigt. Farben folgen dem Bauteil (CPU violett, GPU cyan) in beiden Ebenen. |
+
+Die Verlaufs-API liefert je Punkt zusätzlich `tempCpu` und `tempGpu`.
 
 ### Inbetriebnahme
 
