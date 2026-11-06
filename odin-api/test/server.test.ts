@@ -87,3 +87,41 @@ describe('Odin-API', () => {
     expect(normalizeAddress('192.0.2.20')).toBe('192.0.2.20');
   });
 });
+
+describe('Protokollierung', () => {
+  it('protokolliert gültige Abfragen nicht, abgelehnte Anfragen aber schon – ohne Veraltungswarnung', async () => {
+    const lines: { level: number; msg: string }[] = [];
+    const warnings: string[] = [];
+    const onWarning = (w: Error) => warnings.push(w.message);
+    process.on('warning', onWarning);
+    const { Writable } = await import('node:stream');
+    const stream = new Writable({
+      write(chunk, _enc, cb) {
+        lines.push(JSON.parse(String(chunk)));
+        cb();
+      },
+    });
+    const root = createFixtureRoot();
+    const config = fixtureConfig(root);
+    const { key, cert } = await testTls('odin-sim');
+    app = buildServer({
+      config,
+      tls: { key, cert },
+      tokenHash: createHash('sha256').update(TOKEN).digest('hex'),
+      host: new Host(config, { statfs: fixtureStatFs, addresses: fixtureAddresses }),
+      logger: { level: 'info', stream },
+    });
+    await app.listen({ host: '127.0.0.1', port: 0 });
+    const port = (app.server.address() as AddressInfo).port;
+    lines.length = 0;
+
+    await get(port, '/v1/system/metrics', TOKEN);
+    await get(port, '/v1/health', TOKEN);
+    expect(lines.filter((l) => /request/.test(l.msg))).toEqual([]);
+
+    await get(port, '/v1/health', 'falsch');
+    expect(lines.some((l) => l.msg === 'Anfrage ohne gültiges Token')).toBe(true);
+    process.off('warning', onWarning);
+    expect(warnings.filter((w) => /disableRequestLogging/.test(w))).toEqual([]);
+  });
+});

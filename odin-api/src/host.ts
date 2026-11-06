@@ -51,7 +51,7 @@ export class Host {
       readMemory(proc),
       readGpu(sys),
       readTemperatures(sys),
-      readStorage(proc, this.config.disks, this.deps.statfs),
+      readStorage(proc, this.config.disks, this.deps.statfs, this.config.paths.etc),
       readNetwork(sys, this.config.network, this.deps.addresses),
       readUptimeSeconds(proc),
     ]);

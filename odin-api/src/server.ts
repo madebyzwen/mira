@@ -43,8 +43,10 @@ export function buildServer(options: ServerOptions): FastifyInstance {
     https: { key: tls.key, cert: tls.cert, minVersion: 'TLSv1.2' },
     logger: options.logger ?? { level: 'info' },
     bodyLimit: 1024,
-    disableRequestLogging: true,
   });
+
+  // Routinemäßige Abfragen (alle paar Sekunden) nicht protokollieren – nur Warnungen und Fehler
+  const quiet = { logLevel: 'warn' } as const;
 
   // (1) Verbindungen von nicht erlaubten Adressen noch vor dem TLS-Handshake trennen
   app.server.on('connection', (socket: Socket) => {
@@ -74,12 +76,12 @@ export function buildServer(options: ServerOptions): FastifyInstance {
     return reply.status(500).send(errorBody('internal_error', 'Systemdaten konnten nicht gelesen werden.'));
   });
 
-  app.get('/v1/health', async (): Promise<OdinHealth> => {
+  app.get('/v1/health', quiet, async (): Promise<OdinHealth> => {
     const info = await host.info();
     return { status: 'ok', apiVersion: ODIN_API_VERSION, hostname: info.hostname };
   });
-  app.get('/v1/system/info', async (): Promise<SystemInfo> => host.info());
-  app.get('/v1/system/metrics', async (): Promise<SystemMetrics> => host.metrics());
+  app.get('/v1/system/info', quiet, async (): Promise<SystemInfo> => host.info());
+  app.get('/v1/system/metrics', quiet, async (): Promise<SystemMetrics> => host.metrics());
 
   return app;
 }

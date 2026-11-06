@@ -94,9 +94,28 @@ eigenen Dienstbenutzer hinaus.
   Vorabprüfung vor dem Start).
 - Die systemd-Härtung wird erst auf Odin wirksam (im Container läuft kein systemd).
 
+## Inbetriebnahme (2026-11-06)
+
+Betrieb auf Asgard über Portainer mit dem Image aus GitHub
+([ADR 0008](../adr/0008-images-ueber-github-container-registry.md)); Odin-API aus dem
+GitHub-Release installiert.
+
+| Erkenntnis | Umsetzung |
+| --- | --- |
+| Asgard installiert nur über Portainer-Stacks, ohne `git` | Image-Build und Releases über GitHub Actions, `deploy/portainer-stack.yml` |
+| Leere Stack-Variablen verhinderten den Start | leere Werte gelten als „nicht gesetzt“ |
+| Container im Heimnetz laufen mit macvlan-Adressen | MIRA erhält eine eigene IP im Server-Netz; spricht Odin direkt an, keine Regel zwischen VLANs nötig; Odin erlaubt nur diese IP |
+| Eigene IP ⇒ Standardport möglich | MIRA lauscht auf Port 80 – ohne Root, nur im Netzwerk-Namensraum des Containers freigegeben |
+| Nginx Proxy Manager erreicht macvlan-Adressen nicht | MIRA zusätzlich im Backend-Netz des Proxys (`http://mira:80`); `MIRA_TRUST_PROXY` = Subnetz dieses Netzes |
+| GitHub lehnte einen Push mit privaten Test-Schlüsseln ab | Test-Zertifikate werden zur Laufzeit erzeugt; keine Schlüssel im Repository |
+| NAS-Laufwerk ist ein systemd-Automount (CIFS) und wurde nicht angezeigt | Odin-API 0.1.2 liest `/etc/fstab` und meldet *eingehängt* / *bereit (Automount)* / *nicht eingehängt*; wartende Automounts werden bewusst nicht ausgelöst |
+| Fastify-Veraltungswarnung im Journal | Odin-API 0.1.2 nutzt die unterstützte Variante (Log-Level je Route) |
+
+Abnahme gegen den echten Odin: Werte plausibel; Härtung bestätigt (`mira-agent`,
+`NoNewPrivileges`, `ProtectSystem=strict`, `ProtectHome`, nftables-Regel nur für MIRA).
+
 ## Offen
 
-- Installation auf Odin durch den Betreiber, OPNsense-Regel, Eintrag auf Asgard.
-- Abnahme gegen den echten Odin (Werte, GPU, Temperaturen, Härtung).
+- Update auf MIRA 0.3.2 / Odin-API 0.1.2 und Prüfung der NAS-Anzeige.
 - Verbindungsdaten über die Oberfläche bearbeitbar (Folgeaufgabe).
 - Dashboard nutzt die echten Odin-Werte erst ab Stufe 6.

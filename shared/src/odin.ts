@@ -59,10 +59,19 @@ export const diskSchema = z.object({
   usedBytes: z.number(),
 });
 
+export const NETWORK_SHARE_STATES = ['mounted', 'automount', 'unmounted'] as const;
+
 export const networkShareSchema = z.object({
   mount: z.string(),
   source: z.string(),
   fsType: z.string(),
+  /**
+   * mounted   = eingehängt (Belegung bekannt)
+   * automount = eingetragen mit x-systemd.automount, wartet auf den ersten Zugriff
+   * unmounted = in /etc/fstab eingetragen, aber nicht eingehängt
+   * Fehlt bei Odin-API ≤ 0.1.1 (dort wurden nur eingehängte Laufwerke geliefert).
+   */
+  state: z.enum(NETWORK_SHARE_STATES).optional(),
   totalBytes: z.number().nullable(),
   usedBytes: z.number().nullable(),
 });

@@ -4,7 +4,7 @@ import { parseProcStat, readCpuInfo, usageBetween } from '../src/collectors/cpu.
 import { parseRangeList, unescapeMount } from '../src/collectors/fsutil.ts';
 import { readGpu, readTemperatures } from '../src/collectors/hardware.ts';
 import { readNetwork } from '../src/collectors/network.ts';
-import { parseMounts, readStorage } from '../src/collectors/storage.ts';
+import { parseFstabNetworkShares, parseMounts, readStorage } from '../src/collectors/storage.ts';
 import { parseMeminfo, readOs } from '../src/collectors/system.ts';
 import { Host } from '../src/host.ts';
 import { createFixtureRoot, fixtureAddresses, fixtureConfig, fixtureStatFs } from './fixtureHost.ts';
@@ -96,7 +96,7 @@ describe('Datenträger, Netzlaufwerke und Netzwerk', () => {
   it('liefert konfigurierte Datenträger und alle NFS/CIFS-Mounts – ohne bei hängenden Mounts zu blockieren', async () => {
     const root = createFixtureRoot();
     const started = Date.now();
-    const result = await readStorage(`${root}/proc`, [{ mount: '/', label: 'NVMe (System)' }], fixtureStatFs);
+    const result = await readStorage(`${root}/proc`, [{ mount: '/', label: 'NVMe (System)' }], fixtureStatFs, `${root}/etc`);
     expect(Date.now() - started).toBeLessThan(2500);
     expect(result.disks).toEqual([
       {
@@ -109,8 +109,50 @@ describe('Datenträger, Netzlaufwerke und Netzwerk', () => {
       },
     ]);
     expect(result.networkShares).toEqual([
-      { mount: '/mnt/asgard', source: '10.11.40.1:/volume1/ki', fsType: 'nfs4', totalBytes: 1_000_000_000 * 4096, usedBytes: 360_000_000 * 4096 },
-      { mount: '/mnt/smb', source: '//nas/Freigabe Ordner', fsType: 'cifs', totalBytes: null, usedBytes: null },
+      { mount: '/mnt/nas', source: '//192.0.2.9/nas-freigabe', fsType: 'cifs', state: 'automount', totalBytes: null, usedBytes: null },
+      { mount: '/mnt/asgard', source: '10.11.40.1:/volume1/ki', fsType: 'nfs4', state: 'mounted', totalBytes: 1_000_000_000 * 4096, usedBytes: 360_000_000 * 4096 },
+      { mount: '/mnt/backup', source: '10.11.40.1:/volume1/backup', fsType: 'nfs4', state: 'unmounted', totalBytes: null, usedBytes: null },
+      { mount: '/mnt/smb', source: '//nas/Freigabe Ordner', fsType: 'cifs', state: 'mounted', totalBytes: null, usedBytes: null },
+    ]);
+  });
+
+  it('löst wartende Automounts nicht aus (kein statfs auf den Einhängepunkt)', async () => {
+    const root = createFixtureRoot();
+    const touched: string[] = [];
+    const spy = async (mount: string) => {
+      touched.push(mount);
+      return fixtureStatFs(mount);
+    };
+    await readStorage(`${root}/proc`, [], spy, `${root}/etc`);
+    expect(touched).not.toContain('/mnt/nas');
+    expect(touched).not.toContain('/mnt/backup');
+  });
+
+  it('meldet einen Automount nach dem ersten Zugriff als eingehängt – mit Belegung', async () => {
+    const root = createFixtureRoot({
+      'proc/mounts': [
+        '/dev/nvme0n1p5 / ext4 rw 0 0',
+        'systemd-1 /mnt/nas autofs rw 0 0',
+        '//192.0.2.9/nas-freigabe /mnt/nas cifs rw 0 0',
+      ].join('\n'),
+    });
+    const statfs = async (mount: string) =>
+      mount === '/mnt/nas' ? { blocks: 500_000_000, bfree: 300_000_000, bsize: 4096 } : fixtureStatFs(mount);
+    const result = await readStorage(`${root}/proc`, [], statfs, `${root}/etc`);
+    expect(result.networkShares.find((s) => s.mount === '/mnt/nas')).toEqual({
+      mount: '/mnt/nas',
+      source: '//192.0.2.9/nas-freigabe',
+      fsType: 'cifs',
+      state: 'mounted',
+      totalBytes: 500_000_000 * 4096,
+      usedBytes: 200_000_000 * 4096,
+    });
+  });
+
+  it('liest Netzlaufwerke aus /etc/fstab inkl. Automount-Kennzeichen', () => {
+    expect(parseFstabNetworkShares('# x\n//h/s /mnt/a cifs _netdev,x-systemd.automount 0 0\nUUID=1 / ext4 defaults 0 1\nh:/e /mnt/b nfs defaults 0 0')).toEqual([
+      { source: '//h/s', mount: '/mnt/a', fsType: 'cifs', automount: true },
+      { source: 'h:/e', mount: '/mnt/b', fsType: 'nfs', automount: false },
     ]);
   });
 

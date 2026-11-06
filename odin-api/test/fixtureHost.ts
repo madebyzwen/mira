@@ -29,6 +29,15 @@ const FILES: Record<string, string> = {
     '/dev/nvme0n1p1 /boot/efi vfat rw 0 0',
     '10.11.40.1:/volume1/ki /mnt/asgard nfs4 rw 0 0',
     '//nas/Freigabe\\040Ordner /mnt/smb cifs rw 0 0',
+    'systemd-1 /mnt/nas autofs rw,relatime 0 0',
+  ].join('\n'),
+  // wie auf Odin: CIFS-Freigabe per systemd-Automount, dazu ein eingetragenes, nicht eingehängtes NFS-Laufwerk
+  'etc/fstab': [
+    '# /etc/fstab',
+    '/dev/disk/by-uuid/35684b68 / ext4 defaults 0 1',
+    '//192.0.2.9/nas-freigabe /mnt/nas cifs credentials=/etc/samba/credentials/x,_netdev,nofail,x-systemd.automount 0 0',
+    '10.11.40.1:/volume1/ki /mnt/asgard nfs4 defaults 0 0',
+    '10.11.40.1:/volume1/backup /mnt/backup nfs4 noauto 0 0',
   ].join('\n'),
   'proc/sys/kernel/hostname': 'odin\n',
   'proc/sys/kernel/osrelease': '7.0.0-42-generic\n',

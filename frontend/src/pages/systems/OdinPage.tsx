@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import {
+  Activity,
   AlertTriangle,
   ArrowLeftRight,
   ChartColumn,
@@ -17,7 +18,7 @@ import {
   Terminal,
   Thermometer,
 } from 'lucide-react';
-import type { OdinStatusResponse, SystemInfo, SystemMetrics, Temperature } from '@mira/shared';
+import type { NetworkShare, OdinStatusResponse, SystemInfo, SystemMetrics, Temperature } from '@mira/shared';
 import { Page } from '../../components/layout/AppLayout';
 import { Card } from '../../components/ui/Card';
 import { IconTile, OnlinePill, Pill, ProgressBar, RangeTabs, Stat, rangeTitleSuffix } from '../../components/ui/Primitives';
@@ -44,6 +45,13 @@ const POLL_MS = 5000;
 const DASH = '–';
 
 const tempIcon: Record<Temperature['sensor'], typeof Cpu> = { cpu: Cpu, gpu: Gpu, nvme: HardDrive };
+
+/** Ältere Odin-API-Versionen liefern keinen Status – dort waren alle gelieferten Laufwerke eingehängt. */
+const shareStateText: Record<NonNullable<NetworkShare['state']>, string> = {
+  mounted: 'eingehängt',
+  automount: 'bereit (wird bei Zugriff eingehängt)',
+  unmounted: 'nicht eingehängt',
+};
 
 function coresText(cpu: SystemInfo['cpu']): string | undefined {
   if (cpu.physicalCores && cpu.performanceCores && cpu.efficiencyCores) {
@@ -246,7 +254,7 @@ export function OdinPage() {
 
         <Card title="Netzlaufwerk (NAS)" icon={<Database size={26} />} divider className="detail-card">
           {!metrics && <p className="widget-note">{DASH}</p>}
-          {metrics && metrics.networkShares.length === 0 && <p className="widget-note">Kein Netzlaufwerk eingebunden.</p>}
+          {metrics && metrics.networkShares.length === 0 && <p className="widget-note">Kein Netzlaufwerk eingerichtet.</p>}
           {metrics?.networkShares.map((s) => {
             const pct = s.totalBytes && s.usedBytes != null ? percentOf(s.usedBytes, s.totalBytes) : null;
             return (
@@ -266,12 +274,20 @@ export function OdinPage() {
                   </div>
                   <div>
                     <dt>
-                      <HardDrive size={18} /> Belegt
+                      <Activity size={18} /> Status
                     </dt>
-                    <dd>
-                      {s.totalBytes && s.usedBytes != null ? `${formatBytes(s.usedBytes)} / ${formatBytes(s.totalBytes)}` : 'nicht lesbar'}
-                    </dd>
+                    <dd>{shareStateText[s.state ?? 'mounted']}</dd>
                   </div>
+                  {(s.state ?? 'mounted') === 'mounted' && (
+                    <div>
+                      <dt>
+                        <HardDrive size={18} /> Belegt
+                      </dt>
+                      <dd>
+                        {s.totalBytes && s.usedBytes != null ? `${formatBytes(s.usedBytes)} / ${formatBytes(s.totalBytes)}` : 'nicht lesbar'}
+                      </dd>
+                    </div>
+                  )}
                 </dl>
                 {pct !== null && (
                   <div className="usage-card__bar">
