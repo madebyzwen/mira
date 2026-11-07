@@ -11,6 +11,8 @@ export interface ServerOptions {
   /** SHA-256 des Tokens als Hex */
   tokenHash: string;
   host: Host;
+  /** Paketversion – wird in `/v1/health` gemeldet, damit MIRA auf Updates hinweisen kann */
+  version?: string;
   logger?: FastifyServerOptions['logger'];
 }
 
@@ -78,7 +80,9 @@ export function buildServer(options: ServerOptions): FastifyInstance {
 
   app.get('/v1/health', quiet, async (): Promise<OdinHealth> => {
     const info = await host.info();
-    return { status: 'ok', apiVersion: ODIN_API_VERSION, hostname: info.hostname };
+    const health: OdinHealth = { status: 'ok', apiVersion: ODIN_API_VERSION, hostname: info.hostname };
+    if (options.version) health.version = options.version;
+    return health;
   });
   app.get('/v1/system/info', quiet, async (): Promise<SystemInfo> => host.info());
   app.get('/v1/system/metrics', quiet, async (): Promise<SystemMetrics> => host.metrics());

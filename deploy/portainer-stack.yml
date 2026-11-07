@@ -36,6 +36,8 @@ services:
       # Subnetz des Proxy-Netzes (z. B. 172.20.0.0/16), damit MIRA HTTPS und die echte Client-IP erkennt
       MIRA_TRUST_PROXY: ${MIRA_TRUST_PROXY:-false}
       MIRA_LOG_LEVEL: ${MIRA_LOG_LEVEL:-info}
+      # Prüfung auf neue Versionen bei GitHub (täglich 04:00 + erster Aufruf am Tag); false = kein Internetzugriff
+      MIRA_UPDATE_CHECK: ${MIRA_UPDATE_CHECK:-true}
       MIRA_ODIN_API_URL: ${MIRA_ODIN_API_URL:-}
       MIRA_ODIN_CERT_FINGERPRINT: ${MIRA_ODIN_CERT_FINGERPRINT:-}
       MIRA_ODIN_TOKEN_FILE: /secrets/odin_api_token.txt

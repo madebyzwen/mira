@@ -23,6 +23,8 @@ export interface OdinMonitorOptions {
   /** Ohne Antwort seit so vielen ms gilt Odin als nicht erreichbar */
   offlineAfterMs: number;
   aggregator?: SampleAggregator;
+  /** Version der Odin-API (Paket); `null` = Odin meldet keine Version (≤ 0.1.3). Aufruf bei jedem Neuladen der Info. */
+  onApiVersion?: (version: string | null) => void;
   /** Für Tests: Uhr ersetzen */
   now?: () => number;
 }
@@ -41,6 +43,7 @@ export class OdinMonitor {
   private readonly intervalMs: number;
   private readonly offlineAfterMs: number;
   private readonly aggregator: SampleAggregator | undefined;
+  private readonly onApiVersion: ((version: string | null) => void) | undefined;
   private readonly now: () => number;
 
   private status: SystemState;
@@ -60,6 +63,7 @@ export class OdinMonitor {
     this.intervalMs = options.intervalMs;
     this.offlineAfterMs = options.offlineAfterMs;
     this.aggregator = options.aggregator;
+    this.onApiVersion = options.onApiVersion;
     this.now = options.now ?? Date.now;
 
     const row = this.db.prepare<[number], StateRow>('SELECT last_seen_at FROM system_state WHERE system_id = ?').get(this.systemId);
@@ -108,6 +112,13 @@ export class OdinMonitor {
     try {
       const needsInfo = !this.info || this.status.state !== 'online' || this.now() - this.infoLoadedAt > INFO_REFRESH_MS;
       if (needsInfo) {
+        const health = await client.health();
+        try {
+          this.onApiVersion?.(health.version ?? null);
+        } catch (err) {
+          // Fehler beim Abgleich der Update-Meldungen dürfen die Verbindung zu Odin nicht als gestört melden
+          this.log.error({ err }, 'Version der Odin-API konnte nicht übernommen werden');
+        }
         this.info = await client.info();
         this.infoLoadedAt = this.now();
       }

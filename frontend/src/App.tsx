@@ -11,6 +11,7 @@ import { AgentsPage } from './pages/AgentsPage';
 import { LlmPage } from './pages/LlmPage';
 import { ConfigOverviewPage, ConfigSectionPage } from './pages/config/ConfigPages';
 import { ConfigSystemsPage } from './pages/config/ConfigSystemsPage';
+import { ConfigMiraPage } from './pages/config/ConfigMiraPage';
 import { features } from './lib/features';
 
 export function App() {
@@ -35,6 +36,7 @@ export function App() {
             <Route path="/llm" element={<LlmPage />} />
             <Route path="/konfiguration" element={<ConfigOverviewPage />} />
             <Route path="/konfiguration/systeme" element={<ConfigSystemsPage />} />
+            <Route path="/konfiguration/mira" element={<ConfigMiraPage />} />
             <Route path="/konfiguration/:section" element={<ConfigSectionPage />} />
           </Route>
           <Route path="/" element={<Navigate to="/dashboard" replace />} />

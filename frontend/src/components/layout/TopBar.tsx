@@ -2,6 +2,7 @@ import { Fragment, useEffect, useRef, useState, type ReactNode } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { ChevronDown, ChevronRight, LogOut } from 'lucide-react';
 import { useAuth, useCurrentUser } from '../../auth/AuthContext';
+import { NotificationBell } from './Notifications';
 
 export interface Crumb {
   label: string;
@@ -48,7 +49,10 @@ export function TopBar({ title, subtitle, icon, breadcrumb }: TopBarProps) {
           {subtitle && <p className="topbar__subtitle">{subtitle}</p>}
         </div>
       </div>
-      <UserMenu />
+      <div className="topbar__actions">
+        <NotificationBell />
+        <UserMenu />
+      </div>
     </header>
   );
 }

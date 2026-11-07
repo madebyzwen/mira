@@ -51,5 +51,24 @@ export const coreMigrations: ModuleMigrations = {
         CREATE INDEX idx_audit_ts ON audit_log(ts);
       `,
     },
+    {
+      version: 2,
+      name: 'notifications',
+      sql: `
+        CREATE TABLE notifications (
+          id            INTEGER PRIMARY KEY AUTOINCREMENT,
+          key           TEXT NOT NULL UNIQUE,
+          -- Stand des Inhalts (z. B. gemeldete Version); ändert er sich, gilt die Meldung als neu
+          ref           TEXT NOT NULL,
+          level         TEXT NOT NULL CHECK (level IN ('info', 'warning', 'error')),
+          title         TEXT NOT NULL,
+          message       TEXT NOT NULL,
+          links         TEXT NOT NULL DEFAULT '[]',
+          created_at    TEXT NOT NULL,
+          read_at       TEXT,
+          dismissed_at  TEXT
+        );
+      `,
+    },
   ],
 };

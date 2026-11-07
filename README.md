@@ -26,8 +26,9 @@ auf dem NAS **Asgard** und verwaltet von dort den KI-Server **Odin**.
 | 3 | Messwert-Historie: echte Verlaufsdiagramme, tägliche Sicherung | ✅ abgeschlossen |
 | 4 | Shelly Plug: Stromverbrauch, Verlauf und Kosten | ⏳ als Nächstes |
 
-Alle Stufen: [Roadmap](docs/entwicklung/roadmap.md). Echt sind die Anmeldung und
-die Odin-Ansicht (Live-Werte alle 2 s und Verlauf von Auslastung und Temperaturen über 1 h / 24 h / 7 / 30 Tage); alle
+Alle Stufen: [Roadmap](docs/entwicklung/roadmap.md). Echt sind die Anmeldung,
+die Odin-Ansicht (Live-Werte alle 2 s und Verlauf von Auslastung und Temperaturen über 1 h / 24 h / 7 / 30 Tage) sowie
+die Update-Hinweise über die Glocke in der Kopfzeile (Konfiguration › MIRA); alle
 übrigen Ansichten zeigen noch **Beispieldaten** und führen keine Aktionen aus.
 
 ## Dokumentation
@@ -222,6 +223,8 @@ Wiederherstellen (per SSH auf Asgard):
 | `MIRA_HISTORY_HOURLY_DAYS` | `365` | Aufbewahrung der Stundenwerte |
 | `MIRA_BACKUP_TIME` | `03:30` | Uhrzeit der täglichen Sicherung (Ortszeit, `HH:MM`) |
 | `MIRA_BACKUP_KEEP` | `7` | Anzahl aufbewahrter Sicherungen |
+| `MIRA_UPDATE_CHECK` | `true` | Prüfung auf neue Versionen von MIRA und Odin-API bei GitHub (`false` = keine Verbindung ins Internet) |
+| `MIRA_UPDATE_CHECK_TIME` | `04:00` | Uhrzeit der täglichen Update-Prüfung (zusätzlich einmal beim ersten Aufruf am Tag) |
 | `TZ` | – (Stack: `Europe/Berlin`) | Zeitzone des Containers |
 
 ## Lizenz

@@ -14,19 +14,32 @@ import { registerHealth } from './core/http/health.ts';
 import { registerSecurity } from './core/http/security.ts';
 import { backupDatabase } from './core/backup.ts';
 import { Scheduler } from './core/scheduler.ts';
+import { NotificationStore } from './core/notifications.ts';
+import { SettingsStore } from './core/settings.ts';
+import { createGithubFetcher, type ReleaseFetcher } from './core/updates/github.ts';
+import { registerNotificationRoutes } from './core/updates/routes.ts';
+import { UpdateService } from './core/updates/updateService.ts';
 import type { CoreContext, MiraModule } from './core/module.ts';
 import { createModules } from './modules/index.ts';
-
 
 export interface BuildOptions {
   modules?: MiraModule[];
   logger?: FastifyServerOptions['logger'];
+  /** Für Tests: Abfrage bei GitHub ersetzen */
+  fetchRelease?: ReleaseFetcher;
+  /** Für Tests: Uhr der Update-Prüfung ersetzen */
+  now?: () => Date;
 }
 
 export interface MiraApp {
   app: FastifyInstance;
   db: Db;
+  updates: UpdateService;
+  notifications: NotificationStore;
 }
+
+/** Gelesene bzw. ausgeblendete Benachrichtigungen werden nach dieser Frist gelöscht. */
+const NOTIFICATION_RETENTION_DAYS = 90;
 
 /**
  * Baut die komplette Anwendung: Datenbank + Migrationen, Core-Dienste,
@@ -61,7 +74,23 @@ export async function buildApp(config: AppConfig, options: BuildOptions = {}): P
   registerAuth(app, { config, users, sessions, audit });
 
   const scheduler = new Scheduler(app.log);
-  const ctx: CoreContext = { config, db, audit, scheduler };
+  const settings = new SettingsStore(db);
+  const notifications = new NotificationStore(db, options.now);
+  const updates = new UpdateService({
+    settings,
+    notifications,
+    log: app.log,
+    enabled: config.updateCheck.enabled,
+    scheduleTime: config.updateCheck.time,
+    miraVersion: config.version,
+    fetchRelease: options.fetchRelease ?? createGithubFetcher(config.version),
+    now: options.now,
+  });
+  // Nach einem Update von MIRA erledigte Meldung sofort entfernen – ohne Abfrage bei GitHub
+  updates.reconcile();
+  registerNotificationRoutes(app, { notifications, updates, audit });
+
+  const ctx: CoreContext = { config, db, audit, scheduler, settings, notifications, updates };
   for (const module of modules) {
     await module.registerRoutes(app, ctx);
   }
@@ -75,7 +104,8 @@ export async function buildApp(config: AppConfig, options: BuildOptions = {}): P
     () => {
       const expiredSessions = sessions.pruneExpired();
       const oldAudit = audit.pruneOlderThan(config.auditRetentionDays);
-      if (expiredSessions || oldAudit) app.log.info({ expiredSessions, oldAudit }, 'Wartung durchgeführt');
+      const oldNotifications = notifications.pruneOlderThan(NOTIFICATION_RETENTION_DAYS);
+      if (expiredSessions || oldAudit || oldNotifications) app.log.info({ expiredSessions, oldAudit, oldNotifications }, 'Wartung durchgeführt');
     },
     { runNow: true },
   );
@@ -88,11 +118,16 @@ export async function buildApp(config: AppConfig, options: BuildOptions = {}): P
     });
   }
 
+  // Tägliche Update-Prüfung (MIRA und Odin-API in einer Abfrage)
+  if (config.updateCheck.enabled) {
+    scheduler.dailyAt('core.update_pruefung', config.updateCheck.time, () => updates.checkScheduled());
+  }
+
   app.addHook('onReady', async () => scheduler.start());
   app.addHook('onClose', async () => {
     scheduler.stop();
     db.close();
   });
 
-  return { app, db };
+  return { app, db, updates, notifications };
 }

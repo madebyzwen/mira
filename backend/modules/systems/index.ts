@@ -30,7 +30,7 @@ export class SystemsModule implements MiraModule {
   history: ServerHistory | undefined;
 
   registerRoutes(app: FastifyInstance, ctx: CoreContext): void {
-    const { db, config, scheduler } = ctx;
+    const { db, config, scheduler, updates } = ctx;
     const odinRow = db.prepare<[string], SystemRow>('SELECT id, slug, name, kind, description FROM systems WHERE slug = ?').get('odin');
     if (!odinRow) throw new Error('System „odin“ fehlt in der Datenbank');
 
@@ -44,6 +44,7 @@ export class SystemsModule implements MiraModule {
       intervalMs: config.odin.pollSeconds * 1000,
       offlineAfterMs: config.odin.offlineSeconds * 1000,
       aggregator: new SampleAggregator(db, odinRow.id),
+      onApiVersion: (version) => updates.reportOdinApiVersion(version),
     });
     this.monitor = monitor;
     this.history = history;

@@ -41,6 +41,10 @@ const envSchema = z.object({
   MIRA_BACKUP_KEEP: z.coerce.number().int().min(1).max(365).default(7),
   /** Uhrzeit der täglichen Sicherung (Ortszeit des Containers, TZ) */
   MIRA_BACKUP_TIME: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/).default('03:30'),
+  /** Prüfung auf neue Versionen bei GitHub (MIRA und Odin-API); `false` = keine Verbindung ins Internet */
+  MIRA_UPDATE_CHECK: z.preprocess(emptyAsUndefined, z.enum(['true', 'false']).default('true')),
+  /** Uhrzeit der täglichen Update-Prüfung (Ortszeit des Containers, TZ) */
+  MIRA_UPDATE_CHECK_TIME: z.preprocess(emptyAsUndefined, z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/).default('04:00')),
 });
 
 export interface AppConfig {
@@ -60,6 +64,7 @@ export interface AppConfig {
   odin: { apiUrl?: string; certFingerprint?: string; tokenFile?: string; pollSeconds: number; offlineSeconds: number };
   history: { rawDays: number; hourlyDays: number };
   backup: { keep: number; time: string };
+  updateCheck: { enabled: boolean; time: string };
   version: string;
 }
 
@@ -94,6 +99,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env, version = '0.0.
     },
     history: { rawDays: e.MIRA_HISTORY_RAW_DAYS, hourlyDays: e.MIRA_HISTORY_HOURLY_DAYS },
     backup: { keep: e.MIRA_BACKUP_KEEP, time: e.MIRA_BACKUP_TIME },
+    updateCheck: { enabled: e.MIRA_UPDATE_CHECK === 'true', time: e.MIRA_UPDATE_CHECK_TIME },
     version,
   };
 }

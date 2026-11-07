@@ -3,7 +3,10 @@ import type { AuditLog } from './audit.ts';
 import type { AppConfig } from './config.ts';
 import type { Db } from './db/database.ts';
 import type { Migration } from './db/migrations.ts';
+import type { NotificationStore } from './notifications.ts';
 import type { Scheduler } from './scheduler.ts';
+import type { SettingsStore } from './settings.ts';
+import type { UpdateService } from './updates/updateService.ts';
 
 /** Dienste des Core, die Fachmodule nutzen dürfen. */
 export interface CoreContext {
@@ -12,6 +15,10 @@ export interface CoreContext {
   audit: AuditLog;
   /** Hintergrundaufgaben – laufen erst, wenn MIRA vollständig bereit ist */
   scheduler: Scheduler;
+  settings: SettingsStore;
+  notifications: NotificationStore;
+  /** Update-Prüfung – Module melden installierte Versionen ihrer Komponenten (z. B. Odin-API) */
+  updates: UpdateService;
 }
 
 /**

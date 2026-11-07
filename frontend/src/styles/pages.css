@@ -1296,3 +1296,50 @@
 .disk-list__usage > span {
   white-space: nowrap;
 }
+
+/* Konfiguration › MIRA – Updates */
+.update-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.update-list__item {
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--color-divider);
+}
+
+.update-list__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 4px;
+  font-size: var(--fs-md);
+}
+
+.update-list__hint {
+  margin-top: 8px;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  background: rgba(124, 58, 237, 0.1);
+  font-size: var(--fs-sm);
+  color: var(--color-text-muted);
+}
+
+.update-list__meta {
+  margin-top: 6px;
+}
+
+.update-list__meta a {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.update-list__error {
+  display: block;
+  margin-top: 2px;
+  font-size: var(--fs-sm);
+  color: var(--color-red);
+}

@@ -5,6 +5,7 @@ import { Sidebar } from './Sidebar';
 import { TopBar, type TopBarProps } from './TopBar';
 import { Modal } from '../ui/Modal';
 import { MiraLogo } from '../brand/MiraLogo';
+import { NotificationsProvider } from './Notifications';
 import type { HealthResponse } from '@mira/shared';
 
 const STORAGE_KEY = 'mira.sidebar.collapsed';
@@ -70,36 +71,38 @@ export function AppLayout() {
   const closeAbout = useCallback(() => setAboutOpen(false), []);
 
   return (
-    <div
-      className={[
-        'app-shell',
-        effectiveCollapsed && 'app-shell--collapsed',
-        isMobile && 'app-shell--mobile',
-        isMobile && mobileOpen && 'app-shell--overlay',
-      ]
-        .filter(Boolean)
-        .join(' ')}
-    >
-      <Sidebar collapsed={effectiveCollapsed} onToggle={toggle} onAbout={() => setAboutOpen(true)} />
-      {isMobile && mobileOpen && <div className="sidebar-backdrop" onClick={() => setMobileOpen(false)} aria-hidden />}
-      <div className="app-main">
-        <Outlet />
-      </div>
-
-      <Modal open={aboutOpen} onClose={closeAbout} title="Über MIRA" icon={<Info size={22} />}>
-        <div className="about">
-          <MiraLogo size={56} />
-          <div>
-            <p className="about__name">MIRA – Management, Infrastructure, Resources &amp; Automation</p>
-            <p className="about__meta">Version {version ?? '…'}</p>
-          </div>
+    <NotificationsProvider>
+      <div
+        className={[
+          'app-shell',
+          effectiveCollapsed && 'app-shell--collapsed',
+          isMobile && 'app-shell--mobile',
+          isMobile && mobileOpen && 'app-shell--overlay',
+        ]
+          .filter(Boolean)
+          .join(' ')}
+      >
+        <Sidebar collapsed={effectiveCollapsed} onToggle={toggle} onAbout={() => setAboutOpen(true)} />
+        {isMobile && mobileOpen && <div className="sidebar-backdrop" onClick={() => setMobileOpen(false)} aria-hidden />}
+        <div className="app-main">
+          <Outlet />
         </div>
-        <p className="about__text">
-          Selbst gehostete Weboberfläche zur Überwachung, Verwaltung und Automatisierung lokaler KI-Infrastruktur. MIRA wird
-          stufenweise ausgebaut: Bereiche, die noch nicht angebunden sind, zeigen Beispieldaten und führen keine Aktionen aus.
-        </p>
-      </Modal>
-    </div>
+
+        <Modal open={aboutOpen} onClose={closeAbout} title="Über MIRA" icon={<Info size={22} />}>
+          <div className="about">
+            <MiraLogo size={56} />
+            <div>
+              <p className="about__name">MIRA – Management, Infrastructure, Resources &amp; Automation</p>
+              <p className="about__meta">Version {version ?? '…'}</p>
+            </div>
+          </div>
+          <p className="about__text">
+            Selbst gehostete Weboberfläche zur Überwachung, Verwaltung und Automatisierung lokaler KI-Infrastruktur. MIRA wird
+            stufenweise ausgebaut: Bereiche, die noch nicht angebunden sind, zeigen Beispieldaten und führen keine Aktionen aus.
+          </p>
+        </Modal>
+      </div>
+    </NotificationsProvider>
   );
 }
 

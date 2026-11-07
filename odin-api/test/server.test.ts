@@ -17,7 +17,7 @@ afterEach(async () => {
   app = undefined;
 });
 
-async function start(allowedClients = ['127.0.0.1']): Promise<number> {
+async function start(allowedClients = ['127.0.0.1'], version?: string): Promise<number> {
   const root = createFixtureRoot();
   const config = fixtureConfig(root, { allowedClients });
   const { key, cert } = await testTls('odin-sim');
@@ -26,6 +26,7 @@ async function start(allowedClients = ['127.0.0.1']): Promise<number> {
     tls: { key, cert },
     tokenHash: createHash('sha256').update(TOKEN).digest('hex'),
     host: new Host(config, { statfs: fixtureStatFs, addresses: fixtureAddresses }),
+    version,
     logger: false,
   });
   await app.listen({ host: '127.0.0.1', port: 0 });
@@ -65,6 +66,15 @@ describe('Odin-API', () => {
     const port = await start();
     const health = await get(port, '/v1/health', TOKEN);
     expect(health.body).toEqual({ status: 'ok', apiVersion: '1', hostname: 'odin' });
+  });
+
+  it('meldet die Paketversion in Health, wenn sie bekannt ist', async () => {
+    const port = await start(['127.0.0.1'], '0.1.4');
+    expect((await get(port, '/v1/health', TOKEN)).body).toEqual({ status: 'ok', apiVersion: '1', hostname: 'odin', version: '0.1.4' });
+  });
+
+  it('liefert Info und Messwerte', async () => {
+    const port = await start();
     const info = await get(port, '/v1/system/info', TOKEN);
     expect(info.body.os.name).toBe('Ubuntu 26.04.1 LTS');
     const metrics = await get(port, '/v1/system/metrics', TOKEN);

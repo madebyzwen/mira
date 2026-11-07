@@ -32,6 +32,7 @@ const app = buildServer({
   tls: { key: fs.readFileSync(config.tls.keyFile), cert: fs.readFileSync(config.tls.certFile) },
   tokenHash: fs.readFileSync(config.tokenHashFile, 'utf8').trim(),
   host: new Host(config),
+  version: VERSION === 'dev' ? undefined : VERSION,
 });
 
 if (values.check) {

@@ -48,7 +48,7 @@ Der bestehende administrative SSH-Zugang zu Odin bleibt unverändert.
 
 | Endpunkt | Zweck | Stufe |
 | --- | --- | --- |
-| `GET /v1/health` | Erreichbarkeit, API-Version | 2 ✅ |
+| `GET /v1/health` | Erreichbarkeit, Protokollversion (`apiVersion`), ab 0.1.4 Paketversion (`version`) für den Update-Hinweis in MIRA | 2 ✅ |
 | `GET /v1/system/info` | OS, Kernel, CPU (inkl. P-/E-Kerne), RAM, GPU, Startzeit | 2 ✅ |
 | `GET /v1/system/metrics` | CPU, RAM, GPU, VRAM, Last, Temperaturen, Datenträger, NFS/CIFS-Mounts, Netzwerk | 2 ✅ |
 | `GET /v1/docker/containers` | Containerstatus (read-only) | 6 |

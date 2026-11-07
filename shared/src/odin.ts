@@ -10,8 +10,11 @@ export const ODIN_API_VERSION = '1';
 
 export const odinHealthSchema = z.object({
   status: z.literal('ok'),
+  /** Version des Protokolls (Verträge), nicht des Pakets */
   apiVersion: z.string(),
   hostname: z.string(),
+  /** Paketversion der Odin-API (z. B. `0.1.4`) – erst ab 0.1.4 gemeldet */
+  version: z.string().optional(),
 });
 export type OdinHealth = z.infer<typeof odinHealthSchema>;
 

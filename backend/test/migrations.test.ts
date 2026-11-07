@@ -22,8 +22,8 @@ describe('Migrationen', () => {
   it('legt die Core-Tabellen an und protokolliert die Version', () => {
     const db = openDatabase(':memory:');
     const [result] = runMigrations(db, [coreMigrations]);
-    expect(result).toEqual({ module: 'core', applied: [1] });
-    expect(tables(db)).toEqual(expect.arrayContaining(['users', 'sessions', 'settings', 'audit_log', 'schema_migrations']));
+    expect(result).toEqual({ module: 'core', applied: [1, 2] });
+    expect(tables(db)).toEqual(expect.arrayContaining(['users', 'sessions', 'settings', 'audit_log', 'notifications', 'schema_migrations']));
   });
 
   it('ist idempotent – ein zweiter Lauf wendet nichts erneut an', () => {
@@ -43,6 +43,7 @@ describe('Migrationen', () => {
       { module: 'beispiel', version: 1 },
       { module: 'beispiel', version: 2 },
       { module: 'core', version: 1 },
+      { module: 'core', version: 2 },
     ]);
   });
 

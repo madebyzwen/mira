@@ -5,7 +5,7 @@ import type { AddressInfo } from 'node:net';
 import { afterEach, describe, expect, it } from 'vitest';
 import type { FastifyInstance } from 'fastify';
 import { buildServer, Host } from '@mira/odin-api';
-import { historyResponseSchema, odinStatusResponseSchema } from '@mira/shared';
+import { historyResponseSchema, odinStatusResponseSchema, updateStatusResponseSchema } from '@mira/shared';
 import { buildApp } from '../app.ts';
 import { SystemsModule } from '../modules/systems/index.ts';
 import { createFixtureRoot, fixtureAddresses, fixtureConfig, fixtureStatFs } from '../../odin-api/test/fixtureHost.ts';
@@ -20,7 +20,7 @@ afterEach(async () => {
 });
 
 /** Startet die echte Odin-API gegen den nachgebildeten Odin. */
-async function startOdin(options: { certName?: TestCertName; token?: string } = {}) {
+async function startOdin(options: { certName?: TestCertName; token?: string; version?: string } = {}) {
   const root = createFixtureRoot();
   const config = fixtureConfig(root);
   const { cert, key } = await testTls(options.certName ?? 'odin-sim');
@@ -29,6 +29,7 @@ async function startOdin(options: { certName?: TestCertName; token?: string } = 
     tls: { cert, key },
     tokenHash: createHash('sha256').update(options.token ?? TOKEN).digest('hex'),
     host: new Host(config, { statfs: fixtureStatFs, addresses: fixtureAddresses }),
+    version: options.version,
     logger: false,
   });
   let requests = 0;
@@ -160,6 +161,22 @@ describe('Systeme › Odin', () => {
     expect(odin.requests()).toBeGreaterThanOrEqual(4); // Info + 3 × Messwerte
     expect(odin.tlsConnections()).toBe(1);
   }, 15_000);
+
+  it('übernimmt die Version der Odin-API für die Update-Prüfung (ohne Versionsmeldung: höchstens 0.1.3)', async () => {
+    const odinApi = async (app: FastifyInstance, cookie: string) => {
+      const res = await app.inject({ method: 'GET', url: '/api/v1/system/update', cookies: { mira_session: cookie } });
+      return updateStatusResponseSchema.parse(res.json()).components.find((c) => c.component === 'odin-api');
+    };
+    const legacy = await startOdin();
+    const a = await startMira({ port: legacy.port });
+    await a.monitor.poll();
+    expect(await odinApi(a.app, a.cookie)).toMatchObject({ installed: '0.1.3', installedAtMost: true });
+
+    const current = await startOdin({ version: '0.1.4' });
+    const b = await startMira({ port: current.port });
+    await b.monitor.poll();
+    expect(await odinApi(b.app, b.cookie)).toMatchObject({ installed: '0.1.4', installedAtMost: false });
+  });
 
   it('liefert den Verlauf nur angemeldet und mit gültigem Zeitraum', async () => {
     const odin = await startOdin();

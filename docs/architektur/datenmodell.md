@@ -14,8 +14,9 @@ Legende: ✅ umgesetzt · 🔜 geplant (Stufe) · ⏸ zurückgestellt
 | `schema_migrations` | modul, version, name, applied_at | ✅ Stufe 1 |
 | `users` | id, username (eindeutig, ohne Groß-/Kleinschreibung), display_name, password_hash (scrypt), created_at, last_login_at | ✅ Stufe 1 |
 | `sessions` | id, user_id → users, token_hash (SHA-256), created_at, last_seen_at, expires_at, ip, user_agent | ✅ Stufe 1 |
-| `settings` | modul, key, value (JSON), updated_at – Konfiguration aller Module | ✅ Stufe 1 (Tabelle) |
+| `settings` | modul, key, value (JSON), updated_at – Konfiguration und kleine Zustände der Module (z. B. `core.update_check`: Ergebnis und Zählung der Update-Prüfungen, zuletzt von Odin gemeldete Version der Odin-API) | ✅ Stufe 1 (Tabelle), genutzt ab A-004 |
 | `audit_log` | ts, actor, modul, action, target, result, ip, details (JSON) | ✅ Stufe 1 |
+| `notifications` | id, key (eindeutig je Thema, z. B. `update:mira`), ref (Stand, z. B. Version), level, title, message, links (JSON), created_at, read_at, dismissed_at – Glocke in der Kopfzeile; gelesene/ausgeblendete nach 90 Tagen gelöscht | ✅ A-004 (Core-Migration 2) |
 | `jobs` | id, modul, typ, system_id, status, progress, payload, result, error, Zeitstempel | 🔜 Stufe 5/8 |
 
 ## Modul `systems`
