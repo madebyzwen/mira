@@ -11,7 +11,7 @@ auf dem NAS **Asgard** und verwaltet von dort den KI-Server **Odin**.
 - Dashboard für Systemstatus und Schnellaktionen
 - Überwachung und Energieverwaltung des KI-Servers
 - Verbrauchsmessung per Shelly Plug
-- Verwaltung von KI-Agenten
+- Verwaltung von KI-Agenten (zurückgestellt)
 - Bestand lokaler GGUF-Modelle und direkte Downloads
 - Modulare Konfigurationsoberfläche
 - Sicherer webbasierter Zugriff

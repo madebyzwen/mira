@@ -12,6 +12,7 @@ aktualisiert die passende Datei im selben Commit.
 | [`architektur/`](architektur/) | Gültige Konzepte: Zielarchitektur, Datenmodell, Odin-API, Sicherheit |
 | [`adr/`](adr/) | Architekturentscheidungen (Architecture Decision Records), fortlaufend nummeriert |
 | [`entwicklung/`](entwicklung/) | Roadmap und je Entwicklungsstufe ein Dokument mit Umfang, Erfolgskriterien und Ergebnis |
+| [`aufgaben/`](aufgaben/) | Offene Aufgaben und Ideen, die noch keiner Entwicklungsstufe zugeordnet sind |
 | [`vorgaben/`](vorgaben/) | Ausgangsdokumente (Briefings, Aufträge) im Originalwortlaut – zur Nachvollziehbarkeit |
 | [`mockups/`](mockups/) | Freigegebene UI-Entwürfe (verbindliche visuelle Grundlage) |
 

@@ -5,7 +5,7 @@ Migrationen (siehe [ADR 0003](../adr/0003-sqlite-mit-modulmigrationen.md)).
 Zeitstempel als ISO-8601 in UTC. Geheimnisse werden **nicht** in SQLite
 gespeichert, sondern als Datei referenziert ([ADR 0006](../adr/0006-geheimnisse-als-dateien.md)).
 
-Legende: ✅ umgesetzt · 🔜 geplant (Stufe)
+Legende: ✅ umgesetzt · 🔜 geplant (Stufe) · ⏸ zurückgestellt
 
 ## Core
 
@@ -26,10 +26,12 @@ Legende: ✅ umgesetzt · 🔜 geplant (Stufe)
 | `server_connections` | system_id, api_url, zertifikats-Fingerprint, token_ref (Datei), wol-Parameter – bis die Verbindung über die Oberfläche bearbeitbar ist, kommen die Werte aus `MIRA_ODIN_*` | 🔜 später |
 | `system_state` | system_id, state (`online`/`offline`/`unknown`; `sleeping`/`windows` ab Stufe 5), since, last_seen_at, last_error | ✅ Stufe 2 |
 | `server_samples` | system_id, ts (Minutenbeginn, UTC), samples, cpu/gpu Mittel + Max, ram/vram, load1, Temperaturen CPU/GPU/NVMe Mittel + Max – 1 Datensatz je Minute, 7 Tage | ✅ Stufe 3 |
-| `power_meters` | system_id, host, modell/generation, auth_ref, misst_system_id | 🔜 Stufe 4 |
-| `power_samples` | meter_id, ts, watt, energie_wh | 🔜 Stufe 4 |
+| `power_meters` | system_id, modell, generation, misst_system_id – Adresse und Passwort-Datei aus `MIRA_SHELLY_*` | 🔜 Stufe 4 |
+| `power_samples` | system_id, ts (Minutenbeginn, UTC), samples, Leistung Mittel/Min/Max, Spannung, Energie (Wh, aus Zählerdifferenz), Gerätetemperatur – 7 Tage | 🔜 Stufe 4 |
 | `server_samples_hourly` | wie `server_samples`, je Stunde (nach Messungen gewichtet), 365 Tage | ✅ Stufe 3 |
-| `power_samples_hourly` | verdichtete Stromwerte für Langzeit-Diagramme | 🔜 Stufe 4 |
+| `power_samples_hourly` | wie `power_samples`, je Stunde, 365 Tage | 🔜 Stufe 4 |
+| `power_energy_daily` | system_id, Tag (Ortszeit), Energie (Wh) – dauerhaft, für Monats-/Jahreskosten | 🔜 Stufe 4 |
+| `energy_prices` | gültig ab, Preis ct/kWh – Kosten bleiben bei Tarifwechsel richtig | 🔜 Stufe 4 |
 | `sleep_inhibits` | system_id, grund, bis, erstellt_von – sperrt automatischen Schlafmodus | 🔜 Stufe 9 |
 
 ## Modul `llm`
@@ -44,7 +46,7 @@ Downloads nutzen die Core-Tabelle `jobs`; Zielverzeichnisse stehen in `settings`
 
 | Tabelle | Inhalt | Status |
 | --- | --- | --- |
-| `agents` | id, name, typ, endpunkt, aktiv, config | 🔜 Stufe 10 |
+| `agents` | id, name, typ, endpunkt, aktiv, config | ⏸ Stufe 10 (zurückgestellt) |
 
 ## Modul `dashboard`
 

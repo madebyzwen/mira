@@ -55,7 +55,7 @@ backend/
     ├── index.ts         statische Liste der registrierten Module
     ├── systems/         Odin, Shelly (ab Stufe 2)
     ├── llm/             (ab Stufe 7)
-    ├── agents/          (ab Stufe 10)
+    ├── agents/          (Stufe 10, zurückgestellt)
     └── dashboard/       (ab Stufe 6)
 ```
 
