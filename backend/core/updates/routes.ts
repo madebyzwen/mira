@@ -45,7 +45,7 @@ export function registerNotificationRoutes(app: FastifyInstance, { notifications
 
   app.get('/api/v1/system/update', async (): Promise<UpdateStatusResponse> => updates.status());
 
-  // Prüfung von Hand (für den späteren Knopf unter Konfiguration › MIRA): höchstens 1× je Stunde.
+  // Prüfung von Hand (Knopf „Jetzt prüfen“ unter Konfiguration › MIRA) – Sperrfrist siehe UpdateService.
   app.post('/api/v1/system/update/check', async (request): Promise<ManualUpdateCheckResponse> => {
     const result = await updates.checkManually();
     if (result) {

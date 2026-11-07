@@ -4,6 +4,7 @@ import { buildApp, type MiraApp } from '../app.ts';
 import type { AppConfig } from '../core/config.ts';
 import { parseRelease, UpdateCheckFailure, type LatestRelease } from '../core/updates/github.ts';
 import { isNewer } from '../core/updates/semver.ts';
+import { MANUAL_CHECK_LOCK_MS } from '../core/updates/updateService.ts';
 import { loginCookie, testConfig } from './helpers.ts';
 
 const cleanup: (() => Promise<unknown>)[] = [];
@@ -56,14 +57,15 @@ interface Env {
   config?: AppConfig;
   version?: string;
   env?: Record<string, string>;
+  manualCheckIntervalMs?: number;
   gh?: ReturnType<typeof fakeGithub>;
   clk?: ReturnType<typeof clock>;
 }
 
-async function start({ config, version = '0.5.1', env = {}, gh = fakeGithub(), clk = clock() }: Env = {}) {
+async function start({ config, version = '0.5.1', env = {}, manualCheckIntervalMs, gh = fakeGithub(), clk = clock() }: Env = {}) {
   const cfg = config ?? testConfig(env);
   cfg.version = version;
-  const mira: MiraApp = await buildApp(cfg, { logger: false, modules: [], fetchRelease: gh.fetch, now: clk.now });
+  const mira: MiraApp = await buildApp(cfg, { logger: false, modules: [], fetchRelease: gh.fetch, now: clk.now, manualCheckIntervalMs });
   await mira.app.ready();
   let closed = false;
   const close = async () => {
@@ -201,8 +203,17 @@ describe('Update-Prüfung › Zeitpunkte und Zählung', () => {
     expect(m.gh.calls).toBe(1);
   });
 
-  it('Prüfung von Hand: höchstens einmal je Stunde, zählt nicht gegen die automatischen', async () => {
+  it('Entwicklungsphase (A-005): jeder Klick auf „Jetzt prüfen“ prüft', async () => {
     const m = await start();
+    for (let i = 1; i <= 3; i++) {
+      const res = (await m.req('POST', '/api/v1/system/update/check')).json();
+      expect(res).toMatchObject({ performed: true, status: { nextManualCheckAt: null } });
+      expect(m.gh.calls).toBe(i);
+    }
+  });
+
+  it('Prüfung von Hand mit Sperrfrist: höchstens einmal je Stunde, zählt nicht gegen die automatischen', async () => {
+    const m = await start({ manualCheckIntervalMs: MANUAL_CHECK_LOCK_MS });
     const first = await m.req('POST', '/api/v1/system/update/check');
     expect(first.json()).toMatchObject({ performed: true, status: { lastCheck: { trigger: 'manual', ok: true } } });
     expect(m.gh.calls).toBe(1);

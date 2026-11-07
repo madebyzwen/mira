@@ -174,7 +174,12 @@ Aufräumen; Prüfung von Hand (zählt nicht gegen die automatischen, höchstens 
 
 Umgesetzt wie oben beschrieben. Der Knopf heißt „Jetzt prüfen“ (im Bereich „Updates“ unter
 Konfiguration › MIRA, Nachtrag 2026-11-07) und zeigt das Ergebnis sofort an; während der Sperrfrist
-ist er ausgegraut mit „Erneut prüfen ab … Uhr möglich“. Zählung:
+ist er ausgegraut mit „Erneut prüfen ab … Uhr möglich“.
+
+> **Entwicklungsphase:** Die Sperrfrist ist vorübergehend ausgeschaltet – jeder Klick prüft
+> (Entscheidung 2026-11-07). Wieder aktivieren: [A-005](a-005-sperrfrist-jetzt-pruefen-aktivieren.md).
+
+Zählung:
 
 - Jede Prüfung wird **je Auslöser getrennt** gezählt (`scheduled`, `visit`, `manual`) – die Zählung
   wird vor der Abfrage gespeichert, auch Fehlschläge zählen, gleichzeitige Auslöser teilen sich eine

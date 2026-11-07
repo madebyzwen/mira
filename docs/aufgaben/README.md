@@ -12,6 +12,7 @@ Status: 📝 notiert · 🔎 in Klärung · 🚧 in Umsetzung · 🔍 umgesetzt,
 | [A-002](a-002-erste-sicherung-pruefen.md) | Erste nächtliche Sicherung auf Asgard prüfen (Datei, Uhrzeit, Rotation) | 📝 | 2026-11-06 |
 | [A-003](a-003-datensicherung-in-mira-einsehen.md) | Datensicherung in MIRA einsehen (vorhandene Sicherungen, letzter Erfolg/Fehler, Warnung) | 📝 | 2026-11-07 |
 | [A-004](a-004-update-hinweis-benachrichtigungen.md) | Update-Prüfung für MIRA und Odin-API (04:00 + erster Aufruf am Tag), Hinweis über Glocke mit Zähler in der Kopfzeile | 🔍 | 2026-11-07 |
+| [A-005](a-005-sperrfrist-jetzt-pruefen-aktivieren.md) | Sperrfrist für „Jetzt prüfen“ (1× je Stunde) nach der Entwicklungsphase wieder aktivieren | 📝 | 2026-11-07 |
 
 ## Vorlage
 

@@ -15,8 +15,14 @@ import type { SettingsStore } from '../settings.ts';
 import { ODIN_API_GUIDE_URL, UpdateCheckFailure, type LatestRelease, type ReleaseFetcher } from './github.ts';
 import { isNewer, parseVersion } from './semver.ts';
 
-/** Sperrfrist für die Prüfung von Hand. */
-export const MANUAL_CHECK_INTERVAL_MS = 60 * 60 * 1000;
+/** Vorgesehene Sperrfrist für die Prüfung von Hand: höchstens einmal je Stunde. */
+export const MANUAL_CHECK_LOCK_MS = 60 * 60 * 1000;
+
+/**
+ * ENTWICKLUNGSPHASE – vorübergehend keine Sperrfrist: Jeder Klick auf „Jetzt prüfen“ prüft.
+ * Nach der Entwicklung wieder auf `MANUAL_CHECK_LOCK_MS` setzen (Aufgabe A-005).
+ */
+export const MANUAL_CHECK_INTERVAL_MS = 0;
 
 /** Letzte Odin-API, die ihre Version noch nicht meldet – meldet Odin keine Version, ist sie höchstens so alt. */
 export const LAST_UNVERSIONED_ODIN_API = '0.1.3';
@@ -65,6 +71,8 @@ export interface UpdateServiceOptions {
   /** Laufende Version von MIRA */
   miraVersion: string;
   fetchRelease: ReleaseFetcher;
+  /** Sperrfrist für die Prüfung von Hand (Standard: `MANUAL_CHECK_INTERVAL_MS`) */
+  manualCheckIntervalMs?: number;
   now?: () => Date;
 }
 
@@ -87,7 +95,8 @@ function formatDate(iso: string): string {
  * Auslöser (je eigene Zählung, siehe `byTrigger`):
  * - `scheduled`: täglich zur eingestellten Uhrzeit (Scheduler)
  * - `visit`: beim ersten Aufruf der Oberfläche an einem Kalendertag
- * - `manual`: von Hand, höchstens einmal je Stunde – zählt nicht gegen die automatischen
+ * - `manual`: von Hand, höchstens einmal je Stunde (in der Entwicklungsphase ohne Sperre, A-005) –
+ *   zählt nicht gegen die automatischen
  *
  * Die Zählung wird **vor** der Abfrage gespeichert: Auch ein fehlgeschlagener Versuch
  * zählt, und gleichzeitige Aufrufe lösen keine zweite Prüfung aus.
@@ -98,6 +107,7 @@ export class UpdateService {
   private readonly log: FastifyBaseLogger;
   private readonly fetchRelease: ReleaseFetcher;
   private readonly now: () => Date;
+  private readonly manualCheckIntervalMs: number;
   readonly enabled: boolean;
   readonly scheduleTime: string;
   readonly miraVersion: string | null;
@@ -109,6 +119,7 @@ export class UpdateService {
     this.log = options.log;
     this.fetchRelease = options.fetchRelease;
     this.now = options.now ?? (() => new Date());
+    this.manualCheckIntervalMs = options.manualCheckIntervalMs ?? MANUAL_CHECK_INTERVAL_MS;
     this.enabled = options.enabled;
     this.scheduleTime = options.scheduleTime;
     this.miraVersion = parseVersion(options.miraVersion) ? options.miraVersion : null;
@@ -149,12 +160,12 @@ export class UpdateService {
   nextManualCheckAt(state = this.load()): Date | null {
     const last = state.byTrigger.manual?.at;
     if (!last) return null;
-    const next = new Date(new Date(last).getTime() + MANUAL_CHECK_INTERVAL_MS);
+    const next = new Date(new Date(last).getTime() + this.manualCheckIntervalMs);
     return next.getTime() > this.now().getTime() ? next : null;
   }
 
   /**
-   * Prüfung von Hand: höchstens einmal je Stunde, zählt nicht gegen die automatischen.
+   * Prüfung von Hand: höchstens einmal je Sperrfrist, zählt nicht gegen die automatischen.
    * @returns `null`, wenn die Sperrfrist noch läuft bzw. die Prüfung abgeschaltet ist
    */
   async checkManually(): Promise<UpdateCheckResult | null> {

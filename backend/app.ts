@@ -29,6 +29,8 @@ export interface BuildOptions {
   fetchRelease?: ReleaseFetcher;
   /** Für Tests: Uhr der Update-Prüfung ersetzen */
   now?: () => Date;
+  /** Für Tests: Sperrfrist der Prüfung von Hand */
+  manualCheckIntervalMs?: number;
 }
 
 export interface MiraApp {
@@ -84,6 +86,7 @@ export async function buildApp(config: AppConfig, options: BuildOptions = {}): P
     scheduleTime: config.updateCheck.time,
     miraVersion: config.version,
     fetchRelease: options.fetchRelease ?? createGithubFetcher(config.version),
+    manualCheckIntervalMs: options.manualCheckIntervalMs,
     now: options.now,
   });
   // Nach einem Update von MIRA erledigte Meldung sofort entfernen – ohne Abfrage bei GitHub
