@@ -1,8 +1,8 @@
-# A-004 – Datensicherung in MIRA einsehen
+# A-003 – Datensicherung in MIRA einsehen
 
 - Status: 📝 notiert
 - Notiert: 2026-11-07
-- Verwandt: [Stufe 3](../entwicklung/stufe-03-messwert-historie.md) (tägliche Sicherung), [A-003](a-003-erste-sicherung-pruefen.md) (manuelle Prüfung per SSH), [A-001](a-001-portainer-immer-neuestes-image.md) (Sicherung vor Updates)
+- Verwandt: [Stufe 3](../entwicklung/stufe-03-messwert-historie.md) (tägliche Sicherung), [A-002](a-002-erste-sicherung-pruefen.md) (manuelle Prüfung per SSH)
 
 ## Ziel
 
@@ -26,7 +26,7 @@ statt ihn per SSH auf Asgard bzw. in den Container-Logs prüfen zu müssen.
 
 ## Offene Fragen
 
-- Ort in der Oberfläche: Konfiguration › MIRA (zusammen mit Version/Update aus A-001)?
+- Ort in der Oberfläche: Konfiguration › MIRA?
 - Nur anzeigen oder auch **Sicherung jetzt erstellen** auf Knopfdruck?
 - Herunterladen einer Sicherung über die Oberfläche? (enthält alle Daten – Anmeldung,
   ggf. erneute Passwortabfrage, Audit-Log)

@@ -1,8 +1,7 @@
-# A-002 – Update der Odin-API automatisieren
+# A-001 – Update der Odin-API automatisieren
 
 - Status: 📝 notiert (Details werden später geklärt)
 - Notiert: 2026-11-06
-- Verwandt: [A-001](a-001-portainer-immer-neuestes-image.md) (Update von MIRA per Knopf)
 
 ## Ziel
 
@@ -20,7 +19,7 @@ Neue Versionen der Odin-API sollen ohne manuelle Schritte auf Odin
 
 ## Später zu klären
 
-- Wer stößt das Update an: Knopf in MIRA (analog A-001), Zeitplan auf Odin oder beides?
+- Wer stößt das Update an: Knopf in MIRA, Zeitplan auf Odin oder beides?
 - Wie erhält der Update-Vorgang root-Rechte, ohne die Odin-API selbst zu privilegieren
   (z. B. eigener, eng begrenzter Update-Dienst bzw. exakte sudo-Regel)?
 - Prüfung der Echtheit über die Prüfsumme hinaus (z. B. Signatur der Releases).

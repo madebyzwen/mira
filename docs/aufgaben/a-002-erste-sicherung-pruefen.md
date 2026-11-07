@@ -1,4 +1,4 @@
-# A-003 – Erste nächtliche Sicherung prüfen
+# A-002 – Erste nächtliche Sicherung prüfen
 
 - Status: 📝 notiert
 - Notiert: 2026-11-06
