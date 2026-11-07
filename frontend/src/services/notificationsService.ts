@@ -1,4 +1,4 @@
-import type { NotificationsResponse, UpdateCheckError, UpdateStatusResponse } from '@mira/shared';
+import type { ManualUpdateCheckResponse, NotificationsResponse, UpdateCheckError, UpdateStatusResponse } from '@mira/shared';
 import { api } from './apiClient';
 
 export const notificationsService = {
@@ -7,6 +7,8 @@ export const notificationsService = {
   markRead: (ids?: number[]) => api<void>('/api/v1/notifications/read', { method: 'POST', body: ids ? { ids } : {} }),
   dismiss: (id: number) => api<void>(`/api/v1/notifications/${id}`, { method: 'DELETE' }),
   getUpdateStatus: () => api<UpdateStatusResponse>('/api/v1/system/update'),
+  /** Prüfung von Hand – höchstens einmal je Stunde (sonst `performed: false`). */
+  checkNow: () => api<ManualUpdateCheckResponse>('/api/v1/system/update/check', { method: 'POST' }),
 };
 
 /** Verständliche Beschreibung, warum die letzte Update-Prüfung fehlgeschlagen ist. */

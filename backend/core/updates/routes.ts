@@ -28,7 +28,7 @@ export function registerNotificationRoutes(app: FastifyInstance, { notifications
       // Erster Aufruf am Tag: Prüfung im Hintergrund – die Antwort wartet nicht darauf.
       void updates.checkOnVisit()?.catch((err: unknown) => request.log.error({ err }, 'Update-Prüfung beim Aufruf fehlgeschlagen'));
     }
-    return { notifications: notifications.list(), unread: notifications.unreadCount() };
+    return { notifications: notifications.list(), unread: notifications.unreadCount(), checking: updates.checking };
   });
 
   app.post('/api/v1/notifications/read', async (request, reply) => {

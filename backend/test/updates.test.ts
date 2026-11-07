@@ -31,8 +31,11 @@ function fakeGithub() {
     calls: 0,
     release: parseRelease(githubBody()) as LatestRelease,
     failWith: null as UpdateCheckError | null,
+    /** Hält die Antwort zurück, bis das Versprechen erfüllt ist */
+    gate: null as Promise<void> | null,
     fetch: async (): Promise<LatestRelease> => {
       gh.calls += 1;
+      if (gh.gate) await gh.gate;
       if (gh.failWith) throw new UpdateCheckFailure(gh.failWith, 'Test');
       return gh.release;
     },
@@ -128,6 +131,18 @@ describe('Update-Prüfung › Zeitpunkte und Zählung', () => {
     await m.list(true);
     await tick();
     expect(m.gh.calls).toBe(2);
+  });
+
+  it('meldet eine laufende Prüfung, damit die Oberfläche das Ergebnis gleich nachladen kann', async () => {
+    const m = await start();
+    let release!: () => void;
+    m.gh.gate = new Promise((resolve) => (release = resolve));
+    expect((await m.list(true)).checking).toBe(true);
+    expect((await m.status()).checking).toBe(true);
+    release();
+    await tick();
+    expect((await m.list()).checking).toBe(false);
+    expect((await m.status())).toMatchObject({ checking: false, lastCheck: { trigger: 'visit', ok: true } });
   });
 
   it('das regelmäßige Abfragen der Glocke (ohne refresh) prüft nie', async () => {

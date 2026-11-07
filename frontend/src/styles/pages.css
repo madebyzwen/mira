@@ -1343,3 +1343,60 @@
   font-size: var(--fs-sm);
   color: var(--color-red);
 }
+
+.update-check {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px 16px;
+  margin-top: 18px;
+}
+
+.update-check .button:disabled {
+  cursor: not-allowed;
+}
+
+.update-check--busy .button:disabled {
+  cursor: progress;
+}
+
+.update-check__text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  font-size: var(--fs-sm);
+}
+
+.update-check__message--ok {
+  color: var(--color-quant-text);
+}
+
+.update-check__message--update {
+  color: var(--color-accent-strong);
+}
+
+.update-check__message--error {
+  color: var(--color-red);
+}
+
+.update-check__message--info,
+.update-check__lock {
+  color: var(--color-text-muted);
+}
+
+.spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spin {
+    animation: none;
+  }
+}

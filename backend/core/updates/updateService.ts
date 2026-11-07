@@ -122,6 +122,11 @@ export class UpdateService {
     this.settings.set('core', 'update_check', state);
   }
 
+  /** Läuft gerade eine Abfrage bei GitHub? */
+  get checking(): boolean {
+    return this.inFlight !== null;
+  }
+
   /** Tägliche Prüfung (Scheduler). */
   async checkScheduled(): Promise<UpdateCheckResult | null> {
     if (!this.enabled) return null;
@@ -278,6 +283,7 @@ export class UpdateService {
       components: this.components(state),
       release: state.release ? { tag: state.release.tag, publishedAt: state.release.publishedAt, url: state.release.url } : null,
       lastCheck: state.lastCheck,
+      checking: this.checking,
       nextManualCheckAt: this.nextManualCheckAt(state) ? nowIso(this.nextManualCheckAt(state)!) : null,
     };
   }

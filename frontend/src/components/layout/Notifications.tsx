@@ -21,6 +21,8 @@ function fetchNotifications(): Promise<NotificationsResponse> {
 
 interface NotificationsContextValue {
   data: NotificationsResponse | null;
+  /** Sofort neu laden (z. B. nach einer Update-Prüfung von Hand) */
+  refresh: () => void;
   markRead: (ids: number[]) => void;
   dismiss: (id: number) => void;
 }
@@ -35,11 +37,19 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
   // Nach jeder Abfrage gilt wieder der Stand des Servers
   useEffect(() => setLocal(data), [data]);
 
+  // Läuft gerade eine Update-Prüfung, das Ergebnis gleich nachladen statt erst nach 60 s
+  useEffect(() => {
+    if (!data?.checking) return undefined;
+    const timer = window.setTimeout(refresh, 2000);
+    return () => window.clearTimeout(timer);
+  }, [data]); // `refresh` ist bei jedem Rendern neu
+
   const markRead = useCallback(
     (ids: number[]) => {
       if (ids.length === 0) return;
       setLocal((cur) =>
         cur && {
+          ...cur,
           notifications: cur.notifications.map((n) => (ids.includes(n.id) && !n.readAt ? { ...n, readAt: new Date().toISOString() } : n)),
           unread: cur.notifications.filter((n) => !n.readAt && !ids.includes(n.id)).length,
         },
@@ -54,18 +64,18 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
       setLocal((cur) => {
         if (!cur) return cur;
         const notifications = cur.notifications.filter((n) => n.id !== id);
-        return { notifications, unread: notifications.filter((n) => !n.readAt).length };
+        return { ...cur, notifications, unread: notifications.filter((n) => !n.readAt).length };
       });
       void notificationsService.dismiss(id).catch(refresh);
     },
     [refresh],
   );
 
-  const value = useMemo(() => ({ data: local, markRead, dismiss }), [local, markRead, dismiss]);
+  const value = useMemo(() => ({ data: local, refresh, markRead, dismiss }), [local, refresh, markRead, dismiss]);
   return <NotificationsContext.Provider value={value}>{children}</NotificationsContext.Provider>;
 }
 
-function useNotifications(): NotificationsContextValue {
+export function useNotifications(): NotificationsContextValue {
   const ctx = useContext(NotificationsContext);
   if (!ctx) throw new Error('useNotifications muss innerhalb von <NotificationsProvider> verwendet werden');
   return ctx;

@@ -1,6 +1,6 @@
 # A-004 – Update-Hinweis und Benachrichtigungen (Glocke)
 
-- Status: 🔍 umgesetzt, Abnahme ausstehend – ohne Knopf „Jetzt auf Updates prüfen“ (Backend vorbereitet)
+- Status: 🔍 umgesetzt, Abnahme ausstehend
 - Notiert: 2026-11-07
 
 ## Ziel
@@ -130,8 +130,8 @@ Odin längere Zeit offline. In diesem Schritt gibt es nur die Quellen „Update 
     erreichbar – bitte Internetzugang von MIRA prüfen“) statt eines stillen Fehlschlags.
   - Innerhalb einer Stunde nach einer Prüfung von Hand ist der Knopf ausgegraut, darunter
     „Erneut prüfen ab 19:12 Uhr möglich“ – das letzte Ergebnis bleibt sichtbar.
-  - Hinweis zu den Zeitpunkten: „MIRA prüft automatisch täglich um 04:00 Uhr und beim
-    ersten Aufruf am Tag.“
+  - **Kein** Hinweis auf die Zeitpunkte der automatischen Prüfung (04:00, erster Aufruf) –
+    diese Information gibt die Oberfläche bewusst nicht preis (Entscheidung 2026-11-07).
   - Ist die Prüfung abgeschaltet (`MIRA_UPDATE_CHECK=false`): Hinweis darauf, Knopf deaktiviert.
 
 ## Konfiguration
@@ -172,14 +172,15 @@ Aufräumen; Prüfung von Hand (zählt nicht gegen die automatischen, höchstens 
 
 ## Umsetzung (2026-11-07)
 
-Umgesetzt wie oben beschrieben, **ohne** den Knopf „Jetzt auf Updates prüfen“ in der Oberfläche.
-Für den Knopf ist alles vorbereitet:
+Umgesetzt wie oben beschrieben. Der Knopf heißt „Jetzt prüfen“ (im Bereich „Updates“ unter
+Konfiguration › MIRA, Nachtrag 2026-11-07) und zeigt das Ergebnis sofort an; während der Sperrfrist
+ist er ausgegraut mit „Erneut prüfen ab … Uhr möglich“. Zählung:
 
 - Jede Prüfung wird **je Auslöser getrennt** gezählt (`scheduled`, `visit`, `manual`) – die Zählung
   wird vor der Abfrage gespeichert, auch Fehlschläge zählen, gleichzeitige Auslöser teilen sich eine
   Abfrage. Eine Prüfung von Hand verbraucht also weder die Prüfung um 04:00 noch die beim Aufruf.
 - `POST /api/v1/system/update/check` (Sperrfrist 1 h, Audit-Log) und `nextManualCheckAt` in
-  `GET /api/v1/system/update` sind fertig und getestet; es fehlt nur der Knopf in Konfiguration › MIRA.
+  `GET /api/v1/system/update`.
 
 | Was | Wo |
 | --- | --- |

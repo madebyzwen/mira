@@ -28,6 +28,8 @@ export type Notification = z.infer<typeof notificationSchema>;
 export const notificationsResponseSchema = z.object({
   notifications: z.array(notificationSchema),
   unread: z.number().int(),
+  /** Eine Update-Prüfung läuft gerade – das Ergebnis kann gleich neue Meldungen bringen */
+  checking: z.boolean(),
 });
 export type NotificationsResponse = z.infer<typeof notificationsResponseSchema>;
 
@@ -91,6 +93,8 @@ export const updateStatusResponseSchema = z.object({
     .nullable(),
   /** Letzte Prüfung gleich welchen Auslösers */
   lastCheck: updateCheckResultSchema.nullable(),
+  /** Eine Prüfung läuft gerade */
+  checking: z.boolean(),
   /** Ab wann die nächste Prüfung von Hand möglich ist (`null` = sofort) */
   nextManualCheckAt: z.string().nullable(),
 });
