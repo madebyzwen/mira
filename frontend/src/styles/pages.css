@@ -351,6 +351,11 @@
   gap: 18px;
 }
 
+/* Karte über die volle Breite, z. B. wenn ein Widget ausgeblendet ist */
+.dashboard__wide {
+  grid-column: 1 / -1;
+}
+
 .row-list > li {
   border-bottom: 1px solid var(--color-divider);
 }

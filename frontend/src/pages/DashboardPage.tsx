@@ -11,6 +11,7 @@ import { useCurrentUser } from '../auth/AuthContext';
 import { dataService } from '../services/dataService';
 import { formatNumber, formatPercent, percentOf } from '../lib/format';
 import type { ContainerState } from '../types/models';
+import { features } from '../lib/features';
 
 const containerStateLabel: Record<ContainerState, string> = {
   healthy: 'Healthy',
@@ -135,28 +136,30 @@ export function DashboardPage() {
           </ul>
         </Card>
 
-        <Card title="Agents" icon={<Bot size={28} />} divider>
-          {agents.length > 0 ? (
-            <ul className="row-list">
-              {agents.map((a) => (
-                <li key={a.id} className="agent-row">
-                  <StatusDot status={a.status} />
-                  <div>
-                    <strong>{a.name}</strong>
-                    <span>{a.description}</span>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <div className="widget-empty">
-              <p>Noch keine Agenten eingerichtet.</p>
-              <Link to="/agents" className="text-link">
-                Zur Agentenübersicht →
-              </Link>
-            </div>
-          )}
-        </Card>
+        {features.agents && (
+          <Card title="Agents" icon={<Bot size={28} />} divider>
+            {agents.length > 0 ? (
+              <ul className="row-list">
+                {agents.map((a) => (
+                  <li key={a.id} className="agent-row">
+                    <StatusDot status={a.status} />
+                    <div>
+                      <strong>{a.name}</strong>
+                      <span>{a.description}</span>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <div className="widget-empty">
+                <p>Noch keine Agenten eingerichtet.</p>
+                <Link to="/agents" className="text-link">
+                  Zur Agentenübersicht →
+                </Link>
+              </div>
+            )}
+          </Card>
+        )}
 
         <Card title="Schnellaktionen" icon={<Zap size={30} />}>
           <div className="quick-actions">
@@ -189,6 +192,7 @@ export function DashboardPage() {
 
         <Card
           title="Verfügbare LLMs"
+          className={features.agents ? undefined : 'dashboard__wide'}
           subtitle="In Open WebUI verfügbar"
           icon={<Layers size={34} />}
           actions={

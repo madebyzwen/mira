@@ -1,6 +1,7 @@
 import { Box, House, Layers, LayoutGrid, Server, Settings, SlidersHorizontal, type LucideIcon } from 'lucide-react';
 import { dataService } from '../../services/dataService';
 import type { OnlineStatus } from '../../types/models';
+import { features } from '../../lib/features';
 
 export interface NavChild {
   to: string;
@@ -35,7 +36,7 @@ export type NavItem = NavLinkItem | NavGroupItem;
 
 /** Hauptmenü – einzige Quelle für Sidebar-Einträge. */
 export function getNavigation(): NavItem[] {
-  return [
+  const items: (NavItem | false)[] = [
     { kind: 'link', id: 'dashboard', to: '/dashboard', label: 'Dashboard', icon: House },
     {
       kind: 'group',
@@ -45,7 +46,7 @@ export function getNavigation(): NavItem[] {
       basePath: '/systeme',
       children: dataService.getSystems().map((s) => ({ to: s.path, label: s.label, status: s.status, slug: s.id })),
     },
-    { kind: 'link', id: 'agents', to: '/agents', label: 'Agents', icon: Box },
+    features.agents && { kind: 'link', id: 'agents', to: '/agents', label: 'Agents', icon: Box },
     { kind: 'link', id: 'llm', to: '/llm', label: 'LLM', icon: Layers },
     {
       kind: 'group',
@@ -57,6 +58,7 @@ export function getNavigation(): NavItem[] {
       children: configSections.map((s) => ({ to: `/konfiguration/${s.slug}`, label: s.label, icon: s.icon })),
     },
   ];
+  return items.filter((item): item is NavItem => Boolean(item));
 }
 
 export interface ConfigSection {
@@ -65,10 +67,11 @@ export interface ConfigSection {
   icon: LucideIcon;
 }
 
+/** Konfigurationsbereiche; ausgeblendete führen über die Route zurück zur Übersicht. */
 export const configSections: ConfigSection[] = [
   { slug: 'dashboard', label: 'Dashboard', icon: LayoutGrid },
   { slug: 'systeme', label: 'Systeme', icon: Server },
   { slug: 'agents', label: 'Agents', icon: Box },
   { slug: 'llm', label: 'LLM', icon: Layers },
   { slug: 'mira', label: 'MIRA', icon: SlidersHorizontal },
-];
+].filter((s) => s.slug !== 'agents' || features.agents);

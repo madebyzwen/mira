@@ -11,6 +11,7 @@ import { AgentsPage } from './pages/AgentsPage';
 import { LlmPage } from './pages/LlmPage';
 import { ConfigOverviewPage, ConfigSectionPage } from './pages/config/ConfigPages';
 import { ConfigSystemsPage } from './pages/config/ConfigSystemsPage';
+import { features } from './lib/features';
 
 export function App() {
   return (
@@ -30,7 +31,7 @@ export function App() {
             <Route path="/systeme" element={<Navigate to="/systeme/odin" replace />} />
             <Route path="/systeme/odin" element={<OdinPage />} />
             <Route path="/systeme/shelly-plug" element={<ShellyPlugPage />} />
-            <Route path="/agents" element={<AgentsPage />} />
+            {features.agents && <Route path="/agents" element={<AgentsPage />} />}
             <Route path="/llm" element={<LlmPage />} />
             <Route path="/konfiguration" element={<ConfigOverviewPage />} />
             <Route path="/konfiguration/systeme" element={<ConfigSystemsPage />} />

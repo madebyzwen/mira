@@ -4,6 +4,7 @@ import { Page } from '../../components/layout/AppLayout';
 import { Card } from '../../components/ui/Card';
 import { CenteredMessage } from '../../components/ui/Primitives';
 import { configSections } from '../../components/layout/navigation';
+import { features } from '../../lib/features';
 
 /** Konfiguration – Übersicht mit Hinweis zur Bereichsauswahl. */
 export function ConfigOverviewPage() {
@@ -18,7 +19,7 @@ export function ConfigOverviewPage() {
         <CenteredMessage
           icon={<Settings size={88} strokeWidth={1.4} />}
           title="MIRA konfigurieren"
-          text="Verwalte hier die Einstellungen für Dashboard, Systeme, Agents, LLM und MIRA."
+          text={`Verwalte hier die Einstellungen für Dashboard, Systeme, ${features.agents ? 'Agents, ' : ''}LLM und MIRA.`}
         >
           <hr className="config-card__rule" />
           <div className="info-box">
