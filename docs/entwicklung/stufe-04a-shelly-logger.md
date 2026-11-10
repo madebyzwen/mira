@@ -1,6 +1,6 @@
 # Stufe 4a – Shelly-Logger
 
-- Status: 🔍 umgesetzt, Abnahme und Inbetriebnahme ausstehend (2026-11-10)
+- Status: 🔍 in Betrieb seit 2026-11-10 (Logger 0.1.1), Abnahme nach 24 h ausstehend
 - Entscheidung: [ADR 0010](../adr/0010-shelly-logger-als-eigener-container.md) – ersetzt die Planung in [Stufe 4](stufe-04-shelly.md)
 - Code: [`shelly-logger/`](../../shelly-logger/) · Betriebshandbuch: [`shelly-logger/README.md`](../../shelly-logger/README.md)
 - Folgt: [Stufe 4b – MIRA-Integration](stufe-04b-shelly-mira-integration.md) (eigene Freigabe)
@@ -84,10 +84,24 @@ Lasttest mit `--shelly http://<SHELLY_IP>` laufen, auch er nur lesend.
 Die aufgezeichneten Antworten liegen anonymisiert als Testfall in
 `shelly-logger/test/fixtures/plug-pm-gen3.json`.
 
+## Messung am echten Gerät (2026-11-10, Logger 0.1.1 auf Asgard)
+
+Werte aus `/health` nach 4 Minuten Betrieb (Abfrage alle 1000 ms):
+
+| Kennzahl | Wert |
+| --- | --- |
+| Abfragen / Fehler (letzte Minute) | 60 / 0 – Frequenz 1,0 Hz |
+| Antwortzeit Shelly p50 / p95 / max | 36 / 78 / 337 ms (Zeitlimit 800 ms) |
+| CPU / RAM des Loggers | 0,46 % / ≈ 91 MiB |
+| Verbrauch nach ≈ 4 min | 4,642 Wh gemessen, 0 Wh rekonstruiert (≈ 69 W – plausibel) |
+| Container | healthy; API nur im internen Netz, macvlan-Adresse ohne offenen Port |
+
+**Ergebnis:** Das 1-Sekunden-Intervall ist für den Shelly unkritisch; ein Wechsel auf 2 s ist nicht nötig.
+
 ## Abnahme
 
-- [ ] Gerät erkannt (Modell, Generation, Komponente) und Live-Werte plausibel im Vergleich zur Shelly-App
-- [ ] Lasttest am echten Shelly: Frequenz ≈ 1 Hz, Fehlerrate ≈ 0, Antwortzeiten deutlich unter 800 ms – sonst 2000 ms
+- [x] Gerät erkannt (Modell, Generation, Komponente) und Live-Werte plausibel
+- [x] Messung am echten Shelly: Frequenz 1 Hz, Fehlerrate 0, Antwortzeiten deutlich unter 800 ms
 - [ ] Nach 24 h: Tagesverbrauch entspricht dem Zählerfortschritt des Shelly
 - [ ] Neustart des Containers und Neustart von Asgard ohne Doppelzählung
 - [ ] Sicherung vorhanden (`data/backups/`)
