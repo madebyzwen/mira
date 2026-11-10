@@ -103,7 +103,8 @@ Werte aus `/health` nach 4 Minuten Betrieb (Abfrage alle 1000 ms):
 - [x] Gerät erkannt (Modell, Generation, Komponente) und Live-Werte plausibel
 - [x] Messung am echten Shelly: Frequenz 1 Hz, Fehlerrate 0, Antwortzeiten deutlich unter 800 ms
 - [ ] Nach 24 h: Tagesverbrauch entspricht dem Zählerfortschritt des Shelly
-- [ ] Neustart des Containers und Neustart von Asgard ohne Doppelzählung
+- [x] Neustart des Containers ohne Doppelzählung (2026-11-10: Zähler +1,688 Wh, Logger +1,688 Wh über den Neustart)
+- [ ] Neustart von Asgard ohne Doppelzählung (bei Gelegenheit)
 - [ ] Sicherung vorhanden (`data/backups/`)
 - [ ] KI-Server im Ruhezustand: Messung läuft weiter, Zustand „online“
 
