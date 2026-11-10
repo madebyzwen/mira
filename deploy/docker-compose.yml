@@ -1,6 +1,6 @@
 # MIRA – lokal aus dem Quellcode bauen und starten (Entwicklung/Tests)
 #
-# Für den Betrieb auf Asgard über Portainer: deploy/portainer-stack.yml
+# Für den Betrieb auf dem Homeserver über Portainer: deploy/portainer-stack.yml
 #
 # Vor dem ersten Start:
 #   mkdir -p deploy/appdata/data deploy/appdata/secrets

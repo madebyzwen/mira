@@ -4,7 +4,7 @@
 
 MIRA ist eine modulare, selbst gehostete Plattform zur Überwachung, Verwaltung
 und Automatisierung lokaler KI-Infrastruktur. MIRA läuft als Docker-Anwendung
-auf dem NAS **Asgard** und verwaltet von dort einen **KI-Server**. Sein Anzeigename
+auf einem **Homeserver** (NAS mit Docker) und verwaltet von dort einen **KI-Server**. Sein Anzeigename
 ist frei wählbar (`MIRA_AI_SERVER_NAME`); ohne Angabe heißt er „KI-Server“.
 
 ## Geplante Funktionen
@@ -57,7 +57,7 @@ npm-Workspaces, eine Sprache (TypeScript) für alle Teile.
 | `shared/` | Gemeinsame API-Verträge (zod-Schemas und Typen) |
 | `agent/` | MIRA-Agent: läuft auf dem KI-Server, liefert Systemdaten an MIRA (nur lesend) |
 | `shelly-logger/` | Shelly-Logger: eigener Container, erfasst den Stromverbrauch über den Shelly Plug (eigene Datenbank, interne Lese-API) |
-| `deploy/` | Docker Compose für Asgard |
+| `deploy/` | Stacks für den Homeserver (Portainer) und Docker Compose für lokale Tests |
 | `docs/` | Dokumentation, Mockups |
 | `Dockerfile` | Ein Image für API und Oberfläche |
 
@@ -99,7 +99,7 @@ für einen Neuanfang `data/` löschen.
 | `npm run check:naming` | Prüft, dass kein fester Name des KI-Servers eingebaut ist ([ADR 0009](docs/adr/0009-ki-server-als-rolle-agent-mira-agent.md)) |
 | `npm run build` | Produktionsbuild von `shared`, `backend`, `frontend` |
 
-## Betrieb auf Asgard (Portainer)
+## Betrieb auf dem Homeserver (Portainer)
 
 MIRA läuft als ein Container (API und Oberfläche, im Stack auf **Port 80**) als
 unprivilegierter Benutzer (UID 1000) mit schreibgeschütztem Dateisystem. Das
@@ -160,7 +160,7 @@ Danach „Deploy the stack“ → `http://<MIRA_IP>` bzw. über den Reverse Prox
    dabei `--allow <MIRA_IP>`. Das Skript gibt Adresse, Zertifikats-Fingerprint und Token aus.
 2. Liegen MIRA und KI-Server im selben Netz, ist keine Firewall-Regel zwischen VLANs nötig;
    sonst `<MIRA_IP>` → `<KI_SERVER_IP>`, TCP 8443 freigeben.
-3. Token auf Asgard ablegen und im Stack `MIRA_AI_SERVER_URL` und
+3. Token auf dem Homeserver ablegen und im Stack `MIRA_AI_SERVER_URL` und
    `MIRA_AI_SERVER_CERT_FINGERPRINT` setzen, optional `MIRA_AI_SERVER_NAME`, dann „Update the stack“:
 
    ```bash
@@ -179,9 +179,9 @@ MIRA sichert die Datenbank täglich um 03:30 Uhr (Ortszeit, `TZ`) im laufenden
 Betrieb nach `MIRA_APPDATA/data/backups/mira-JJJJ-MM-TT.db` und behält die
 letzten 7 Sicherungen. Jede Sicherung ist eine einzelne, vollständige
 SQLite-Datei. Für zusätzliche Sicherheit den Ordner `backups/` in die
-Sicherung von Asgard (Hyper Backup o. Ä.) aufnehmen.
+Sicherung des Homeservers (Hyper Backup o. Ä.) aufnehmen.
 
-Wiederherstellen (per SSH auf Asgard):
+Wiederherstellen (per SSH auf dem Homeserver):
 
 1. Stack in Portainer stoppen.
 2. Im Ordner `MIRA_APPDATA/data` die aktuelle Datenbank beiseitelegen und die

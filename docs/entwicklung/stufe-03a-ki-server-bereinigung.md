@@ -4,6 +4,9 @@
 - Muss abgeschlossen sein **vor** [Stufe 4](stufe-04-shelly.md)
 - Zielversionen: MIRA **0.7.0**, Agent **0.2.0** (bisher Odin-API 0.1.4)
 
+> **Hinweis:** Das NAS, auf dem MIRA läuft, heißt seit dem 2026-11-10 allgemein **Homeserver**;
+> dieses abgeschlossene Dokument nennt noch den damaligen Gerätenamen.
+
 ## Ziel
 
 MIRA spricht durchgehend vom **KI-Server**. „Odin“ ist nur noch ein **optionaler,

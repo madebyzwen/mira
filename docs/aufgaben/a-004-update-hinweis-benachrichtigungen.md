@@ -161,7 +161,7 @@ Aufräumen; Prüfung von Hand (zählt nicht gegen die automatischen, höchstens 
 
 | Frage | Vorschlag |
 | --- | --- |
-| Hat MIRA auf Asgard Internetzugang (OPNsense)? | prüfen; sonst Regel `<MIRA_IP>` → any, TCP 443 |
+| Hat MIRA auf dem Homeserver Internetzugang (OPNsense)? | prüfen; sonst Regel `<MIRA_IP>` → any, TCP 443 |
 | Einordnung | als kleiner eigener Schritt vor Stufe 4 (Shelly wartet auf Geräteangaben) |
 
 ## Nicht enthalten

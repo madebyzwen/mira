@@ -28,6 +28,6 @@ und die historische Dokumentation.
 
 ## Voraussetzung
 
-Umstellung auf Asgard und dem KI-Server abgeschlossen (Abnahme Stufe 3a). Umsetzung mit
+Umstellung auf dem Homeserver und dem KI-Server abgeschlossen (Abnahme Stufe 3a). Umsetzung mit
 der nächsten Version danach (MIRA 0.8.0 / Agent 0.3.0). Wer dann noch eine Installation
 unter dem früheren Namen hat, muss zuerst auf 0.2.0 aktualisieren.

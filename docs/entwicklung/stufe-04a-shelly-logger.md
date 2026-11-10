@@ -84,7 +84,7 @@ Lasttest mit `--shelly http://<SHELLY_IP>` laufen, auch er nur lesend.
 Die aufgezeichneten Antworten liegen anonymisiert als Testfall in
 `shelly-logger/test/fixtures/plug-pm-gen3.json`.
 
-## Messung am echten Gerät (2026-11-10, Logger 0.1.1 auf Asgard)
+## Messung am echten Gerät (2026-11-10, Logger 0.1.1 auf dem Homeserver)
 
 Werte aus `/health` nach 4 Minuten Betrieb (Abfrage alle 1000 ms):
 
@@ -104,7 +104,7 @@ Werte aus `/health` nach 4 Minuten Betrieb (Abfrage alle 1000 ms):
 - [x] Messung am echten Shelly: Frequenz 1 Hz, Fehlerrate 0, Antwortzeiten deutlich unter 800 ms
 - [ ] Nach 24 h: Tagesverbrauch entspricht dem Zählerfortschritt des Shelly
 - [x] Neustart des Containers ohne Doppelzählung (2026-11-10: Zähler +1,688 Wh, Logger +1,688 Wh über den Neustart)
-- [ ] Neustart von Asgard ohne Doppelzählung (bei Gelegenheit)
+- [ ] Neustart des Homeservers ohne Doppelzählung (bei Gelegenheit)
 - [ ] Sicherung vorhanden (`data/backups/`)
 - [ ] KI-Server im Ruhezustand: Messung läuft weiter, Zustand „online“
 
@@ -113,5 +113,5 @@ Werte aus `/health` nach 4 Minuten Betrieb (Abfrage alle 1000 ms):
 | Angabe | Wofür |
 | --- | --- |
 | ~~Ausgabe von `/shelly`, Passwort, feste IP~~ | ✅ geklärt (siehe Gerät) |
-| Ablageort `LOGGER_APPDATA` auf Asgard | Stack |
-| Sichtbarkeit des Images in der GitHub Container Registry | Asgard muss das Image ohne Anmeldung laden können |
+| Ablageort `LOGGER_APPDATA` auf dem Homeserver | Stack |
+| Sichtbarkeit des Images in der GitHub Container Registry | Der Homeserver muss das Image ohne Anmeldung laden können |

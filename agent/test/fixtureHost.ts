@@ -27,7 +27,7 @@ const FILES: Record<string, string> = {
   'proc/mounts': [
     '/dev/nvme0n1p5 / ext4 rw,relatime 0 0',
     '/dev/nvme0n1p1 /boot/efi vfat rw 0 0',
-    '10.11.40.1:/volume1/ki /mnt/asgard nfs4 rw 0 0',
+    '10.11.40.1:/volume1/ki /mnt/homeserver nfs4 rw 0 0',
     '//nas/Freigabe\\040Ordner /mnt/smb cifs rw 0 0',
     'systemd-1 /mnt/nas autofs rw,relatime 0 0',
   ].join('\n'),
@@ -36,7 +36,7 @@ const FILES: Record<string, string> = {
     '# /etc/fstab',
     '/dev/disk/by-uuid/35684b68 / ext4 defaults 0 1',
     '//192.0.2.9/nas-freigabe /mnt/nas cifs credentials=/etc/samba/credentials/x,_netdev,nofail,x-systemd.automount 0 0',
-    '10.11.40.1:/volume1/ki /mnt/asgard nfs4 defaults 0 0',
+    '10.11.40.1:/volume1/ki /mnt/homeserver nfs4 defaults 0 0',
     '10.11.40.1:/volume1/backup /mnt/backup nfs4 noauto 0 0',
   ].join('\n'),
   'proc/sys/kernel/hostname': 'ki-server\n',
@@ -98,7 +98,7 @@ export const fixtureAddresses = () => ({
 /** statfs-Ersatz: 811 GB-System-NVMe, NAS 4 TB, SMB-Freigabe hängt (Zeitlimit). */
 export const fixtureStatFs = async (mount: string) => {
   if (mount === '/') return { blocks: 211_000_000, bfree: 160_000_000, bsize: 4096 };
-  if (mount === '/mnt/asgard') return { blocks: 1_000_000_000, bfree: 640_000_000, bsize: 4096 };
+  if (mount === '/mnt/homeserver') return { blocks: 1_000_000_000, bfree: 640_000_000, bsize: 4096 };
   if (mount === '/mnt/smb') return new Promise<never>(() => {});
   throw new Error(`ENOENT: ${mount}`);
 };

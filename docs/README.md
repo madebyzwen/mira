@@ -28,8 +28,11 @@ aktualisiert die passende Datei im selben Commit.
 - Sprache: Deutsch.
 - **Das Repository ist öffentlich.** Echte IP-Adressen, Hostnamen, MAC-Adressen,
   Zugangsdaten und Schlüssel gehören nicht in die Dokumentation. Stattdessen
-  Platzhalter wie `<ASGARD_IP>`, `<KI_SERVER_IP>`, `<MIRA_HOSTNAME>` verwenden; die
-  echten Werte stehen nur in der Konfiguration auf Asgard.
+  Platzhalter wie `<HOMESERVER_IP>`, `<KI_SERVER_IP>`, `<MIRA_HOSTNAME>` verwenden; die
+  echten Werte stehen nur in der Konfiguration auf dem Homeserver.
+- Begriffe: **Homeserver** = der Rechner (NAS), auf dem MIRA und der Shelly-Logger als Container
+  laufen; **KI-Server** = der verwaltete Rechner ([ADR 0009](adr/0009-ki-server-als-rolle-agent-mira-agent.md)).
+  Konkrete Gerätenamen stehen nicht in Code und Doku, nur in historischen Dokumenten.
 - Neue ADR: Vorlage in [`adr/README.md`](adr/README.md) kopieren, nächste Nummer vergeben.
 - Neue Entwicklungsstufe: Dokument in `entwicklung/` anlegen und in der
   [Roadmap](entwicklung/roadmap.md) verlinken.
