@@ -31,6 +31,8 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      - name: Benennung prüfen (KI-Server, ADR 0009)
+        run: npm run check:naming
       - run: npm run typecheck
       - run: npm test
       - name: Agent-Paket bauen (Prüfung)

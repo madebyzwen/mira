@@ -14,7 +14,7 @@ Legende: ✅ umgesetzt · 🔜 geplant (Stufe) · ⏸ zurückgestellt
 | `schema_migrations` | modul, version, name, applied_at | ✅ Stufe 1 |
 | `users` | id, username (eindeutig, ohne Groß-/Kleinschreibung), display_name, password_hash (scrypt), created_at, last_login_at | ✅ Stufe 1 |
 | `sessions` | id, user_id → users, token_hash (SHA-256), created_at, last_seen_at, expires_at, ip, user_agent | ✅ Stufe 1 |
-| `settings` | modul, key, value (JSON), updated_at – Konfiguration und kleine Zustände der Module (z. B. `core.update_check`: Ergebnis und Zählung der Update-Prüfungen, zuletzt von Odin gemeldete Version der Odin-API) | ✅ Stufe 1 (Tabelle), genutzt ab A-004 |
+| `settings` | modul, key, value (JSON), updated_at – Konfiguration und kleine Zustände der Module (z. B. `core.update_check`: Ergebnis und Zählung der Update-Prüfungen, zuletzt vom KI-Server gemeldete Version des MIRA-Agents) | ✅ Stufe 1 (Tabelle), genutzt ab A-004 |
 | `audit_log` | ts, actor, modul, action, target, result, ip, details (JSON) | ✅ Stufe 1 |
 | `notifications` | id, key (eindeutig je Thema, z. B. `update:mira`), ref (Stand, z. B. Version), level, title, message, links (JSON), created_at, read_at, dismissed_at – Glocke in der Kopfzeile; gelesene/ausgeblendete nach 90 Tagen gelöscht | ✅ A-004 (Core-Migration 2) |
 | `jobs` | id, modul, typ, system_id, status, progress, payload, result, error, Zeitstempel | 🔜 Stufe 5/8 |
@@ -23,8 +23,8 @@ Legende: ✅ umgesetzt · 🔜 geplant (Stufe) · ⏸ zurückgestellt
 
 | Tabelle | Inhalt | Status |
 | --- | --- | --- |
-| `systems` | id, slug, name, kind (`server` \| `power_meter`), description, created_at – Odin als erster Eintrag | ✅ Stufe 2 |
-| `server_connections` | system_id, api_url, zertifikats-Fingerprint, token_ref (Datei), wol-Parameter – bis die Verbindung über die Oberfläche bearbeitbar ist, kommen die Werte aus `MIRA_ODIN_*` | 🔜 später |
+| `systems` | id, slug, name, kind (`server` \| `power_meter`), description, created_at – der KI-Server als erster Eintrag (fester Slug `ai-server`, Name aus `MIRA_AI_SERVER_NAME`) | ✅ Stufe 2 |
+| `server_connections` | system_id, api_url, zertifikats-Fingerprint, token_ref (Datei), wol-Parameter – bis die Verbindung über die Oberfläche bearbeitbar ist, kommen die Werte aus `MIRA_AI_SERVER_*` | 🔜 später |
 | `system_state` | system_id, state (`online`/`offline`/`unknown`; `sleeping`/`windows` ab Stufe 5), since, last_seen_at, last_error | ✅ Stufe 2 |
 | `server_samples` | system_id, ts (Minutenbeginn, UTC), samples, cpu/gpu Mittel + Max, ram/vram, load1, Temperaturen CPU/GPU/NVMe Mittel + Max – 1 Datensatz je Minute, 7 Tage | ✅ Stufe 3 |
 | `power_meters` | system_id, modell, generation, misst_system_id – Adresse und Passwort-Datei aus `MIRA_SHELLY_*` | 🔜 Stufe 4 |
@@ -39,7 +39,7 @@ Legende: ✅ umgesetzt · 🔜 geplant (Stufe) · ⏸ zurückgestellt
 
 | Tabelle | Inhalt | Status |
 | --- | --- | --- |
-| `llm_models` | Zwischenspeicher der letzten Auflistung (system_id, pfad, größe, quantisierung, familie, geändert, gesehen_am). Maßgeblich bleibt das Dateisystem auf Odin. | 🔜 Stufe 7 |
+| `llm_models` | Zwischenspeicher der letzten Auflistung (system_id, pfad, größe, quantisierung, familie, geändert, gesehen_am). Maßgeblich bleibt das Dateisystem auf dem KI-Server. | 🔜 Stufe 7 |
 
 Downloads nutzen die Core-Tabelle `jobs`; Zielverzeichnisse stehen in `settings`.
 

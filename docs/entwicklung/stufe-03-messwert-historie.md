@@ -3,6 +3,10 @@
 - Status: ✅ abgeschlossen (abgenommen 2026-11-06, MIRA 0.5.0 / Odin-API 0.1.3)
 - Grundlage: [Datenmodell](../architektur/datenmodell.md), Stufe 2 (Odin-Monitor)
 
+> **Hinweis (2026-11-10):** Historisches Dokument – es beschreibt den damaligen Stand. Seit
+> [Stufe 3a](stufe-03a-ki-server-bereinigung.md) heißt der Rechner allgemein **KI-Server**
+> (Name konfigurierbar) und die Software darauf **MIRA-Agent** ([ADR 0009](../adr/0009-ki-server-als-rolle-agent-mira-agent.md)).
+
 ## Ziel
 
 MIRA speichert die Messwerte von Odin dauerhaft und zeigt in der Odin-Ansicht

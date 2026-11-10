@@ -18,6 +18,7 @@
     "dev:frontend": "npm run dev -w @mira/frontend",
     "build": "npm run build -w @mira/shared && npm run build -w @mira/backend && npm run build -w @mira/frontend",
     "typecheck": "npm run typecheck --workspaces",
+    "check:naming": "sh scripts/check-naming.sh",
     "test": "npm test -w @mira/backend -w @mira/agent",
     "start": "node backend/dist/server.js",
     "build:agent": "npm run build -w @mira/agent",

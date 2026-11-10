@@ -1,6 +1,6 @@
 # Stufe 3a – KI-Server statt Odin (Bereinigung)
 
-- Status: ⏳ Konzept, Freigabe ausstehend (notiert 2026-11-10)
+- Status: 🚧 in Umsetzung (Konzept freigegeben 2026-11-10, PR #1)
 - Muss abgeschlossen sein **vor** [Stufe 4](stufe-04-shelly.md)
 - Zielversionen: MIRA **0.7.0**, Agent **0.2.0** (bisher Odin-API 0.1.4)
 
@@ -230,14 +230,44 @@ Dafür wird eine eigene Aufgabe in `docs/aufgaben/` angelegt.
 - [ ] Auf dem KI-Server gibt es keine Dienste, Pfade oder nft-Tabellen mit „odin“ mehr. `systemctl status mira-agent` ist aktiv.
 - [ ] Die Messwert-Historie läuft lückenlos weiter. Die einzige Lücke ist das Umstellungsfenster.
 - [ ] `git grep -i odin` trifft nur noch Stellen auf der Ausnahmeliste, und die CI-Prüfung läuft.
-- [ ] Die Übernahme 0.1.4 → 0.2.0 wurde in `ai-server-sim` getestet.
+- [x] Die Übernahme 0.1.4 → 0.2.0 wurde in `ai-server-sim` getestet (2026-11-10, siehe Umsetzung).
 
-## Entscheidungen (offen)
+## Entscheidungen (getroffen 2026-11-10, wie vorgeschlagen)
 
-| Nr. | Frage | Vorschlag |
+| Nr. | Frage | Entscheidung |
 | --- | --- | --- |
 | E1 | Name der Software auf dem KI-Server | **`mira-agent`** – kurz, rollenneutral, deckt sich mit dem bestehenden Systembenutzer. Alternative: `mira-ki-server-agent`. |
 | E2 | Zertifikat bei der Übernahme erneuern (`CN=mira-agent`) oder das alte (`CN=mira-odin-api`) behalten? | **erneuern** – der Stack wird ohnehin geändert, damit entfällt der letzte „odin“-Rest auf dem KI-Server |
 | E3 | Wo wird der Name gepflegt? | **jetzt** über `MIRA_AI_SERVER_NAME`, **später** bearbeitbar in „Konfiguration › Systeme“ |
 | E4 | Historische Doku (ADRs 0001–0008, Vorgaben, Stufen 0–3) umschreiben? | **nein**, nur einen Hinweis ergänzen. Sie dokumentiert, was damals galt. |
 | E5 | Bezeichnung ohne konfigurierten Namen | **„KI-Server“** |
+
+## Umsetzung (2026-11-10)
+
+Pakete 1–5 sind umgesetzt (Branch `refactor/ki-server-statt-odin`, je Paket ein Commit).
+
+| Was | Wo |
+| --- | --- |
+| Verträge (`AgentHealth`, `AiServerStatusResponse`, `AI_SERVER_SLUG`, Komponente `agent`) | `shared/src/agent.ts`, `shared/src/systems.ts`, `shared/src/notifications.ts` |
+| Konfiguration `MIRA_AI_SERVER_*` | `backend/core/config.ts` |
+| Client, Monitor, Routen, Name beim Start | `backend/modules/systems/` |
+| Migrationen (systems 3, core 3) | `backend/modules/systems/migrations.ts`, `backend/core/db/coreMigrations.ts` |
+| Update-Prüfung (Paket `mira-agent-*`, Texte) | `backend/core/updates/` |
+| Name in der Oberfläche (`useAiServerName`) | `frontend/src/components/layout/Systems.tsx` |
+| Agent, Installer mit Übernahme | `agent/`, `agent/install/install.sh` |
+| Prüfung gegen den früheren Namen | `scripts/check-naming.sh` (CI) |
+
+Geprüft:
+
+- Typecheck, Tests (Backend 87, Agent 27), Produktions-Build und Docker-Image.
+- Migrationstest: Datenbank im Stand 0.6.x → Slug `ai-server`, gleiche `system_id`,
+  Verlauf erhalten, alte Update-Meldung und alter Prüfstand verworfen.
+- Image mit `MIRA_AI_SERVER_NAME=Odin`: `/api/v1/systems` liefert den Namen, Komponente `agent`.
+- `ai-server-sim`: Altinstallation aus dem Release v0.6.1 → Übernahme mit 0.2.0: Token
+  funktioniert weiter, Fingerprint neu (`CN=mira-agent`), eigene Einstellungen der
+  Konfiguration übernommen, keine Dienste, Pfade oder nftables-Tabellen der Altinstallation
+  mehr. Fehlerfall (ungültige Konfiguration): Altinstallation läuft unverändert weiter.
+  Zweiter Lauf ändert nichts; Neuinstallation und `uninstall.sh --purge` funktionieren.
+
+Offen: Paket 6 (Release v0.7.0 und Umstellung im Betrieb) nach dem Merge, Paket 7 als
+[A-006](../aufgaben/a-006-uebergang-ki-server-aufraeumen.md).

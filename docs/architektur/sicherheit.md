@@ -4,7 +4,7 @@
 
 - MIRA ist nur im Heimnetz bzw. über WireGuard erreichbar – keine Veröffentlichung
   über Cloudflare Tunnel oder einen frei erreichbaren Reverse Proxy.
-- Das Frontend erhält nie Zugangsdaten, Tokens für Odin oder Schlüssel und spricht
+- Das Frontend erhält nie Zugangsdaten, Tokens für den KI-Server oder Schlüssel und spricht
   ausschließlich mit dem MIRA-Backend.
 - Das Repository ist öffentlich: keine Geheimnisse, keine echten Netzwerkdaten.
 
@@ -36,9 +36,9 @@ Dateien (Docker-Secrets bzw. `/data/secrets`, Rechte 600), SQLite speichert nur
 Verweise. Der Container läuft als unprivilegierter Benutzer (UID 1000) mit
 schreibgeschütztem Dateisystem; neue Dateien werden mit Umask 077 angelegt.
 
-## Kommunikation mit Odin
+## Kommunikation mit dem KI-Server
 
-Siehe [Odin-API](odin-api.md).
+Siehe [MIRA-Agent](agent.md).
 
 ## Offene Punkte
 
