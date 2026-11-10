@@ -4,6 +4,10 @@
 - Freigabe: 2026-11-05
 - Entscheidungen: [ADR 0001](../adr/0001-modularer-monolith-typescript-fastify.md) bis [ADR 0004](../adr/0004-anmeldung-sessions-erstes-konto.md), [ADR 0006](../adr/0006-geheimnisse-als-dateien.md)
 
+> **Hinweis (2026-11-10):** Historisches Dokument – es beschreibt den damaligen Stand. Seit
+> [Stufe 3a](stufe-03a-ki-server-bereinigung.md) heißt der Rechner allgemein **KI-Server**
+> (Name konfigurierbar) und die Software darauf **MIRA-Agent** ([ADR 0009](../adr/0009-ki-server-als-rolle-agent-mira-agent.md)).
+
 ## Ziel
 
 Ein lauffähiger Backend-Kern mit Datenbank und echter Anmeldung als Grundlage

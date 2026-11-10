@@ -152,7 +152,7 @@ export function CenteredMessage({ icon, title, text, children }: CenteredMessage
   );
 }
 
-/* ---------- Kennzahl mit Icon (Odin, Shelly) ---------- */
+/* ---------- Kennzahl mit Icon (KI-Server, Shelly) ---------- */
 
 interface StatProps {
   icon: ReactNode;

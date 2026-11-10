@@ -1,0 +1,12 @@
+{
+  "listen": { "host": "__LISTEN__", "port": __PORT__ },
+  "tls": { "certFile": "/etc/mira-agent/tls.crt", "keyFile": "/etc/mira-agent/tls.key" },
+  "tokenHashFile": "/etc/mira-agent/token.sha256",
+  "allowedClients": ["__ALLOW__"],
+  "disks": [{ "mount": "/", "label": "NVMe (System)" }],
+  "network": {
+    "include": [],
+    "labels": { "eno1.40": "Server-VLAN", "enp8s0f1": "10-GbE P2P" }
+  },
+  "labels": { "gpuModel": "Radeon AI Pro R9700", "ramType": "DDR4-3200" }
+}

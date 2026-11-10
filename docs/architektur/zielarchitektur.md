@@ -20,7 +20,7 @@ und die [ADRs](../adr/).
         │ HTTPS + Token          │ HTTP (lokal, nur lesend)
         │ (ab Stufe 2)           │ (ab Stufe 4)
         ▼                        ▼
-  Odin: MIRA-Odin-API      Shelly Plug PM
+  KI-Server: MIRA-Agent    Shelly Plug PM
   (systemd-Dienst)
         ▲
         │ Wake-on-LAN (ab Stufe 5) – MIRA liegt per macvlan im selben Netz
@@ -34,7 +34,7 @@ und die [ADRs](../adr/).
 | Backend | Node.js 22, TypeScript, Fastify ([ADR 0001](../adr/0001-modularer-monolith-typescript-fastify.md)) | `backend/` |
 | API-Verträge | zod-Schemas, gemeinsam für alle Teile | `shared/` |
 | Datenbank | SQLite, WAL, Migrationen pro Modul ([ADR 0003](../adr/0003-sqlite-mit-modulmigrationen.md)) | `/data/mira.db` |
-| Odin-API | HTTP-Dienst auf Odin ([ADR 0005](../adr/0005-odin-http-api-statt-ssh.md)) | ab Stufe 2: `odin-api/` |
+| MIRA-Agent | HTTP-Dienst auf dem KI-Server ([ADR 0005](../adr/0005-odin-http-api-statt-ssh.md), [ADR 0009](../adr/0009-ki-server-als-rolle-agent-mira-agent.md)) | ab Stufe 2: `agent/` |
 | Deployment | ein Container für API + Oberfläche ([ADR 0002](../adr/0002-ein-container-fuer-api-und-frontend.md)) | `Dockerfile`, `deploy/` |
 
 ## Backend-Struktur
@@ -53,7 +53,7 @@ backend/
 │   └── module.ts        Schnittstelle für Fachmodule
 └── modules/
     ├── index.ts         statische Liste der registrierten Module
-    ├── systems/         Odin, Shelly (ab Stufe 2)
+    ├── systems/         KI-Server, Shelly (ab Stufe 2)
     ├── llm/             (ab Stufe 7)
     ├── agents/          (Stufe 10, zurückgestellt)
     └── dashboard/       (ab Stufe 6)
@@ -88,4 +88,4 @@ backend/
 
 - [Sicherheit](sicherheit.md)
 - [Datenmodell](datenmodell.md)
-- [Odin-API](odin-api.md)
+- [MIRA-Agent](agent.md)

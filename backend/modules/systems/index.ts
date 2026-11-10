@@ -1,10 +1,18 @@
 import fs from 'node:fs';
 import type { FastifyInstance } from 'fastify';
-import { historyQuerySchema, type HistoryResponse, type OdinStatusResponse, type SystemSummary, type SystemsListResponse } from '@mira/shared';
+import {
+  AI_SERVER_ROLE,
+  AI_SERVER_SLUG,
+  historyQuerySchema,
+  type AiServerStatusResponse,
+  type HistoryResponse,
+  type SystemSummary,
+  type SystemsListResponse,
+} from '@mira/shared';
 import type { CoreContext, MiraModule } from '../../core/module.ts';
 import { systemsMigrations } from './migrations.ts';
-import { OdinClient } from './odinClient.ts';
-import { OdinMonitor } from './odinMonitor.ts';
+import { AgentClient } from './agentClient.ts';
+import { AiServerMonitor } from './aiServerMonitor.ts';
 import { SampleAggregator } from './sampleAggregator.ts';
 import { ServerHistory } from './history.ts';
 
@@ -17,34 +25,37 @@ interface SystemRow {
 }
 
 /**
- * Fachmodul „Systeme“: Odin lesend überwachen (Stufe 2) und den Verlauf
+ * Fachmodul „Systeme“: den KI-Server lesend überwachen (Stufe 2) und den Verlauf
  * speichern (Stufe 3).
- * Routen: `GET /api/v1/systems`, `GET /api/v1/systems/odin`,
- * `GET /api/v1/systems/odin/history?range=1h|24h|7d|30d`.
+ * Routen: `GET /api/v1/systems`, `GET /api/v1/systems/ai-server`,
+ * `GET /api/v1/systems/ai-server/history?range=1h|24h|7d|30d`.
  */
 export class SystemsModule implements MiraModule {
   readonly name = 'systems';
   readonly migrations = systemsMigrations;
   /** Für Tests zugänglich (z. B. um eine Abfrage gezielt auszulösen). */
-  monitor: OdinMonitor | undefined;
+  monitor: AiServerMonitor | undefined;
   history: ServerHistory | undefined;
 
   registerRoutes(app: FastifyInstance, ctx: CoreContext): void {
     const { db, config, scheduler, updates } = ctx;
-    const odinRow = db.prepare<[string], SystemRow>('SELECT id, slug, name, kind, description FROM systems WHERE slug = ?').get('odin');
-    if (!odinRow) throw new Error('System „odin“ fehlt in der Datenbank');
+    const found = db.prepare<[string], SystemRow>('SELECT id, slug, name, kind, description FROM systems WHERE slug = ?').get(AI_SERVER_SLUG);
+    if (!found) throw new Error(`System „${AI_SERVER_SLUG}“ fehlt in der Datenbank`);
+    // Anzeigename aus der Konfiguration übernehmen (ohne Angabe: „KI-Server“)
+    const server: SystemRow = { ...found, name: config.aiServer.name ?? AI_SERVER_ROLE };
+    if (server.name !== found.name) db.prepare('UPDATE systems SET name = ? WHERE id = ?').run(server.name, server.id);
 
-    const client = createClient(config.odin, app);
-    const history = new ServerHistory(db, odinRow.id);
-    const monitor = new OdinMonitor({
+    const client = createClient(config.aiServer, app);
+    const history = new ServerHistory(db, server.id);
+    const monitor = new AiServerMonitor({
       db,
-      systemId: odinRow.id,
+      systemId: server.id,
       client,
       log: app.log,
-      intervalMs: config.odin.pollSeconds * 1000,
-      offlineAfterMs: config.odin.offlineSeconds * 1000,
-      aggregator: new SampleAggregator(db, odinRow.id),
-      onApiVersion: (version) => updates.reportOdinApiVersion(version),
+      intervalMs: config.aiServer.pollSeconds * 1000,
+      offlineAfterMs: config.aiServer.offlineSeconds * 1000,
+      aggregator: new SampleAggregator(db, server.id),
+      onApiVersion: (version) => updates.reportAgentVersion(version),
     });
     this.monitor = monitor;
     this.history = history;
@@ -65,25 +76,25 @@ export class SystemsModule implements MiraModule {
     app.addHook('onClose', async () => monitor.stop());
 
     const summary = (): SystemSummary => ({
-      slug: odinRow.slug,
-      name: odinRow.name,
-      kind: odinRow.kind,
-      description: odinRow.description,
+      slug: server.slug,
+      name: server.name,
+      kind: server.kind,
+      description: server.description,
       status: monitor.snapshot.status,
     });
 
     app.get('/api/v1/systems', async (): Promise<SystemsListResponse> => ({ systems: [summary()] }));
 
-    app.get('/api/v1/systems/odin/history', async (request): Promise<HistoryResponse> => {
+    app.get(`/api/v1/systems/${AI_SERVER_SLUG}/history`, async (request): Promise<HistoryResponse> => {
       const { range } = historyQuerySchema.parse(request.query);
       return history.query(range);
     });
 
-    app.get('/api/v1/systems/odin', async (): Promise<OdinStatusResponse> => {
+    app.get(`/api/v1/systems/${AI_SERVER_SLUG}`, async (): Promise<AiServerStatusResponse> => {
       const { info, metrics } = monitor.snapshot;
       return {
         system: summary(),
-        connection: { configured: client !== null, endpoint: client?.endpoint ?? null, pollIntervalSeconds: config.odin.pollSeconds },
+        connection: { configured: client !== null, endpoint: client?.endpoint ?? null, pollIntervalSeconds: config.aiServer.pollSeconds },
         info,
         metrics,
       };
@@ -91,18 +102,18 @@ export class SystemsModule implements MiraModule {
   }
 }
 
-function createClient(odin: CoreContext['config']['odin'], app: FastifyInstance): OdinClient | null {
-  if (!odin.apiUrl || !odin.certFingerprint || !odin.tokenFile) return null;
+function createClient(aiServer: CoreContext['config']['aiServer'], app: FastifyInstance): AgentClient | null {
+  if (!aiServer.url || !aiServer.certFingerprint || !aiServer.tokenFile) return null;
   let token: string;
   try {
-    token = fs.readFileSync(odin.tokenFile, 'utf8').trim();
+    token = fs.readFileSync(aiServer.tokenFile, 'utf8').trim();
   } catch (err) {
-    app.log.error({ err, file: odin.tokenFile }, 'Token-Datei für die Odin-API nicht lesbar');
+    app.log.error({ err, file: aiServer.tokenFile }, 'Token-Datei für den KI-Server nicht lesbar');
     return null;
   }
   if (!token) {
-    app.log.error({ file: odin.tokenFile }, 'Token-Datei für die Odin-API ist leer');
+    app.log.error({ file: aiServer.tokenFile }, 'Token-Datei für den KI-Server ist leer');
     return null;
   }
-  return new OdinClient({ url: odin.apiUrl, certFingerprint: odin.certFingerprint, token });
+  return new AgentClient({ url: aiServer.url, certFingerprint: aiServer.certFingerprint, token });
 }

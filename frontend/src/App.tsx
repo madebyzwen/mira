@@ -5,7 +5,7 @@ import { AuthProvider } from './auth/AuthContext';
 import { RequireAuth } from './auth/RequireAuth';
 import { LoginPage } from './pages/LoginPage';
 import { DashboardPage } from './pages/DashboardPage';
-import { OdinPage } from './pages/systems/OdinPage';
+import { AiServerPage } from './pages/systems/AiServerPage';
 import { ShellyPlugPage } from './pages/systems/ShellyPlugPage';
 import { AgentsPage } from './pages/AgentsPage';
 import { LlmPage } from './pages/LlmPage';
@@ -29,8 +29,10 @@ export function App() {
             }
           >
             <Route path="/dashboard" element={<DashboardPage />} />
-            <Route path="/systeme" element={<Navigate to="/systeme/odin" replace />} />
-            <Route path="/systeme/odin" element={<OdinPage />} />
+            <Route path="/systeme" element={<Navigate to="/systeme/ki-server" replace />} />
+            <Route path="/systeme/ki-server" element={<AiServerPage />} />
+            {/* Übergang (Stufe 3a): alte Lesezeichen – entfällt mit dem Aufräumen nach der Umstellung */}
+            <Route path="/systeme/odin" element={<Navigate to="/systeme/ki-server" replace />} />
             <Route path="/systeme/shelly-plug" element={<ShellyPlugPage />} />
             {features.agents && <Route path="/agents" element={<AgentsPage />} />}
             <Route path="/llm" element={<LlmPage />} />

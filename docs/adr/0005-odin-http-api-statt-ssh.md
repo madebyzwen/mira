@@ -4,6 +4,11 @@
 - Datum: 2026-11-05
 - Weicht ab von: [Architekturbriefing](../vorgaben/2026-11-05-architekturbriefing.md), Abschnitt 6
 
+> **Nachtrag 2026-11-10:** Der Dienst heißt seit Agent 0.2.0 **MIRA-Agent** (`mira-agent`),
+> der Rechner allgemein **KI-Server** mit konfigurierbarem Namen – siehe
+> [ADR 0009](0009-ki-server-als-rolle-agent-mira-agent.md). Die Entscheidung dieser ADR
+> (HTTP-Dienst statt SSH) gilt unverändert.
+
 ## Kontext
 
 Das Briefing sah einen „MIRA Node Agent“ vor, der über einen eingeschränkten
@@ -28,7 +33,7 @@ Auf Odin läuft eine kleine **HTTP-API als nativer systemd-Dienst** (nicht in Do
   ausschließlich über exakte sudo-Regeln.
 - Entscheidungslogik bleibt in MIRA; die API liefert Daten und führt aus.
 
-Details: [Odin-API](../architektur/odin-api.md).
+Details: [Odin-API](../architektur/agent.md).
 
 **Sprache (entschieden 2026-11-05): TypeScript auf Node.js 22**, Fastify wie im
 MIRA-Backend. Die API nutzt dieselben zod-Verträge aus `shared/`; Node.js wird

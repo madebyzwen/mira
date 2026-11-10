@@ -8,6 +8,7 @@ import { ServerTower } from '../components/illustrations/ServerTower';
 import { DevicePhoto } from '../components/illustrations/DevicePhoto';
 import { useNotice } from '../components/ui/Notice';
 import { useCurrentUser } from '../auth/AuthContext';
+import { useAiServerName } from '../components/layout/Systems';
 import { dataService } from '../services/dataService';
 import { formatNumber, formatPercent, percentOf } from '../lib/format';
 import type { ContainerState } from '../types/models';
@@ -22,14 +23,15 @@ const containerStateLabel: Record<ContainerState, string> = {
 export function DashboardPage() {
   const { notAvailable } = useNotice();
   const user = useCurrentUser();
-  const odin = dataService.getOdin();
-  const util = dataService.getOdinUtilization();
+  const server = dataService.getAiServer();
+  const serverName = useAiServerName();
+  const util = dataService.getAiServerUtilization();
   const shelly = dataService.getShellyPlug();
   const powerSeries = dataService.getShellyPowerHistory('24h').values;
   const containers = dataService.getDockerContainers();
   const agents = dataService.getAgents();
   const llms = dataService.getLlmModels().filter((m) => m.availableInOpenWebUi);
-  const hw = odin.hardware;
+  const hw = server.hardware;
 
   const ramPct = percentOf(util.ramUsedGb, hw.ramTotalGb);
   const vramPct = percentOf(util.vramUsedGb, hw.vramTotalGb);
@@ -71,16 +73,16 @@ export function DashboardPage() {
 
       <Card title="Systemübersicht" icon={<Server size={28} />} divider className="overview">
         <div className="overview__top">
-          <Link to="/systeme/odin" className="overview__image" aria-label="Odin öffnen">
-            <DevicePhoto name="odin" alt={`Server ${odin.name}`} fallback={<ServerTower />} />
+          <Link to="/systeme/ki-server" className="overview__image" aria-label={`${serverName} öffnen`}>
+            <DevicePhoto name="ki-server" alt={serverName} fallback={<ServerTower label={serverName} />} />
           </Link>
           <div className="overview__server">
             <div className="overview__name">
-              <h3>{odin.name}</h3>
-              <OnlinePill status={odin.status} />
+              <h3>{serverName}</h3>
+              <OnlinePill status={server.status} />
             </div>
             <p className="overview__os">
-              {odin.os} (Kernel {odin.kernel.replace(/-generic$/, '')})
+              {server.os} (Kernel {server.kernel.replace(/-generic$/, '')})
             </p>
             <ul className="spec-list">
               <li>
@@ -163,10 +165,10 @@ export function DashboardPage() {
 
         <Card title="Schnellaktionen" icon={<Zap size={30} />}>
           <div className="quick-actions">
-            <button type="button" className="quick-action quick-action--highlight" onClick={() => notAvailable('Odin schlafen legen')}>
+            <button type="button" className="quick-action quick-action--highlight" onClick={() => notAvailable(`${serverName} schlafen legen`)}>
               <Moon size={30} className="accent-icon" fill="currentColor" />
               <span>
-                Odin
+                {serverName}
                 <br />
                 schlafen legen
               </span>
@@ -179,10 +181,10 @@ export function DashboardPage() {
                 neu starten
               </span>
             </button>
-            <button type="button" className="quick-action" onClick={() => notAvailable('Odin neustarten')}>
+            <button type="button" className="quick-action" onClick={() => notAvailable(`${serverName} neustarten`)}>
               <RotateCw size={28} />
               <span>
-                Odin
+                {serverName}
                 <br />
                 neustarten
               </span>

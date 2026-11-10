@@ -1,7 +1,11 @@
 # Stufe 2 – Odin lesen
 
 - Status: ✅ abgeschlossen (abgenommen 2026-11-06, MIRA 0.3.2 / Odin-API 0.1.2)
-- Grundlage: [Odin-API](../architektur/odin-api.md), [ADR 0005](../adr/0005-odin-http-api-statt-ssh.md)
+- Grundlage: [Odin-API](../architektur/agent.md), [ADR 0005](../adr/0005-odin-http-api-statt-ssh.md)
+
+> **Hinweis (2026-11-10):** Historisches Dokument – es beschreibt den damaligen Stand. Seit
+> [Stufe 3a](stufe-03a-ki-server-bereinigung.md) heißt der Rechner allgemein **KI-Server**
+> (Name konfigurierbar) und die Software darauf **MIRA-Agent** ([ADR 0009](../adr/0009-ki-server-als-rolle-agent-mira-agent.md)).
 
 ## Ziel
 

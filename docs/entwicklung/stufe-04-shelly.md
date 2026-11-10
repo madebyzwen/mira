@@ -5,7 +5,7 @@
 
 ## Ziel
 
-MIRA liest den Shelly Plug, der den Stromverbrauch von Odin misst, lokal und
+MIRA liest den Shelly Plug, der den Stromverbrauch des KI-Servers misst, lokal und
 **nur lesend** aus. Systeme › Shelly zeigt die **aktuelle Leistungsaufnahme live**
 sowie Verbrauch, Kosten und den Verlauf. Die Beispieldaten auf der Shelly-Seite und
 im Dashboard-Widget „Verbrauch“ werden durch echte Werte ersetzt.
@@ -34,7 +34,7 @@ Shelly ──HTTP (lokal, nur lesend)──▶ MIRA-Backend: Shelly-Monitor (all
 
 | | Festlegung |
 | --- | --- |
-| Erfassung | alle **2 Sekunden** im Backend, **unabhängig davon, ob die Weboberfläche offen ist** – wie bei Odin |
+| Erfassung | alle **2 Sekunden** im Backend, **unabhängig davon, ob die Weboberfläche offen ist** – wie beim KI-Server |
 | Live-Anzeige | Browser fragt alle 2 s bei MIRA (nicht beim Shelly), solange die Seite sichtbar ist |
 | „Offline“ | nach **10 Sekunden** ohne Antwort; Zeiten ohne Messung bleiben im Verlauf als **Lücke** sichtbar |
 | Verbindung | offen gehalten (Keep-Alive), höchstens eine Anfrage gleichzeitig |
@@ -50,7 +50,7 @@ Shelly ──HTTP (lokal, nur lesend)──▶ MIRA-Backend: Shelly-Monitor (all
 - **Nur lesend:** MIRA ruft ausschließlich Status-Abfragen auf, nie Schalt- oder
   Konfigurationsbefehle (Test stellt das sicher). Hinweis: Der Shelly kennt keinen
   Nur-Lese-Benutzer – wer das Passwort hat, könnte schalten. Das Passwort wird daher wie
-  das Odin-Token als Datei unter `secrets/` abgelegt ([ADR 0006](../adr/0006-geheimnisse-als-dateien.md)).
+  das Token des MIRA-Agents als Datei unter `secrets/` abgelegt ([ADR 0006](../adr/0006-geheimnisse-als-dateien.md)).
 - **Anmeldung:** Gen 2/3 mit Digest-Authentifizierung (SHA-256) – das Passwort geht nie im
   Klartext über das Netz. Gen 1 nutzt Basic-Auth.
 - **Verschlüsselung:** Der Shelly bietet lokal nur HTTP. Die Messwerte selbst sind
@@ -70,21 +70,21 @@ Shelly ──HTTP (lokal, nur lesend)──▶ MIRA-Backend: Shelly-Monitor (all
 
 | Tabelle | Inhalt | Aufbewahrung |
 | --- | --- | --- |
-| `power_meters` | system_id, Modell, Generation, misst_system_id (Odin) | dauerhaft |
+| `power_meters` | system_id, Modell, Generation, misst_system_id (KI-Server) | dauerhaft |
 | `power_samples` | system_id, ts (Minutenbeginn, UTC), samples, Leistung Mittel/Min/Max (W), Spannung Mittel (V), Energie (Wh), Gerätetemperatur | 7 Tage |
 | `power_samples_hourly` | wie oben, je Stunde (gewichtet) | 365 Tage |
 | `power_energy_daily` | system_id, Tag (Ortszeit), Energie (Wh) | **dauerhaft** – wenige Zeilen pro Jahr, für Monats- und Jahreskosten |
 | `energy_prices` | gültig ab (Datum), Preis (ct/kWh) | dauerhaft |
 
 Die Verdichtung (Minute → Stunde), Aufbewahrung und Verlaufsabfrage aus Stufe 3 werden
-dafür **allgemein** gemacht, sodass Odin und Shelly denselben Code nutzen
+dafür **allgemein** gemacht, sodass KI-Server und Shelly denselben Code nutzen
 (Tabellen- und Feldbeschreibung je Messreihe).
 
 ## Konfiguration
 
 | Was | Wo | Warum |
 | --- | --- | --- |
-| Adresse des Shelly | Stack: `MIRA_SHELLY_URL` (z. B. `http://<SHELLY_IP>`) | wie die Odin-Verbindung; Bearbeitung in der Oberfläche später |
+| Adresse des Shelly | Stack: `MIRA_SHELLY_URL` (z. B. `http://<SHELLY_IP>`) | wie die Verbindung zum KI-Server; Bearbeitung in der Oberfläche später |
 | Passwort | Datei `secrets/shelly_password.txt`, Stack: `MIRA_SHELLY_PASSWORD_FILE` | Geheimnisse als Datei (ADR 0006); leer/fehlend = ohne Passwort |
 | Strompreis | Oberfläche: Konfiguration › Systeme › Shelly (Preis ab Datum) | ändert sich gelegentlich, braucht Historie; Änderung im Audit-Log |
 
@@ -104,14 +104,14 @@ dafür **allgemein** gemacht, sodass Odin und Shelly denselben Code nutzen
   „Beispieldaten“ entfällt.
 - **Dashboard:** Widget „Verbrauch“ mit echten Werten.
 - **Konfiguration › Systeme › Shelly:** Verbindungsstatus, erkanntes Modell/Firmware, Strompreis.
-- Später möglich: aktuelle Leistung auch auf der Odin-Seite (der Shelly misst Odin).
+- Später möglich: aktuelle Leistung auch auf der Seite des KI-Servers (der Shelly misst den KI-Server).
 
 ## Netz und Infrastruktur
 
 - Liegt der Shelly in einem anderen VLAN: Regel in der OPNsense `<MIRA_IP>` → `<SHELLY_IP>`,
   TCP 80 (Einrichtung durch den Betreiber nach Anleitung).
 - Shelly: feste Adresse (DHCP-Reservierung) und – empfohlen – ein Passwort für die lokale Oberfläche.
-- Keine Änderung an Odin.
+- Keine Änderung am KI-Server.
 
 ## Tests
 

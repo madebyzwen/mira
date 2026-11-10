@@ -6,6 +6,7 @@ import { TopBar, type TopBarProps } from './TopBar';
 import { Modal } from '../ui/Modal';
 import { MiraLogo } from '../brand/MiraLogo';
 import { NotificationsProvider } from './Notifications';
+import { SystemsProvider } from './Systems';
 import type { HealthResponse } from '@mira/shared';
 
 const STORAGE_KEY = 'mira.sidebar.collapsed';
@@ -72,6 +73,7 @@ export function AppLayout() {
 
   return (
     <NotificationsProvider>
+      <SystemsProvider>
       <div
         className={[
           'app-shell',
@@ -102,6 +104,7 @@ export function AppLayout() {
           </p>
         </Modal>
       </div>
+      </SystemsProvider>
     </NotificationsProvider>
   );
 }

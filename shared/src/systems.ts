@@ -1,7 +1,12 @@
 import { z } from 'zod';
-import { systemInfoSchema, systemMetricsSchema } from './odin.ts';
+import { systemInfoSchema, systemMetricsSchema } from './agent.ts';
 
 /** Verträge des MIRA-Moduls „systems“ (Backend → Frontend). */
+
+/** Fester Schlüssel des KI-Servers in Datenbank und API – unabhängig von seinem Namen. */
+export const AI_SERVER_SLUG = 'ai-server';
+/** Bezeichnung der Rolle; zugleich Name des KI-Servers, wenn keiner konfiguriert ist (`MIRA_AI_SERVER_NAME`). */
+export const AI_SERVER_ROLE = 'KI-Server';
 
 export const SYSTEM_STATES = ['online', 'offline', 'unknown'] as const;
 export type SystemStateValue = (typeof SYSTEM_STATES)[number];
@@ -38,19 +43,19 @@ export type SystemSummary = z.infer<typeof systemSummarySchema>;
 export const systemsListResponseSchema = z.object({ systems: z.array(systemSummarySchema) });
 export type SystemsListResponse = z.infer<typeof systemsListResponseSchema>;
 
-/** Antwort von `GET /api/v1/systems/odin`. */
-export const odinStatusResponseSchema = z.object({
+/** Antwort von `GET /api/v1/systems/ai-server`. */
+export const aiServerStatusResponseSchema = z.object({
   system: systemSummarySchema,
   connection: z.object({
     configured: z.boolean(),
-    /** host:port der Odin-API, z. B. für die Konfigurationsansicht */
+    /** host:port des Agents auf dem KI-Server, z. B. für die Konfigurationsansicht */
     endpoint: z.string().nullable(),
     pollIntervalSeconds: z.number(),
   }),
   info: systemInfoSchema.nullable(),
   metrics: systemMetricsSchema.nullable(),
 });
-export type OdinStatusResponse = z.infer<typeof odinStatusResponseSchema>;
+export type AiServerStatusResponse = z.infer<typeof aiServerStatusResponseSchema>;
 
 /* ---------- Verlauf (ab Stufe 3) ---------- */
 
@@ -58,7 +63,7 @@ export const HISTORY_RANGES = ['1h', '24h', '7d', '30d'] as const;
 export type HistoryRange = (typeof HISTORY_RANGES)[number];
 
 /**
- * Einheitliches Zeitraster aller Verlaufsdiagramme (Odin, später Shelly):
+ * Einheitliches Zeitraster aller Verlaufsdiagramme (KI-Server, später Shelly):
  * Anzahl Punkte und Abstand je Zeitraum.
  */
 export const HISTORY_GRID: Record<HistoryRange, { points: number; stepSeconds: number }> = {
@@ -76,7 +81,7 @@ export const historyQuerySchema = z.object({ range: z.enum(HISTORY_RANGES).defau
 export const historyPointSchema = z.object({
   /** Beginn des Zeitabschnitts (ISO, UTC) */
   ts: z.string(),
-  /** Mittlere Auslastung in Prozent; `null` = keine Messwerte (Odin aus/schlafend) */
+  /** Mittlere Auslastung in Prozent; `null` = keine Messwerte (KI-Server aus/schlafend) */
   cpu: z.number().nullable(),
   gpu: z.number().nullable(),
   /** Mittlere Temperatur in °C; `null` = keine Messwerte */
@@ -85,7 +90,7 @@ export const historyPointSchema = z.object({
 });
 export type HistoryPoint = z.infer<typeof historyPointSchema>;
 
-/** Antwort von `GET /api/v1/systems/odin/history?range=…` */
+/** Antwort von `GET /api/v1/systems/ai-server/history?range=…` */
 export const historyResponseSchema = z.object({
   range: z.enum(HISTORY_RANGES),
   from: z.string(),

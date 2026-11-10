@@ -1,0 +1,10 @@
+#!/bin/sh
+# Ersatz für journalctl im Test-Container: zeigt das Protokoll der Unit (-u NAME)
+unit=mira-agent
+while [ $# -gt 0 ]; do
+  case "$1" in
+    -u) unit="${2%.service}"; shift 2 ;;
+    *) shift ;;
+  esac
+done
+tail -n 40 "/var/log/$unit.log" 2>/dev/null

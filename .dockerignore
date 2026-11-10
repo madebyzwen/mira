@@ -11,7 +11,7 @@ tests
 backend/test
 *.log
 .DS_Store
-odin-api/dist
-odin-api/release
-odin-api/test
-odin-api/dev
+agent/dist
+agent/release
+agent/test
+agent/dev

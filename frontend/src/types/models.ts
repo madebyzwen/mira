@@ -30,7 +30,7 @@ export interface TimeSeries {
   values: number[];
 }
 
-/* ---------- Odin (KI-Server) ---------- */
+/* ---------- KI-Server ---------- */
 
 export interface ServerHardware {
   cpuModel: string;

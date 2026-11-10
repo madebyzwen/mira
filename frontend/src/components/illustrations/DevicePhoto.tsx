@@ -20,7 +20,7 @@ function findPhoto(name: string): string | undefined {
 }
 
 interface DevicePhotoProps {
-  /** Dateiname ohne Endung, z. B. `shelly-plug` oder `odin` */
+  /** Dateiname ohne Endung, z. B. `shelly-plug` oder `ki-server` */
   name: string;
   alt: string;
   fallback: ReactNode;

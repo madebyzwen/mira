@@ -4,7 +4,8 @@
 
 MIRA ist eine modulare, selbst gehostete Plattform zur Überwachung, Verwaltung
 und Automatisierung lokaler KI-Infrastruktur. MIRA läuft als Docker-Anwendung
-auf dem NAS **Asgard** und verwaltet von dort den KI-Server **Odin**.
+auf dem NAS **Asgard** und verwaltet von dort einen **KI-Server**. Sein Anzeigename
+ist frei wählbar (`MIRA_AI_SERVER_NAME`); ohne Angabe heißt er „KI-Server“.
 
 ## Geplante Funktionen
 
@@ -22,12 +23,13 @@ auf dem NAS **Asgard** und verwaltet von dort den KI-Server **Odin**.
 | --- | --- | --- |
 | 0 | Klickbare Weboberfläche nach Mockups | ✅ abgeschlossen |
 | 1 | Fundament: Backend, SQLite, echte Anmeldung, ein Container | ✅ abgeschlossen |
-| 2 | Odin-API: Live-Daten von Odin in der Odin-Ansicht | ✅ abgeschlossen |
+| 2 | KI-Server lesen: Live-Daten über den MIRA-Agent | ✅ abgeschlossen |
 | 3 | Messwert-Historie: echte Verlaufsdiagramme, tägliche Sicherung | ✅ abgeschlossen |
-| 4 | Shelly Plug: Stromverbrauch, Verlauf und Kosten | ⏳ als Nächstes |
+| 3a | Bereinigung: durchgängig „KI-Server“, Name konfigurierbar, Agent `mira-agent` | 🚧 in Umsetzung |
+| 4 | Shelly Plug: Stromverbrauch, Verlauf und Kosten | ⏳ geplant |
 
 Alle Stufen: [Roadmap](docs/entwicklung/roadmap.md). Echt sind die Anmeldung,
-die Odin-Ansicht (Live-Werte alle 2 s und Verlauf von Auslastung und Temperaturen über 1 h / 24 h / 7 / 30 Tage) sowie
+die Ansicht des KI-Servers (Live-Werte alle 2 s und Verlauf von Auslastung und Temperaturen über 1 h / 24 h / 7 / 30 Tage) sowie
 die Update-Hinweise über die Glocke in der Kopfzeile (Konfiguration › MIRA); alle
 übrigen Ansichten zeigen noch **Beispieldaten** und führen keine Aktionen aus.
 
@@ -36,7 +38,7 @@ die Update-Hinweise über die Glocke in der Kopfzeile (Konfiguration › MIRA); 
 Konzepte, Architekturentscheidungen und Entwicklungsstufen liegen unter
 [`docs/`](docs/README.md):
 
-- [Zielarchitektur](docs/architektur/zielarchitektur.md) · [Datenmodell](docs/architektur/datenmodell.md) · [Odin-API](docs/architektur/odin-api.md) · [Sicherheit](docs/architektur/sicherheit.md)
+- [Zielarchitektur](docs/architektur/zielarchitektur.md) · [Datenmodell](docs/architektur/datenmodell.md) · [MIRA-Agent](docs/architektur/agent.md) · [Sicherheit](docs/architektur/sicherheit.md)
 - [Architekturentscheidungen (ADR)](docs/adr/README.md)
 - [Roadmap und Stufen](docs/entwicklung/roadmap.md)
 - [Vorgaben im Original](docs/vorgaben/README.md) · [Mockups](docs/mockups/)
@@ -50,7 +52,7 @@ npm-Workspaces, eine Sprache (TypeScript) für alle Teile.
 | `frontend/` | Weboberfläche (React 19, Vite, React Router, Lucide) |
 | `backend/` | API und Hintergrunddienste (Node.js 22, Fastify, SQLite) – `core/` + `modules/` |
 | `shared/` | Gemeinsame API-Verträge (zod-Schemas und Typen) |
-| `odin-api/` | Odin-API: läuft auf Odin, liefert Systemdaten an MIRA (nur lesend) |
+| `agent/` | MIRA-Agent: läuft auf dem KI-Server, liefert Systemdaten an MIRA (nur lesend) |
 | `deploy/` | Docker Compose für Asgard |
 | `docs/` | Dokumentation, Mockups |
 | `Dockerfile` | Ein Image für API und Oberfläche |
@@ -86,9 +88,10 @@ für einen Neuanfang `data/` löschen.
 
 | Befehl (Wurzelverzeichnis) | Zweck |
 | --- | --- |
-| `npm test` | Tests von Backend und Odin-API (Vitest) |
-| `npm run package:odin-api` | Installationspaket für Odin bauen (`odin-api/release/`) |
+| `npm test` | Tests von Backend und Agent (Vitest) |
+| `npm run package:agent` | Installationspaket für den KI-Server bauen (`agent/release/`) |
 | `npm run typecheck` | TypeScript-Prüfung aller Pakete |
+| `npm run check:naming` | Prüft, dass kein fester Name des KI-Servers eingebaut ist ([ADR 0009](docs/adr/0009-ki-server-als-rolle-agent-mira-agent.md)) |
 | `npm run build` | Produktionsbuild von `shared`, `backend`, `frontend` |
 
 ## Betrieb auf Asgard (Portainer)
@@ -99,7 +102,7 @@ Image baut GitHub bei jedem Push automatisch (`ghcr.io/madebyzwen/mira`,
 [ADR 0008](docs/adr/0008-images-ueber-github-container-registry.md)).
 
 Netzwerk: MIRA erhält über ein vorhandenes **macvlan-Netz eine eigene IP im
-Server-Netz** (`<MIRA_IP>`), in dem auch Odin liegt. Aufgerufen wird MIRA über
+Server-Netz** (`<MIRA_IP>`), in dem auch der KI-Server liegt. Aufgerufen wird MIRA über
 den Reverse Proxy (`https://<MIRA_HOSTNAME>` → `http://<MIRA_IP>`); direkt im
 Server-Netz unter `http://<MIRA_IP>`. Port 80 ist ohne Root-Rechte möglich, weil
 der Stack ihn nur im Netzwerk-Namensraum des Containers freigibt.
@@ -135,7 +138,8 @@ Stacks → Add stack → Name `mira` → Web editor: Inhalt von
 | `MIRA_PORT` | `80` | Port von MIRA (Standard 80) |
 | `MIRA_TRUST_PROXY` | `<PROXY_SUBNETZ>` | Subnetz des Proxy-Netzes, z. B. `172.20.0.0/16` |
 | `MIRA_ADMIN_USER` / `MIRA_ADMIN_DISPLAY_NAME` | `sven` / `Sven` | erstes Konto |
-| `MIRA_ODIN_API_URL` / `MIRA_ODIN_CERT_FINGERPRINT` | – | erst nach der Odin-Installation |
+| `MIRA_AI_SERVER_NAME` | `<NAME>` | Anzeigename des KI-Servers (optional, Standard „KI-Server“) |
+| `MIRA_AI_SERVER_URL` / `MIRA_AI_SERVER_CERT_FINGERPRINT` | – | erst nach der Installation des Agents |
 | `TZ` | `Europe/Berlin` | Zeitzone (Uhrzeit der Sicherung, Dateinamen) |
 
 Danach „Deploy the stack“ → `http://<MIRA_IP>` bzw. über den Reverse Proxy.
@@ -145,21 +149,24 @@ Danach „Deploy the stack“ → `http://<MIRA_IP>` bzw. über den Reverse Prox
 `MIRA_VERSION` auf die neue Version setzen → „Update the stack“ mit
 „Re-pull image“. Daten und Einstellungen bleiben in `MIRA_APPDATA` erhalten.
 
-### Verbindung zu Odin (Odin-API)
+### Verbindung zum KI-Server (MIRA-Agent)
 
-1. Odin-API auf Odin installieren – Anleitung: [`odin-api/install/README.md`](odin-api/install/README.md),
+1. MIRA-Agent auf dem KI-Server installieren – Anleitung: [`agent/install/README.md`](agent/install/README.md),
    dabei `--allow <MIRA_IP>`. Das Skript gibt Adresse, Zertifikats-Fingerprint und Token aus.
-2. Liegen MIRA und Odin im selben Netz, ist keine Firewall-Regel zwischen VLANs nötig;
-   sonst `<MIRA_IP>` → `<ODIN_IP>`, TCP 8443 freigeben.
-3. Token auf Asgard ablegen und im Stack `MIRA_ODIN_API_URL` und
-   `MIRA_ODIN_CERT_FINGERPRINT` setzen, dann „Update the stack“:
+2. Liegen MIRA und KI-Server im selben Netz, ist keine Firewall-Regel zwischen VLANs nötig;
+   sonst `<MIRA_IP>` → `<KI_SERVER_IP>`, TCP 8443 freigeben.
+3. Token auf Asgard ablegen und im Stack `MIRA_AI_SERVER_URL` und
+   `MIRA_AI_SERVER_CERT_FINGERPRINT` setzen, optional `MIRA_AI_SERVER_NAME`, dann „Update the stack“:
 
    ```bash
-   read -rs -p "Token: " T; echo; printf '%s\n' "$T" > "$APPDATA/secrets/odin_api_token.txt"; unset T
-   chmod 600 "$APPDATA/secrets/odin_api_token.txt"
+   read -rs -p "Token: " T; echo; printf '%s\n' "$T" > "$APPDATA/secrets/ai_server_token.txt"; unset T
+   chmod 600 "$APPDATA/secrets/ai_server_token.txt"
    ```
 
 Den Verbindungsstatus zeigt Konfiguration › Systeme.
+
+**Umstieg von MIRA 0.6.x:** Ab MIRA 0.7.0 haben Variablen, Secret-Datei und Agent-Paket
+neue Namen. Ablauf in [Stufe 3a, Umstellung im Betrieb](docs/entwicklung/stufe-03a-ki-server-bereinigung.md#paket-6--release-und-umstellung-im-betrieb).
 
 ### Sicherung und Wiederherstellung
 
@@ -214,16 +221,17 @@ Wiederherstellen (per SSH auf Asgard):
 | `MIRA_LOGIN_MAX_FAILURES` / `MIRA_LOGIN_WINDOW_MINUTES` | `5` / `15` | Login-Sperre |
 | `MIRA_AUDIT_RETENTION_DAYS` | `365` | Aufbewahrung des Audit-Logs |
 | `MIRA_LOG_LEVEL` | `info` | Protokollierungsstufe |
-| `MIRA_ODIN_API_URL` | – | Adresse der Odin-API, z. B. `https://<ODIN_IP>:8443` |
-| `MIRA_ODIN_CERT_FINGERPRINT` | – | SHA-256-Fingerprint des Odin-Zertifikats |
-| `MIRA_ODIN_TOKEN_FILE` | – | Datei mit dem Zugriffstoken |
-| `MIRA_ODIN_POLL_SECONDS` | `2` | Abfrageintervall der Odin-API (läuft im Backend, auch ohne geöffnete Weboberfläche) |
-| `MIRA_ODIN_OFFLINE_SECONDS` | `10` | Ohne Antwort seit so vielen Sekunden gilt Odin als „offline“ |
+| `MIRA_AI_SERVER_NAME` | – | Anzeigename des KI-Servers (1–32 Zeichen); ohne Angabe „KI-Server“ |
+| `MIRA_AI_SERVER_URL` | – | Adresse des MIRA-Agents, z. B. `https://<KI_SERVER_IP>:8443` |
+| `MIRA_AI_SERVER_CERT_FINGERPRINT` | – | SHA-256-Fingerprint des Agent-Zertifikats |
+| `MIRA_AI_SERVER_TOKEN_FILE` | – | Datei mit dem Zugriffstoken |
+| `MIRA_AI_SERVER_POLL_SECONDS` | `2` | Abfrageintervall des Agents (läuft im Backend, auch ohne geöffnete Weboberfläche) |
+| `MIRA_AI_SERVER_OFFLINE_SECONDS` | `10` | Ohne Antwort seit so vielen Sekunden gilt der KI-Server als „offline“ |
 | `MIRA_HISTORY_RAW_DAYS` | `7` | Aufbewahrung der Minutenwerte |
 | `MIRA_HISTORY_HOURLY_DAYS` | `365` | Aufbewahrung der Stundenwerte |
 | `MIRA_BACKUP_TIME` | `03:30` | Uhrzeit der täglichen Sicherung (Ortszeit, `HH:MM`) |
 | `MIRA_BACKUP_KEEP` | `7` | Anzahl aufbewahrter Sicherungen |
-| `MIRA_UPDATE_CHECK` | `true` | Prüfung auf neue Versionen von MIRA und Odin-API bei GitHub (`false` = keine Verbindung ins Internet) |
+| `MIRA_UPDATE_CHECK` | `true` | Prüfung auf neue Versionen von MIRA und MIRA-Agent bei GitHub (`false` = keine Verbindung ins Internet) |
 | `MIRA_UPDATE_CHECK_TIME` | `04:00` | Uhrzeit der täglichen Update-Prüfung (zusätzlich einmal beim ersten Aufruf am Tag) |
 | `TZ` | – (Stack: `Europe/Berlin`) | Zeitzone des Containers |
 

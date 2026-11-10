@@ -1,0 +1,36 @@
+{
+  "name": "@mira/agent",
+  "private": true,
+  "version": "0.2.0",
+  "description": "MIRA-Agent: liefert Systemdaten des KI-Servers an MIRA (nur lesend, HTTPS + Token)",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "node --conditions=source --watch src/main.ts --config dev/config.json",
+    "build": "node scripts/build.mjs",
+    "package": "npm run build && sh scripts/package.sh",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@mira/shared": "*",
+    "fastify": "^5.12.8",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@types/node": "^22",
+    "esbuild": "^0.28.2",
+    "selfsigned": "^5.5.0",
+    "typescript": "~5.9",
+    "vitest": "^5.1.0"
+  },
+  "exports": {
+    ".": {
+      "source": "./src/index.ts",
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    }
+  }
+}

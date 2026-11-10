@@ -13,7 +13,7 @@ export type NotificationLink = z.infer<typeof notificationLinkSchema>;
 
 export const notificationSchema = z.object({
   id: z.number().int(),
-  /** Herkunft, eindeutig je Thema – z. B. `update:mira`, `update:odin-api` */
+  /** Herkunft, eindeutig je Thema – z. B. `update:mira`, `update:agent` */
   key: z.string(),
   level: z.enum(NOTIFICATION_LEVELS),
   title: z.string(),
@@ -46,7 +46,7 @@ export type MarkNotificationsRead = z.infer<typeof markNotificationsReadSchema>;
 
 // ---------------------------------------------------------------- Update-Prüfung
 
-export const UPDATE_COMPONENTS = ['mira', 'odin-api'] as const;
+export const UPDATE_COMPONENTS = ['mira', 'agent'] as const;
 export type UpdateComponent = (typeof UPDATE_COMPONENTS)[number];
 
 /**
@@ -69,9 +69,9 @@ export type UpdateCheckResult = z.infer<typeof updateCheckResultSchema>;
 
 export const componentUpdateSchema = z.object({
   component: z.enum(UPDATE_COMPONENTS),
-  /** `null` = unbekannt (z. B. Odin noch nie erreicht oder Entwicklungsversion) */
+  /** `null` = unbekannt (z. B. KI-Server noch nie erreicht oder Entwicklungsversion) */
   installed: z.string().nullable(),
-  /** `true`, wenn die Komponente keine Version meldet und daher höchstens `installed` ist (Odin-API ≤ 0.1.3) */
+  /** `true`, wenn die Komponente keine Version meldet und daher höchstens `installed` ist (Agent ≤ 0.1.3) */
   installedAtMost: z.boolean(),
   latest: z.string().nullable(),
   updateAvailable: z.boolean(),

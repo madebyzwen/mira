@@ -56,5 +56,5 @@ frontend/src/assets/devices/*
 deploy/secrets/
 deploy/appdata/
 
-# Odin-API: gebaute Installationspakete
-odin-api/release/
+# MIRA-Agent: gebaute Installationspakete
+agent/release/

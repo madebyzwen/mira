@@ -9,7 +9,7 @@ aktualisiert die passende Datei im selben Commit.
 
 | Verzeichnis | Inhalt |
 | --- | --- |
-| [`architektur/`](architektur/) | Gültige Konzepte: Zielarchitektur, Datenmodell, Odin-API, Sicherheit |
+| [`architektur/`](architektur/) | Gültige Konzepte: Zielarchitektur, Datenmodell, MIRA-Agent, Sicherheit |
 | [`adr/`](adr/) | Architekturentscheidungen (Architecture Decision Records), fortlaufend nummeriert |
 | [`entwicklung/`](entwicklung/) | Roadmap und je Entwicklungsstufe ein Dokument mit Umfang, Erfolgskriterien und Ergebnis |
 | [`aufgaben/`](aufgaben/) | Offene Aufgaben und Ideen, die noch keiner Entwicklungsstufe zugeordnet sind |
@@ -28,7 +28,7 @@ aktualisiert die passende Datei im selben Commit.
 - Sprache: Deutsch.
 - **Das Repository ist öffentlich.** Echte IP-Adressen, Hostnamen, MAC-Adressen,
   Zugangsdaten und Schlüssel gehören nicht in die Dokumentation. Stattdessen
-  Platzhalter wie `<ASGARD_IP>`, `<ODIN_IP>`, `<MIRA_HOSTNAME>` verwenden; die
+  Platzhalter wie `<ASGARD_IP>`, `<KI_SERVER_IP>`, `<MIRA_HOSTNAME>` verwenden; die
   echten Werte stehen nur in der Konfiguration auf Asgard.
 - Neue ADR: Vorlage in [`adr/README.md`](adr/README.md) kopieren, nächste Nummer vergeben.
 - Neue Entwicklungsstufe: Dokument in `entwicklung/` anlegen und in der

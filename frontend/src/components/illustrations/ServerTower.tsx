@@ -1,13 +1,13 @@
 import { useId } from 'react';
 
-/** Stilisierte Darstellung des KI-Servers Odin (Tower mit Glasseite und RGB-Lüftern). */
-export function ServerTower({ className }: { className?: string }) {
+/** Stilisierte Darstellung des KI-Servers (Tower mit Glasseite und RGB-Lüftern). */
+export function ServerTower({ className, label = 'KI-Server' }: { className?: string; label?: string }) {
   const uid = useId().replace(/:/g, '');
   const id = (n: string) => `${uid}-${n}`;
   const fans = [52, 100, 148];
 
   return (
-    <svg className={className} viewBox="0 0 200 210" role="img" aria-label="Server Odin">
+    <svg className={className} viewBox="0 0 200 210" role="img" aria-label={label}>
       <defs>
         <linearGradient id={id('case')} x1="0" y1="0" x2="1" y2="0">
           <stop offset="0" stopColor="#2a2d36" />

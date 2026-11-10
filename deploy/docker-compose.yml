@@ -21,9 +21,11 @@ services:
       MIRA_ADMIN_PASSWORD_FILE: /secrets/admin_password.txt
       MIRA_TRUST_PROXY: ${MIRA_TRUST_PROXY:-false}
       MIRA_LOG_LEVEL: ${MIRA_LOG_LEVEL:-info}
-      MIRA_ODIN_API_URL: ${MIRA_ODIN_API_URL:-}
-      MIRA_ODIN_CERT_FINGERPRINT: ${MIRA_ODIN_CERT_FINGERPRINT:-}
-      MIRA_ODIN_TOKEN_FILE: /secrets/odin_api_token.txt
+      # KI-Server: optionaler Anzeigename (ohne Angabe „KI-Server“) und Verbindung zum MIRA-Agent
+      MIRA_AI_SERVER_NAME: ${MIRA_AI_SERVER_NAME:-}
+      MIRA_AI_SERVER_URL: ${MIRA_AI_SERVER_URL:-}
+      MIRA_AI_SERVER_CERT_FINGERPRINT: ${MIRA_AI_SERVER_CERT_FINGERPRINT:-}
+      MIRA_AI_SERVER_TOKEN_FILE: /secrets/ai_server_token.txt
     volumes:
       - ${MIRA_APPDATA:-./appdata}/data:/data
       - ${MIRA_APPDATA:-./appdata}/secrets:/secrets:ro

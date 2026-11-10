@@ -4,13 +4,13 @@
 - Datum: 2026-11-05
 
 > **Nachtrag 2026-11-06:** MIRA erhält per macvlan eine eigene IP im Server-Netz
-> von Odin. Damit ist WoL direkt aus dem Container möglich; diese ADR wird vor
+> des KI-Servers. Damit ist WoL direkt aus dem Container möglich; diese ADR wird vor
 > Stufe 5 neu bewertet und voraussichtlich durch eine direkte Lösung ersetzt.
 
 ## Kontext
 
-Ein schlafender Odin ist nur per Wake-on-LAN erreichbar. Das Magic Packet ist ein
-Broadcast und bleibt in seinem VLAN. Asgard liegt in einem anderen VLAN als Odin;
+Ein schlafender KI-Server ist nur per Wake-on-LAN erreichbar. Das Magic Packet ist ein
+Broadcast und bleibt in seinem VLAN. Asgard liegt in einem anderen VLAN als der KI-Server;
 außerdem erreicht ein Broadcast aus einem Docker-Container im Bridge-Netz das LAN
 nicht. Im Netz läuft eine OPNsense.
 

@@ -2,7 +2,7 @@
 #
 # Nutzt das fertige Image aus der GitHub Container Registry. MIRA erhält über
 # ein vorhandenes macvlan-Netz eine eigene IP im Server-Netz (dort liegt auch
-# Odin) und ist unter http://<MIRA_IP> (Port 80) erreichbar. HTTPS übernimmt der
+# der KI-Server) und ist unter http://<MIRA_IP> (Port 80) erreichbar. HTTPS übernimmt der
 # Reverse Proxy (Nginx Proxy Manager): Er erreicht MIRA über sein Backend-Netz
 # unter http://mira:80 – macvlan-Adressen sind für Bridge-Container nicht erreichbar.
 #
@@ -13,7 +13,7 @@
 #   data/                       Datenbank (wird von MIRA angelegt)
 #   data/backups/               tägliche Sicherungen der Datenbank (die letzten 7)
 #   secrets/admin_password.txt  Startpasswort – nur für den allerersten Start
-#   secrets/odin_api_token.txt  Zugriffstoken der Odin-API
+#   secrets/ai_server_token.txt Zugriffstoken des MIRA-Agents auf dem KI-Server
 services:
   mira:
     image: ghcr.io/madebyzwen/mira:${MIRA_VERSION:-latest}
@@ -38,9 +38,11 @@ services:
       MIRA_LOG_LEVEL: ${MIRA_LOG_LEVEL:-info}
       # Prüfung auf neue Versionen bei GitHub (täglich 04:00 + erster Aufruf am Tag); false = kein Internetzugriff
       MIRA_UPDATE_CHECK: ${MIRA_UPDATE_CHECK:-true}
-      MIRA_ODIN_API_URL: ${MIRA_ODIN_API_URL:-}
-      MIRA_ODIN_CERT_FINGERPRINT: ${MIRA_ODIN_CERT_FINGERPRINT:-}
-      MIRA_ODIN_TOKEN_FILE: /secrets/odin_api_token.txt
+      # KI-Server: optionaler Anzeigename (ohne Angabe „KI-Server“) und Verbindung zum MIRA-Agent
+      MIRA_AI_SERVER_NAME: ${MIRA_AI_SERVER_NAME:-}
+      MIRA_AI_SERVER_URL: ${MIRA_AI_SERVER_URL:-}
+      MIRA_AI_SERVER_CERT_FINGERPRINT: ${MIRA_AI_SERVER_CERT_FINGERPRINT:-}
+      MIRA_AI_SERVER_TOKEN_FILE: /secrets/ai_server_token.txt
     volumes:
       - ${MIRA_APPDATA:?MIRA_APPDATA setzen, z. B. /volume2/…/appdata/mira}/data:/data
       - ${MIRA_APPDATA}/secrets:/secrets:ro

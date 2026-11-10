@@ -17,7 +17,7 @@ export interface CoreContext {
   scheduler: Scheduler;
   settings: SettingsStore;
   notifications: NotificationStore;
-  /** Update-Prüfung – Module melden installierte Versionen ihrer Komponenten (z. B. Odin-API) */
+  /** Update-Prüfung – Module melden installierte Versionen ihrer Komponenten (z. B. des Agents auf dem KI-Server) */
   updates: UpdateService;
 }
 

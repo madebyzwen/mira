@@ -12,7 +12,7 @@ import {
 import { nowIso } from '../db/database.ts';
 import type { NotificationStore } from '../notifications.ts';
 import type { SettingsStore } from '../settings.ts';
-import { ODIN_API_GUIDE_URL, UpdateCheckFailure, type LatestRelease, type ReleaseFetcher } from './github.ts';
+import { AGENT_GUIDE_URL, UpdateCheckFailure, type LatestRelease, type ReleaseFetcher } from './github.ts';
 import { isNewer, parseVersion } from './semver.ts';
 
 /** Vorgesehene Sperrfrist für die Prüfung von Hand: höchstens einmal je Stunde. */
@@ -24,10 +24,10 @@ export const MANUAL_CHECK_LOCK_MS = 60 * 60 * 1000;
  */
 export const MANUAL_CHECK_INTERVAL_MS = 0;
 
-/** Letzte Odin-API, die ihre Version noch nicht meldet – meldet Odin keine Version, ist sie höchstens so alt. */
-export const LAST_UNVERSIONED_ODIN_API = '0.1.3';
+/** Letzte Version des Agents, die ihre Version noch nicht meldet – meldet der Agent keine Version, ist er höchstens so alt. */
+export const LAST_UNVERSIONED_AGENT = '0.1.3';
 
-const NOTIFICATION_KEY = { mira: 'update:mira', odinApi: 'update:odin-api' } as const;
+const NOTIFICATION_KEY = { mira: 'update:mira', agent: 'update:agent' } as const;
 
 const checkSchema = z.object({
   at: z.string(),
@@ -40,7 +40,7 @@ const stateSchema = z.object({
     .object({
       tag: z.string(),
       version: z.string(),
-      odinApiVersion: z.string().nullable(),
+      agentVersion: z.string().nullable(),
       publishedAt: z.string(),
       url: z.string(),
     })
@@ -58,7 +58,8 @@ const stateSchema = z.object({
       manual: checkSchema.optional(),
     })
     .default({}),
-  odinApi: z.object({ version: z.string(), atMost: z.boolean() }).nullable().default(null),
+  /** Installierte Version des Agents auf dem KI-Server (zuletzt gemeldet) */
+  agent: z.object({ version: z.string(), atMost: z.boolean() }).nullable().default(null),
 });
 type State = z.infer<typeof stateSchema>;
 
@@ -89,7 +90,7 @@ function formatDate(iso: string): string {
 }
 
 /**
- * Prüft, ob auf GitHub neuere Versionen von MIRA und der Odin-API vorliegen, und
+ * Prüft, ob auf GitHub neuere Versionen von MIRA und des Agents (KI-Server) vorliegen, und
  * hält die passenden Benachrichtigungen aktuell. Eine Abfrage liefert beide Versionen.
  *
  * Auslöser (je eigene Zählung, siehe `byTrigger`):
@@ -215,14 +216,14 @@ export class UpdateService {
   }
 
   /**
-   * Meldet die installierte Version der Odin-API (`null` = Odin erreichbar, meldet aber
-   * keine Version, also höchstens 0.1.3). Ohne Internet: entfernt bzw. aktualisiert die Meldung sofort.
+   * Meldet die installierte Version des Agents (`null` = KI-Server erreichbar, der Agent meldet
+   * aber keine Version, ist also höchstens 0.1.3). Ohne Internet: entfernt bzw. aktualisiert die Meldung sofort.
    */
-  reportOdinApiVersion(version: string | null): void {
-    const next = version === null ? { version: LAST_UNVERSIONED_ODIN_API, atMost: true } : parseVersion(version) ? { version, atMost: false } : null;
+  reportAgentVersion(version: string | null): void {
+    const next = version === null ? { version: LAST_UNVERSIONED_AGENT, atMost: true } : parseVersion(version) ? { version, atMost: false } : null;
     const state = this.load();
-    if (JSON.stringify(state.odinApi) === JSON.stringify(next)) return;
-    state.odinApi = next;
+    if (JSON.stringify(state.agent) === JSON.stringify(next)) return;
+    state.agent = next;
     this.save(state);
     this.reconcile();
   }
@@ -231,7 +232,7 @@ export class UpdateService {
   reconcile(): void {
     const state = this.load();
     const release = state.release;
-    const [mira, odin] = this.components(state);
+    const [mira, agent] = this.components(state);
     const published = release ? formatDate(release.publishedAt) : '';
 
     if (release && mira.updateAvailable) {
@@ -247,27 +248,27 @@ export class UpdateService {
       this.notifications.remove(NOTIFICATION_KEY.mira);
     }
 
-    if (release && odin.updateAvailable) {
-      const installed = odin.installedAtMost ? `${odin.installed} oder älter` : odin.installed;
+    if (release && agent.updateAvailable) {
+      const installed = agent.installedAtMost ? `${agent.installed} oder älter` : agent.installed;
       this.notifications.upsert({
-        key: NOTIFICATION_KEY.odinApi,
-        ref: odin.latest!,
+        key: NOTIFICATION_KEY.agent,
+        ref: agent.latest!,
         level: 'info',
-        title: `Odin-API ${odin.latest} verfügbar`,
-        message: `Installiert auf Odin: ${installed} · veröffentlicht am ${published}. Update auf Odin: Paket laden, Prüfsumme prüfen, sudo ./install.sh – Konfiguration, Zertifikat und Token bleiben erhalten.`,
+        title: `Update für den KI-Server: MIRA-Agent ${agent.latest}`,
+        message: `Installiert: ${installed} · veröffentlicht am ${published}. Update auf dem KI-Server: Paket laden, Prüfsumme prüfen, sudo ./install.sh – Konfiguration, Zertifikat und Token bleiben erhalten.`,
         links: [
           { label: 'Release auf GitHub', url: release.url },
-          { label: 'Anleitung', url: ODIN_API_GUIDE_URL },
+          { label: 'Anleitung', url: AGENT_GUIDE_URL },
         ],
       });
     } else {
-      this.notifications.remove(NOTIFICATION_KEY.odinApi);
+      this.notifications.remove(NOTIFICATION_KEY.agent);
     }
   }
 
   private components(state: State): [ComponentUpdate, ComponentUpdate] {
     const latestMira = state.release?.version ?? null;
-    const latestOdin = state.release?.odinApiVersion ?? null;
+    const latestAgent = state.release?.agentVersion ?? null;
     return [
       {
         component: 'mira',
@@ -277,11 +278,11 @@ export class UpdateService {
         updateAvailable: isNewer(latestMira, this.miraVersion),
       },
       {
-        component: 'odin-api',
-        installed: state.odinApi?.version ?? null,
-        installedAtMost: state.odinApi?.atMost ?? false,
-        latest: latestOdin,
-        updateAvailable: isNewer(latestOdin, state.odinApi?.version),
+        component: 'agent',
+        installed: state.agent?.version ?? null,
+        installedAtMost: state.agent?.atMost ?? false,
+        latest: latestAgent,
+        updateAvailable: isNewer(latestAgent, state.agent?.version),
       },
     ];
   }
