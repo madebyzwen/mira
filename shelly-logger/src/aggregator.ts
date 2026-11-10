@@ -79,10 +79,13 @@ export class Aggregator {
 
   /** Verbrauch seit dem letzten geschriebenen Intervall (noch im Speicher) – für „bis jetzt“-Summen */
   pendingEnergyWh(): number {
-    const last = [...this.pending].reverse().find((r) => r.energyTotalWh !== null);
-    if (!last || !this.meter) return 0;
-    const d = last.energyTotalWh! - this.meter.totalWh;
-    return d >= 0 && last.ts - this.meter.ts <= this.gapMs + BUCKET_MS && d <= this.plausibleWh(last.ts - this.meter.ts) ? d : 0;
+    const counters = this.pending.filter((r) => r.energyTotalWh !== null);
+    const last = counters.at(-1);
+    if (!last) return 0;
+    // Bezug: zuletzt verbuchter Zählerstand; bei ganz neuer Datenbank die erste Messung
+    const base = this.meter ?? { ts: counters[0].ts, totalWh: counters[0].energyTotalWh! };
+    const d = last.energyTotalWh! - base.totalWh;
+    return d >= 0 && last.ts - base.ts <= this.gapMs + BUCKET_MS && d <= this.plausibleWh(last.ts - base.ts) ? d : 0;
   }
 
   /** Abgeschlossene Intervalle schreiben (Intervallende + kurze Wartezeit für späte Antworten vorbei). */

@@ -44,7 +44,7 @@ function cpuSampler() {
 
 /** Fastify-Instanz mit Zugriffsschutz (nur GET, optional Token) und Fehlerbehandlung. */
 export function createApp(options: AppOptions = {}): FastifyInstance {
-  const app = Fastify({ logger: options.logger ?? false, disableRequestLogging: true });
+  const app = Fastify({ logger: options.logger ?? false });
   const expected = options.apiToken ? digest(options.apiToken) : null;
 
   app.addHook('onRequest', async (request, reply) => {
@@ -71,8 +71,10 @@ export function registerRoutes(app: FastifyInstance, options: RouteOptions): voi
   const { poller, reports } = options;
   const startedAt = options.startedAt ?? Date.now();
   const cpu = cpuSampler();
+  // Keine Protokollzeile je Anfrage (MIRA fragt sekündlich ab) – nur Warnungen und Fehler
+  const quiet = { logLevel: 'warn' } as const;
 
-  app.get('/health', async (): Promise<LoggerHealth> => {
+  app.get('/health', quiet, async (): Promise<LoggerHealth> => {
     const mem = process.memoryUsage();
     return {
       status: 'ok',
@@ -85,9 +87,9 @@ export function registerRoutes(app: FastifyInstance, options: RouteOptions): voi
     };
   });
 
-  app.get('/api/v1/live', async (): Promise<LiveResponse> => poller.live());
+  app.get('/api/v1/live', quiet, async (): Promise<LiveResponse> => poller.live());
 
-  app.get('/api/v1/consumption', async (request, reply): Promise<ConsumptionResponse | undefined> => {
+  app.get('/api/v1/consumption', quiet, async (request, reply): Promise<ConsumptionResponse | undefined> => {
     const parsed = consumptionQuerySchema.safeParse(request.query);
     if (!parsed.success || (parsed.data.date && !isValidDayKey(parsed.data.date))) {
       void reply.code(400).send({ error: 'invalid_request', message: 'period=day|week|month|year, optional date=JJJJ-MM-TT' });
@@ -96,7 +98,7 @@ export function registerRoutes(app: FastifyInstance, options: RouteOptions): voi
     return reports.consumption(parsed.data.period, parsed.data.date);
   });
 
-  app.get('/api/v1/history', async (request, reply): Promise<PowerHistoryResponse | undefined> => {
+  app.get('/api/v1/history', quiet, async (request, reply): Promise<PowerHistoryResponse | undefined> => {
     const parsed = powerHistoryQuerySchema.safeParse(request.query);
     if (!parsed.success) {
       void reply.code(400).send({ error: 'invalid_request', message: 'range=1h|24h|7d|30d' });
@@ -105,7 +107,7 @@ export function registerRoutes(app: FastifyInstance, options: RouteOptions): voi
     return reports.history(parsed.data.range);
   });
 
-  app.get('/api/v1/database/stats', async (): Promise<DatabaseStatsResponse> => reports.databaseStats());
+  app.get('/api/v1/database/stats', quiet, async (): Promise<DatabaseStatsResponse> => reports.databaseStats());
 }
 
 /** Server mit Routen in einem Schritt (z. B. für Tests). */

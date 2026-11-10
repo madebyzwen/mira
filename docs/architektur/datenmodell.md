@@ -27,12 +27,25 @@ Legende: ✅ umgesetzt · 🔜 geplant (Stufe) · ⏸ zurückgestellt
 | `server_connections` | system_id, api_url, zertifikats-Fingerprint, token_ref (Datei), wol-Parameter – bis die Verbindung über die Oberfläche bearbeitbar ist, kommen die Werte aus `MIRA_AI_SERVER_*` | 🔜 später |
 | `system_state` | system_id, state (`online`/`offline`/`unknown`; `sleeping`/`windows` ab Stufe 5), since, last_seen_at, last_error | ✅ Stufe 2 |
 | `server_samples` | system_id, ts (Minutenbeginn, UTC), samples, cpu/gpu Mittel + Max, ram/vram, load1, Temperaturen CPU/GPU/NVMe Mittel + Max – 1 Datensatz je Minute, 7 Tage | ✅ Stufe 3 |
-| `power_meters` | system_id, modell, generation, misst_system_id – Adresse und Passwort-Datei aus `MIRA_SHELLY_*` | 🔜 Stufe 4 |
-| `power_samples` | system_id, ts (Minutenbeginn, UTC), samples, Leistung Mittel/Min/Max, Spannung, Energie (Wh, aus Zählerdifferenz), Gerätetemperatur – 7 Tage | 🔜 Stufe 4 |
 | `server_samples_hourly` | wie `server_samples`, je Stunde (nach Messungen gewichtet), 365 Tage | ✅ Stufe 3 |
-| `power_samples_hourly` | wie `power_samples`, je Stunde, 365 Tage | 🔜 Stufe 4 |
-| `power_energy_daily` | system_id, Tag (Ortszeit), Energie (Wh) – dauerhaft, für Monats-/Jahreskosten | 🔜 Stufe 4 |
-| `energy_prices` | gültig ab, Preis ct/kWh – Kosten bleiben bei Tarifwechsel richtig | 🔜 Stufe 4 |
+| `energy_prices` | gültig ab, Preis ct/kWh – Kosten bleiben bei Tarifwechsel richtig; der Strompreis bleibt in MIRA, nicht im Shelly-Logger | 🔜 Stufe 4b |
+
+Die Messwerte des Shelly speichert **nicht** MIRA, sondern der eigenständige Shelly-Logger in
+seiner eigenen Datenbank ([ADR 0010](../adr/0010-shelly-logger-als-eigener-container.md)).
+MIRA liest sie ab Stufe 4b über dessen Lese-API. Die früher hier geplanten Tabellen
+`power_meters`, `power_samples`, `power_samples_hourly` und `power_energy_daily` entfallen in MIRA.
+
+## Shelly-Logger (eigene Datenbank `shelly-logger.db`)
+
+Zeitpunkte als UTC-Millisekunden; Kalendertage in `Europe/Berlin`. Es wird nichts automatisch gelöscht.
+Einzelheiten: [`shelly-logger/README.md`](../../shelly-logger/README.md#datenformat).
+
+| Tabelle | Inhalt | Status |
+| --- | --- | --- |
+| `power_samples` | 30-s-Intervall: Beginn/Ende, Leistung Mittel (zeitgewichtet)/Min/Max, Anzahl Messungen, abgedeckte Zeit, Spannung, Energie (Wh, aus der Zählerdifferenz), Qualität (`ok`/`partial`/`counter_reset`/`implausible`) | ✅ Stufe 4a |
+| `energy_gaps` | Energie über Messausfälle aus der Zählerdifferenz (Summe sicher, Verteilung unbekannt), je Kalendertag aufgeteilt | ✅ Stufe 4a |
+| `daily_energy` | Tagessummen: gemessen, rekonstruiert, abgedeckte Zeit, Anzahl Intervalle – Grundlage für Woche, Monat, Jahr | ✅ Stufe 4a |
+| `meter_state` | zuletzt verbuchter Zählerstand und Geräte-ID – verhindert Doppelzählung nach Neustart | ✅ Stufe 4a |
 | `sleep_inhibits` | system_id, grund, bis, erstellt_von – sperrt automatischen Schlafmodus | 🔜 Stufe 9 |
 
 ## Modul `llm`

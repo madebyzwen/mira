@@ -223,4 +223,29 @@ describe('30-Sekunden-Verdichtung', () => {
     expect(before[0].sampleCount).toBe(3);
     expect(before[1].sampleCount).toBe(1);
   });
+
+  it('Datenbankwachstum: ein Tag (2 880 Intervalle) bleibt klein und dauerhaft gespeichert', () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'shelly-logger-'));
+    const file = path.join(dir, 'db.sqlite');
+    const { store, agg } = setup({ file });
+    const day = t('2026-11-09T23:00:00Z'); // 10.11. 00:00 Ortszeit
+    let wh = 0;
+    for (let i = 0; i < 2880; i++) {
+      agg.add(reading(day + i * 30_000, 100, wh));
+      agg.add(reading(day + i * 30_000 + 15_000, 100, (wh += 100 / 240)));
+      wh += 100 / 240;
+    }
+    agg.flushAll();
+    store.db.pragma('wal_checkpoint(TRUNCATE)');
+    const bytes = fs.statSync(file).size;
+    expect(store.counts().samples).toBe(2880);
+    expect(bytes / 2880).toBeLessThan(150); // ≈ 50 MB je Jahr
+    store.close();
+    // nach dem Wiederöffnen vollständig vorhanden
+    const reopened = new Store(file, TZ);
+    stores.push(reopened);
+    expect(reopened.counts().samples).toBe(2880);
+    expect(reopened.dailyEnergy('2026-11-10', '2026-11-11')[0].sampleCount).toBe(2880);
+    fs.rmSync(dir, { recursive: true, force: true });
+  });
 });

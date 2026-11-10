@@ -11,6 +11,7 @@ COPY shared/package.json shared/
 COPY backend/package.json backend/
 COPY frontend/package.json frontend/
 COPY agent/package.json agent/
+COPY shelly-logger/package.json shelly-logger/
 RUN npm ci --no-audit --no-fund
 COPY shared shared
 COPY backend backend
@@ -26,6 +27,7 @@ COPY shared/package.json shared/
 COPY backend/package.json backend/
 COPY frontend/package.json frontend/
 COPY agent/package.json agent/
+COPY shelly-logger/package.json shelly-logger/
 RUN npm ci --omit=dev --no-audit --no-fund -w @mira/backend -w @mira/shared \
  && rm -rf node_modules/better-sqlite3/deps node_modules/better-sqlite3/src \
            node_modules/better-sqlite3/build/Release/obj* node_modules/better-sqlite3/build/Release/.deps
