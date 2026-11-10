@@ -19,7 +19,7 @@ und die [ADRs](../adr/).
 │   └─ SQLite /data/mira.db                  └─ SQLite /data/shelly-logger.db    │
 └───────┬────────────────────────────────────────────────────┬──────────────────┘
         │ HTTPS + Token (ab Stufe 2)                          │ HTTP, lokal, nur lesend
-        ▼                                                     ▼ (über Asgards Adresse, OPNsense-Regel)
+        ▼                                                     ▼ (eigene macvlan-IP, OPNsense-Regel)
   KI-Server: MIRA-Agent                               Shelly Plug PM (IoT-VLAN)
   (systemd-Dienst)
         ▲

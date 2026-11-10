@@ -6,6 +6,12 @@
   [Stufe 4 (Shelly)](../entwicklung/stufe-04-shelly.md) vom 2026-11-06
 - Ergänzt: [ADR 0001](0001-modularer-monolith-typescript-fastify.md) (modularer Monolith) um eine begründete Ausnahme
 
+> **Nachtrag 2026-11-10 (vor der Inbetriebnahme):** Der Netzweg zum Shelly wurde geändert. Der Logger
+> erhält – wie MIRA – eine **eigene feste IP im macvlan-Netz** des Server-VLANs; die OPNsense-Regel gilt
+> nur für diese Adresse (`<LOGGER_IP>` → `<SHELLY_IP>`, TCP 80) statt für ganz Asgard. Damit auf der
+> macvlan-Adresse kein Port offen ist, lauscht die API nur auf ihrer festen Adresse im internen Netz
+> `mira-intern` (`LOGGER_HOST`). Das eigene Bridge-Netz entfällt. Ab Logger 0.1.1.
+
 ## Kontext
 
 Der Stromverbrauch des KI-Servers wird über einen Shelly Plug gemessen. Das bisherige

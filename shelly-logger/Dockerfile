@@ -50,9 +50,10 @@ USER node
 VOLUME ["/data"]
 EXPOSE 8090
 # Der Container ist gesund, solange der Logger läuft und antwortet – auch wenn der Shelly
-# gerade nicht erreichbar ist (das zeigt /health im Feld „meter.state“).
+# gerade nicht erreichbar ist (das zeigt /health im Feld „meter.state“). Geprüft wird die
+# Adresse, auf der die API tatsächlich lauscht (LOGGER_HOST; 0.0.0.0 → 127.0.0.1).
 HEALTHCHECK --interval=30s --timeout=3s --start-period=15s --retries=3 \
-  CMD ["sh", "-c", "wget -q -O /dev/null http://127.0.0.1:${LOGGER_PORT}/health || exit 1"]
+  CMD ["sh", "-c", "H=${LOGGER_HOST:-0.0.0.0}; [ \"$H\" = 0.0.0.0 ] && H=127.0.0.1; wget -q -O /dev/null http://$H:${LOGGER_PORT}/health || exit 1"]
 # SIGTERM (docker stop) beendet geordnet: laufende Abfrage abwarten, Intervall schreiben, Datenbank schließen
 STOPSIGNAL SIGTERM
 CMD ["node", "shelly-logger/dist/main.js"]

@@ -41,10 +41,11 @@ Shelly Plug (IoT-VLAN) ◀── HTTP GET, 1×/s ── Poller ──▶ Live-We
 
 | Netz | Zweck |
 | --- | --- |
-| `shelly-egress` (Bridge, nur dieser Container) | Weg zum Shelly über Asgards Adresse (NAT) |
-| `mira-intern` (`internal: true`) | Lese-API für MIRA (ab Stufe 4b); keine Verbindung nach außen |
+| `server` (vorhandenes macvlan-Netz, wie MIRA) | eigene feste IP `<LOGGER_IP>` im Server-Netz – nur der Weg zum Shelly; auf dieser Adresse ist **kein Port offen** |
+| `mira-intern` (`internal: true`, festes Subnetz) | Lese-API für MIRA (ab Stufe 4b) – der Logger lauscht nur hier (`LOGGER_HOST`); keine Verbindung nach außen |
 
-Es werden keine Ports veröffentlicht. Aus dem Heimnetz ist die API nicht erreichbar.
+Es werden keine Ports veröffentlicht. Aus dem Heimnetz ist die API nicht erreichbar, und die
+Firewall-Regel zum Shelly gilt nur für die Adresse des Loggers, nicht für ganz Asgard.
 
 ## Konfiguration
 
@@ -59,7 +60,7 @@ Es werden keine Ports veröffentlicht. Aus dem Heimnetz ist die API nicht erreic
 | `LOGGER_MAX_POWER_W` | `3680` | Plausibilitätsgrenze (16 A × 230 V) für Zählersprünge |
 | `LOGGER_TIMEZONE` | `Europe/Berlin` | Zeitzone für Tage, Wochen, Monate, Jahre und die Sicherungszeit |
 | `LOGGER_DATA_DIR` | `/data` | Datenbank `shelly-logger.db`, Sicherungen in `backups/` |
-| `LOGGER_HOST` / `LOGGER_PORT` | `0.0.0.0` / `8090` | Adresse der API im Container |
+| `LOGGER_HOST` / `LOGGER_PORT` | `0.0.0.0` / `8090` | Adresse der API im Container; im Stack die feste Adresse im internen Netz, damit auf der macvlan-Adresse kein Port offen ist |
 | `LOGGER_API_TOKEN_FILE` | – | Datei mit einem Token; gesetzt = alle Endpunkte außer `/health` verlangen `Authorization: Bearer <Token>` |
 | `LOGGER_BACKUP_TIME` / `LOGGER_BACKUP_KEEP` | `03:45` / `7` | tägliche Sicherung (Ortszeit) und Anzahl aufbewahrter Sicherungen |
 | `LOGGER_LOG_LEVEL` | `info` | Protokollierungsstufe |
@@ -83,12 +84,13 @@ Geheimnisse nur als Datei ([ADR 0006](../docs/adr/0006-geheimnisse-als-dateien.m
 | Feld | Wert |
 | --- | --- |
 | Aktion | Erlauben |
-| Schnittstelle | Netz, in dem Asgard liegt (eingehend) |
-| Quelle | `<ASGARD_IP>` (einzelne Adresse) |
+| Schnittstelle | Server-Netz (eingehend) – dort liegt die macvlan-Adresse des Loggers |
+| Quelle | `<LOGGER_IP>` (einzelne Adresse) |
 | Ziel | `<SHELLY_IP>` (einzelne Adresse) |
 | Protokoll / Port | TCP / 80 |
 
 Alles andere vom und zum IoT-VLAN bleibt gesperrt. Der Logger braucht keinen Internetzugang.
+`<LOGGER_IP>` ist eine freie, feste Adresse im Server-Netz außerhalb des DHCP-Bereichs (wie `<MIRA_IP>`).
 
 ### 3. Asgard: Ordner und Passwort-Datei (per SSH)
 
@@ -104,9 +106,8 @@ sudo chown -R 1000:1000 "$APPDATA"
 ### 4. Image
 
 Das Image `ghcr.io/madebyzwen/mira-shelly-logger` entsteht bei jedem Push auf `main` (`:main`)
-und bei Tags `shelly-logger-vX.Y.Z` (`:X.Y.Z`, `:latest`). Ein neues Paket ist in der GitHub
-Container Registry zunächst **privat** – entweder in den Paket-Einstellungen auf „Public“ stellen
-(wie das MIRA-Image) oder auf Asgard `docker login ghcr.io` mit einem Token (`read:packages`).
+und bei Tags `shelly-logger-vX.Y.Z` (`:X.Y.Z`, `:latest`). Es ist wie das MIRA-Image öffentlich
+abrufbar – Asgard braucht keine Anmeldung bei der Registry.
 
 ### 5. Stack in Portainer
 
@@ -116,18 +117,22 @@ Stacks → Add stack → Name `mira-shelly-logger` → Web editor: Inhalt von
 | Variable | Beispiel |
 | --- | --- |
 | `LOGGER_APPDATA` | `<APPDATA_PFAD>/mira-shelly-logger` |
+| `LOGGER_IP` | `<LOGGER_IP>` – feste Adresse im Server-Netz (Pflicht) |
+| `LOGGER_NETWORK` | `macvlan_server` – Name des vorhandenen macvlan-Netzes (wie `MIRA_NETWORK`) |
 | `LOGGER_SHELLY_URL` | `http://<SHELLY_IP>` |
-| `LOGGER_VERSION` | `0.1.0` (Standard `latest`) |
+| `LOGGER_VERSION` | `0.1.1` (Standard `latest`) |
 | `LOGGER_POLL_INTERVAL_MS` | `1000` |
+| `MIRA_INTERN_SUBNET` / `LOGGER_INTERN_IP` | `172.31.250.0/28` / `172.31.250.10` – nur ändern, falls das Subnetz auf Asgard schon belegt ist |
 
 Der MIRA-Stack bleibt unverändert; MIRA tritt dem Netz `mira-intern` erst in Stufe 4b bei.
+Der macvlan-Container kann – wie MIRA – Asgard selbst nicht erreichen; das ist hier nicht nötig.
 
 ### 6. Prüfen
 
 ```bash
 docker logs mira-shelly-logger                     # „Shelly erkannt“, keine Warnungen
-docker exec mira-shelly-logger wget -qO- http://127.0.0.1:8090/api/v1/live
-docker exec mira-shelly-logger wget -qO- http://127.0.0.1:8090/health
+docker exec mira-shelly-logger sh -c 'wget -qO- http://$LOGGER_HOST:8090/api/v1/live'
+docker exec mira-shelly-logger sh -c 'wget -qO- http://$LOGGER_HOST:8090/health'
 ```
 
 Live-Werte mit der Shelly-App vergleichen. Nach 24 Stunden muss der Tagesverbrauch
@@ -137,7 +142,7 @@ Live-Werte mit der Shelly-App vergleichen. Nach 24 Stunden muss der Tagesverbrau
 letzten Minute sowie CPU und RAM des Loggers. Eine Stunde lang minütlich mitschreiben:
 
 ```bash
-for i in $(seq 60); do docker exec mira-shelly-logger wget -qO- http://127.0.0.1:8090/health; echo; sleep 60; done > logger-health.jsonl
+for i in $(seq 60); do docker exec mira-shelly-logger sh -c 'wget -qO- http://$LOGGER_HOST:8090/health'; echo; sleep 60; done > logger-health.jsonl
 ```
 
 Sind Fehler häufig oder die Antwortzeiten nahe am Zeitlimit, `LOGGER_POLL_INTERVAL_MS=2000` setzen
