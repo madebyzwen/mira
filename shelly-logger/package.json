@@ -1,0 +1,30 @@
+{
+  "name": "@mira/shelly-logger",
+  "private": true,
+  "version": "0.1.0",
+  "description": "MIRA Shelly-Logger: erfasst den Stromverbrauch des KI-Servers über einen Shelly Plug (lokal, nur lesend) mit eigener SQLite-Datenbank und interner Lese-API",
+  "type": "module",
+  "engines": {
+    "node": ">=22.22"
+  },
+  "scripts": {
+    "dev": "node --conditions=source --env-file-if-exists=.env --watch src/main.ts",
+    "fake-shelly": "node --conditions=source dev/fake-shelly.ts",
+    "loadtest": "node --conditions=source scripts/loadtest.ts",
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@mira/shared": "*",
+    "better-sqlite3": "^13.0.3",
+    "fastify": "^5.12.8",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^9.6.0",
+    "@types/node": "^22",
+    "typescript": "~5.9",
+    "vitest": "^5.1.0"
+  }
+}

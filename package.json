@@ -11,7 +11,8 @@
     "shared",
     "backend",
     "frontend",
-    "agent"
+    "agent",
+    "shelly-logger"
   ],
   "scripts": {
     "dev:backend": "npm run dev -w @mira/backend",
@@ -19,9 +20,10 @@
     "build": "npm run build -w @mira/shared && npm run build -w @mira/backend && npm run build -w @mira/frontend",
     "typecheck": "npm run typecheck --workspaces",
     "check:naming": "sh scripts/check-naming.sh",
-    "test": "npm test -w @mira/backend -w @mira/agent",
+    "test": "npm test -w @mira/backend -w @mira/agent -w @mira/shelly-logger",
     "start": "node backend/dist/server.js",
     "build:agent": "npm run build -w @mira/agent",
-    "package:agent": "npm run package -w @mira/agent"
+    "package:agent": "npm run package -w @mira/agent",
+    "build:shelly-logger": "npm run build -w @mira/shared && npm run build -w @mira/shelly-logger"
   }
 }
