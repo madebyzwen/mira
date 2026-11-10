@@ -1,0 +1,53 @@
+# MIRA Shelly-Logger – eigener Stack für Portainer (Asgard)
+#
+# VORSCHLAG (Stufe 4a) – Inbetriebnahme erst nach ausdrücklicher Freigabe.
+# Anleitung: shelly-logger/README.md, Abschnitt „Inbetriebnahme“.
+#
+# Der Logger läuft unabhängig von MIRA und vom KI-Server und erfasst den Stromverbrauch
+# über den Shelly Plug (lokale HTTP-API, nur lesend). Er veröffentlicht KEINE Ports:
+# - Netz „shelly-egress“: eigenes Bridge-Netz nur für den Logger – der Weg zum Shelly
+#   führt über Asgards Adresse (NAT). In der OPNsense genau eine Regel:
+#   <ASGARD_IP> → <SHELLY_IP>, TCP 80.
+# - Netz „mira-intern“: internes Netz ohne Verbindung nach außen. Hier ist die API
+#   erreichbar; MIRA tritt diesem Netz erst in Stufe 4b bei.
+#
+# Erwartete Ordnerstruktur unter LOGGER_APPDATA (gehört UID 1000):
+#   data/                         Datenbank shelly-logger.db (wird angelegt)
+#   data/backups/                 tägliche Sicherungen (die letzten 7)
+#   secrets/shelly_password.txt   Passwort der lokalen Shelly-Oberfläche (Benutzer admin)
+services:
+  shelly-logger:
+    image: ghcr.io/madebyzwen/mira-shelly-logger:${LOGGER_VERSION:-latest}
+    container_name: mira-shelly-logger
+    restart: unless-stopped
+    networks:
+      shelly-egress: {}
+      mira-intern: {}
+    environment:
+      LOGGER_SHELLY_URL: ${LOGGER_SHELLY_URL:?LOGGER_SHELLY_URL setzen, z. B. http://<SHELLY_IP>}
+      # leer lassen, wenn der Shelly kein Passwort hat (nicht empfohlen)
+      LOGGER_SHELLY_PASSWORD_FILE: ${LOGGER_SHELLY_PASSWORD_FILE-/secrets/shelly_password.txt}
+      # 1000 (Standard) oder 2000 – ohne Codeänderung umstellbar
+      LOGGER_POLL_INTERVAL_MS: ${LOGGER_POLL_INTERVAL_MS:-1000}
+      LOGGER_TIMEZONE: Europe/Berlin
+      LOGGER_LOG_LEVEL: ${LOGGER_LOG_LEVEL:-info}
+    volumes:
+      - ${LOGGER_APPDATA:?LOGGER_APPDATA setzen, z. B. /volume2/…/appdata/mira-shelly-logger}/data:/data
+      - ${LOGGER_APPDATA}/secrets:/secrets:ro
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    # Beim Stoppen Zeit lassen: laufende Abfrage abwarten, Intervall schreiben, Datenbank schließen
+    stop_grace_period: 20s
+
+networks:
+  shelly-egress:
+    driver: bridge
+  mira-intern:
+    # festgelegter Name, damit der MIRA-Stack in Stufe 4b als „external“ beitreten kann
+    name: mira-intern
+    internal: true

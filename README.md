@@ -26,7 +26,8 @@ ist frei wählbar (`MIRA_AI_SERVER_NAME`); ohne Angabe heißt er „KI-Server“
 | 2 | KI-Server lesen: Live-Daten über den MIRA-Agent | ✅ abgeschlossen |
 | 3 | Messwert-Historie: echte Verlaufsdiagramme, tägliche Sicherung | ✅ abgeschlossen |
 | 3a | Bereinigung: durchgängig „KI-Server“, Name konfigurierbar, Agent `mira-agent` | ✅ abgeschlossen |
-| 4 | Shelly Plug: Stromverbrauch, Verlauf und Kosten | ⏳ als Nächstes |
+| 4a | Shelly-Logger: eigener Container erfasst den Stromverbrauch (eigene Datenbank, Lese-API) | 🔍 umgesetzt, Inbetriebnahme ausstehend |
+| 4b | Shelly in MIRA: Leistung, Verbrauch, Kosten und Verlauf aus dem Logger | ⏳ nach Freigabe |
 
 Alle Stufen: [Roadmap](docs/entwicklung/roadmap.md). Echt sind die Anmeldung,
 die Ansicht des KI-Servers (Live-Werte alle 2 s und Verlauf von Auslastung und Temperaturen über 1 h / 24 h / 7 / 30 Tage) sowie
@@ -38,7 +39,7 @@ die Update-Hinweise über die Glocke in der Kopfzeile (Konfiguration › MIRA); 
 Konzepte, Architekturentscheidungen und Entwicklungsstufen liegen unter
 [`docs/`](docs/README.md):
 
-- [Zielarchitektur](docs/architektur/zielarchitektur.md) · [Datenmodell](docs/architektur/datenmodell.md) · [MIRA-Agent](docs/architektur/agent.md) · [Sicherheit](docs/architektur/sicherheit.md)
+- [Zielarchitektur](docs/architektur/zielarchitektur.md) · [Datenmodell](docs/architektur/datenmodell.md) · [MIRA-Agent](docs/architektur/agent.md) · [Sicherheit](docs/architektur/sicherheit.md) · [Shelly-Logger](shelly-logger/README.md)
 - [Architekturentscheidungen (ADR)](docs/adr/README.md)
 - [Roadmap und Stufen](docs/entwicklung/roadmap.md)
 - [Vorgaben im Original](docs/vorgaben/README.md) · [Mockups](docs/mockups/)
@@ -53,6 +54,7 @@ npm-Workspaces, eine Sprache (TypeScript) für alle Teile.
 | `backend/` | API und Hintergrunddienste (Node.js 22, Fastify, SQLite) – `core/` + `modules/` |
 | `shared/` | Gemeinsame API-Verträge (zod-Schemas und Typen) |
 | `agent/` | MIRA-Agent: läuft auf dem KI-Server, liefert Systemdaten an MIRA (nur lesend) |
+| `shelly-logger/` | Shelly-Logger: eigener Container, erfasst den Stromverbrauch über den Shelly Plug (eigene Datenbank, interne Lese-API) |
 | `deploy/` | Docker Compose für Asgard |
 | `docs/` | Dokumentation, Mockups |
 | `Dockerfile` | Ein Image für API und Oberfläche |
@@ -88,8 +90,9 @@ für einen Neuanfang `data/` löschen.
 
 | Befehl (Wurzelverzeichnis) | Zweck |
 | --- | --- |
-| `npm test` | Tests von Backend und Agent (Vitest) |
+| `npm test` | Tests von Backend, Agent und Shelly-Logger (Vitest) |
 | `npm run package:agent` | Installationspaket für den KI-Server bauen (`agent/release/`) |
+| `npm run build:shelly-logger` | Shelly-Logger bauen; Image: `docker build -f shelly-logger/Dockerfile .` – Betrieb: [`shelly-logger/README.md`](shelly-logger/README.md) |
 | `npm run typecheck` | TypeScript-Prüfung aller Pakete |
 | `npm run check:naming` | Prüft, dass kein fester Name des KI-Servers eingebaut ist ([ADR 0009](docs/adr/0009-ki-server-als-rolle-agent-mira-agent.md)) |
 | `npm run build` | Produktionsbuild von `shared`, `backend`, `frontend` |

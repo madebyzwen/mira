@@ -13,7 +13,8 @@ Status: ✅ abgeschlossen · 🔍 umgesetzt, Abnahme ausstehend · 🚧 in Umset
 | [2](stufe-02-odin-lesen.md) | KI-Server lesen: Agent (`health`, `system/info`, `system/metrics`), Online-Zustand, Ansicht mit Live-Daten; zuerst gegen den Test-KI-Server | KI-Server: Dienst, Benutzer, Firewall · Asgard: macvlan-IP für MIRA | ✅ |
 | [3](stufe-03-messwert-historie.md) | Messwert-Historie: Scheduler, Speicherung, Verdichtung, Aufbewahrung; echte Diagramme des KI-Servers; Backup-Konzept | nein | ✅ |
 | [3a](stufe-03a-ki-server-bereinigung.md) | Bereinigung: durchgängig „KI-Server“, Name konfigurierbar (`MIRA_AI_SERVER_NAME`), Agent `mira-agent` ([ADR 0009](../adr/0009-ki-server-als-rolle-agent-mira-agent.md)); **Voraussetzung für Stufe 4** | KI-Server: Agent neu installieren (übernimmt die Altinstallation) · Asgard: Stack-Variablen, Secret umbenennen | ✅ |
-| [4](stufe-04-shelly.md) | Shelly Plug: lokale API nur lesend, Live-Leistung, Verbrauch, Historie, Kosten; Dashboard-Widget „Verbrauch“ | OPNsense-Regel | ⏳ |
+| [4a](stufe-04a-shelly-logger.md) | Shelly-Logger: eigener Container mit eigener SQLite-Datenbank, Abfrage 1 s (lokal, nur lesend), 30-s-Verdichtung, Tag/Woche/Monat/Jahr, interne Lese-API ([ADR 0010](../adr/0010-shelly-logger-als-eigener-container.md)); ersetzt die Planung in [Stufe 4](stufe-04-shelly.md) | Asgard: eigener Stack · OPNsense: `<ASGARD_IP>` → `<SHELLY_IP>`, TCP 80 | 🔍 |
+| [4b](stufe-04b-shelly-mira-integration.md) | Shelly in MIRA: Anbindung an den Logger, Live-Leistung, Verbrauch, Kosten, Verlauf, Dashboard-Widget „Verbrauch“ – nach gesonderter Freigabe | MIRA-Stack: internes Netz `mira-intern` | ⏳ |
 | 5 | Energiesteuerung: Wake-on-LAN, Suspend, Herunterfahren, Neustart, Windows-Neustart, Verfügbarkeitsprüfung | KI-Server: sudo-Regeln, GRUB · OPNsense: os-wol | ⏳ |
 | 6 | Dashboard mit echten Daten: Docker-Status, Ressourcen, Strom, LLMs | KI-Server: sudo-Regel `docker ps` | ⏳ |
 | 7 | LLM-Übersicht: auflisten, Info, löschen mit Sicherheitsabfrage | KI-Server: Leserechte Modellverzeichnis | ⏳ |
@@ -21,7 +22,7 @@ Status: ✅ abgeschlossen · 🔍 umgesetzt, Abnahme ausstehend · 🚧 in Umset
 | 9 | Automatischer Schlafmodus: Inaktivität, Sperren, Schutz laufender Jobs/Anfragen | Aktivitätserkennung llama.cpp | ⏳ |
 | 10 | Agents: Hermes-Anbindung – Ansicht und Einrichtung von Agenten (2026-11-07 zurückgestellt) | offen | ⏸ |
 
-Konfigurations-Widgets entstehen jeweils **mit ihrer Stufe** (z. B. Verbindung zum KI-Server in Stufe 2, Shelly in Stufe 4).
+Konfigurations-Widgets entstehen jeweils **mit ihrer Stufe** (z. B. Verbindung zum KI-Server in Stufe 2, Shelly in Stufe 4b).
 
 ## Begründung der Reihenfolge
 
@@ -29,6 +30,9 @@ Konfigurations-Widgets entstehen jeweils **mit ihrer Stufe** (z. B. Verbindung z
   hinter der Anmeldung. Stufe 1 ist ohne Risiko für die Infrastruktur prüfbar.
 - **Lesen vor Steuern:** Fehler beim Lesen sind harmlos, beim Steuern nicht.
 - **Shelly früh möglich:** unabhängig vom MIRA-Agent, kann bei Bedarf vorgezogen werden.
+- **Shelly-Logger getrennt (2026-11-10):** Die Messung läuft als eigener Container weiter,
+  auch wenn MIRA aktualisiert wird ([ADR 0010](../adr/0010-shelly-logger-als-eigener-container.md)).
+  Zuerst nur der Logger (4a), die Anzeige in MIRA folgt nach eigener Freigabe (4b).
 - **Agents zurückgestellt (2026-11-07):** Ansicht und Einrichtung von Agenten werden
   vorerst nicht umgesetzt; Stufe 10 bleibt als Platzhalter stehen und wird bei Bedarf neu bewertet.
   Die Platzhalter aus Stufe 0 (Menü, Seite, Dashboard-Widget, Konfiguration) sind über den
@@ -40,7 +44,8 @@ Konfigurations-Widgets entstehen jeweils **mit ihrer Stufe** (z. B. Verbindung z
 
 | Thema | Benötigt bis |
 | --- | --- |
-| Shelly-Modell/Generation, IP, VLAN, Passwort, Strompreis ([Stufe 4](stufe-04-shelly.md)) | Stufe 4 |
+| Shelly: Ausgabe von `/shelly`, feste IP, Passwort, Ablageort ([Stufe 4a](stufe-04a-shelly-logger.md#offene-angaben-vom-betreiber)) | Inbetriebnahme 4a |
+| Strompreis und Gültigkeitsbeginn ([Stufe 4b](stufe-04b-shelly-mira-integration.md)) | Stufe 4b |
 | Wake-on-LAN über OPNsense ([ADR 0007](../adr/0007-wake-on-lan-ueber-opnsense.md)) | Stufe 5 |
 | MAC von `eno1`, WoL im BIOS, GRUB-Eintrag für Windows | Stufe 5 |
 | Modellverzeichnis, Aufbau von llama.cpp/Containern auf dem KI-Server | Stufe 6–8 |

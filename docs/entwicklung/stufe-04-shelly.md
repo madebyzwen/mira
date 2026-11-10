@@ -1,7 +1,14 @@
 # Stufe 4 – Shelly Plug: Leistung, Verbrauch, Kosten
 
-- Status: ⏳ Konzept freigegeben (2026-11-06), Angaben zum Gerät stehen noch aus
+- Status: ❌ **ersetzt** (2026-11-10) durch [Stufe 4a – Shelly-Logger](stufe-04a-shelly-logger.md) und
+  [Stufe 4b – MIRA-Integration](stufe-04b-shelly-mira-integration.md), Entscheidung: [ADR 0010](../adr/0010-shelly-logger-als-eigener-container.md)
 - Grundlage: [Datenmodell](../architektur/datenmodell.md), [Stufe 3](stufe-03-messwert-historie.md) (Abfrage, Verdichtung, Verlauf)
+
+> **Hinweis (2026-11-10):** Dieses Konzept bleibt als Nachweis der früheren Planung erhalten.
+> Die Entscheidung „Modul in MIRA, kein eigener Container“ (unten) gilt **nicht mehr**: Die
+> Messung übernimmt ein eigenständiger Container mit eigener Datenbank, MIRA liest nur über
+> dessen API. Weiter gültig sind die Anforderungen an die Oberfläche (übernommen in Stufe 4b)
+> und der Strompreis mit Gültigkeitsdatum in MIRA.
 
 ## Ziel
 
