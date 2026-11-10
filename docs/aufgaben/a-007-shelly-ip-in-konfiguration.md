@@ -1,6 +1,6 @@
 # A-007 – Konfiguration › Systeme › Shelly Plug: Adresse des Shelly statt des Loggers anzeigen
 
-- Status: 📝 notiert
+- Status: 📝 notiert – wird mit [Stufe 4c](../entwicklung/stufe-04c-betriebsart.md) (Logger 0.2.0) umgesetzt
 - Notiert: 2026-11-10
 
 ## Ziel
