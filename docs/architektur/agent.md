@@ -27,7 +27,7 @@ Entscheidungen (z. B. „nach 45 Minuten schlafen“) trifft ausschließlich MIR
   Fileshare und wird nicht verwendet.
 - Der MIRA-Container hat über macvlan eine **eigene IP im Server-Netz** (`<MIRA_IP>`)
   und spricht den KI-Server direkt an – ohne Umweg über die OPNsense (Stand 2026-11-06;
-  ursprünglich war Asgards Adresse in einem anderen VLAN vorgesehen).
+  ursprünglich war die Adresse des Homeservers in einem anderen VLAN vorgesehen).
 - Freigaben:
   - Auf dem KI-Server (ufw ist dort inaktiv und bleibt unverändert): eigene nftables-Tabelle
     `inet mira_agent`, die **nur** Port 8443 betrifft und nur `<MIRA_IP>` zulässt
@@ -41,7 +41,7 @@ Entscheidungen (z. B. „nach 45 Minuten schlafen“) trifft ausschließlich MIR
 | Maßnahme | Zweck |
 | --- | --- |
 | TLS mit selbst erstelltem Zertifikat, Fingerprint in MIRA hinterlegt | Verschlüsselung und Schutz vor untergeschobenem Server |
-| Langes Zufallstoken pro Anfrage; auf dem KI-Server nur der Hash, auf Asgard als Secret-Datei | Nur MIRA darf den Agent nutzen |
+| Langes Zufallstoken pro Anfrage; auf dem KI-Server nur der Hash, auf dem Homeserver als Secret-Datei | Nur MIRA darf den Agent nutzen |
 | Nur fest definierte Endpunkte, keine Ausführung beliebiger Befehle | Kleine Angriffsfläche |
 | Privilegierte Aktionen über `/etc/sudoers.d/mira-agent` mit **exakten** Befehlszeilen | Keine pauschalen Root-Rechte |
 | Docker-Status über exakte sudo-Regel für `docker ps --all --format json` statt Gruppe `docker` | Gruppe `docker` wäre faktisch Root |

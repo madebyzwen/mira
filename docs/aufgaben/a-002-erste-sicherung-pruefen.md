@@ -6,10 +6,10 @@
 
 ## Ziel
 
-Nachweisen, dass MIRA auf Asgard die Datenbank täglich um 03:30 Uhr (Ortszeit)
+Nachweisen, dass MIRA auf dem Homeserver die Datenbank täglich um 03:30 Uhr (Ortszeit)
 sichert und die Sicherung brauchbar ist.
 
-## Prüfschritte (per SSH auf Asgard)
+## Prüfschritte (per SSH auf dem Homeserver)
 
 1. Ordner ansehen – erwartet: eine Datei `mira-JJJJ-MM-TT.db` mit dem Datum des Tages,
    Besitzer UID 1000, einige hundert KB bis wenige MB groß, **ohne** `-wal`/`-shm` daneben:

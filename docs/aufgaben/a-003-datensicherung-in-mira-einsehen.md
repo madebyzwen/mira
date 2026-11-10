@@ -7,14 +7,14 @@
 ## Ziel
 
 Der Zustand der Datensicherung soll direkt in der MIRA-Oberfläche sichtbar sein,
-statt ihn per SSH auf Asgard bzw. in den Container-Logs prüfen zu müssen.
+statt ihn per SSH auf dem Homeserver bzw. in den Container-Logs prüfen zu müssen.
 
 ## Kontext
 
 - Seit Stufe 3 sichert MIRA die Datenbank täglich um 03:30 Uhr (Ortszeit,
   `MIRA_BACKUP_TIME`) nach `/data/backups/mira-JJJJ-MM-TT.db`; die letzten 7
   bleiben erhalten (`MIRA_BACKUP_KEEP`). Umsetzung: `backend/core/backup.ts`.
-- Heute ist das Ergebnis nur über den Ordner auf Asgard und die Logs nachvollziehbar.
+- Heute ist das Ergebnis nur über den Ordner auf dem Homeserver und die Logs nachvollziehbar.
 
 ## Mögliche Inhalte (zu klären)
 

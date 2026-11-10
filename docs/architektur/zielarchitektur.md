@@ -9,7 +9,7 @@ und die [ADRs](../adr/).
  Browser (Heimnetz / WireGuard)
      │  HTTPS über vorhandenen Reverse Proxy (NPM, Backend-Netz) → http://mira:80 · direkt: http://<MIRA_IP> (macvlan, Server-Netz)
      ▼
-┌──────────────────────────── Asgard (NAS, Docker) ─────────────────────────────┐
+┌───────────────────────── Homeserver (NAS, Docker) ────────────────────────────┐
 │  Container „mira“                         Container „mira-shelly-logger“       │
 │   ├─ Weboberfläche (React, statisch)       (ab Stufe 4a, ADR 0010)             │
 │   ├─ API /api/v1/…  (Fastify)              ├─ Abfrage am Shelly (1 s / 2 s)    │
