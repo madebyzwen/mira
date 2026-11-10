@@ -1,0 +1,28 @@
+{
+  "_comment": "Aufgezeichnete Antworten eines Shelly Plug PM Gen3 (S3PL-30116EU, Firmware 2.1.1) vom 2026-11-10; Kennungen (ID, MAC) anonymisiert.",
+  "shelly": {
+    "name": "Steckdose",
+    "id": "shellyplugpmg3-000000000000",
+    "mac": "000000000000",
+    "slot": 0,
+    "model": "S3PL-30116EU",
+    "gen": 3,
+    "fw_id": "20261026-151255/2.1.1-g07e9ad2",
+    "ver": "2.1.1",
+    "app": "PlugPMG3",
+    "auth_en": true,
+    "auth_domain": "shellyplugpmg3-000000000000",
+    "matter": false,
+    "provision": "complete",
+    "enhanced_security": false
+  },
+  "pm1Status": {
+    "id": 0,
+    "voltage": 237,
+    "current": 0.416,
+    "apower": 68.8,
+    "freq": 50,
+    "aenergy": { "total": 57.605, "by_minute": [1055.043, 1055.043, 1266.052], "minute_ts": 1794332160 },
+    "ret_aenergy": { "total": 0, "by_minute": [0, 0, 0], "minute_ts": 1794332160 }
+  }
+}

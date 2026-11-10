@@ -1,9 +1,12 @@
+import http from 'node:http';
+import type { AddressInfo } from 'node:net';
 import { afterEach, describe, expect, it } from 'vitest';
 import Fastify from 'fastify';
 import { loadConfig } from '../src/config.ts';
 import { Poller } from '../src/poller.ts';
 import { ShellyClient, ShellyError, statusPath, type MeterReading } from '../src/shelly/client.ts';
 import { FakeShelly } from './fakeShelly.ts';
+import recorded from './fixtures/plug-pm-gen3.json' with { type: 'json' };
 
 const log = Fastify({ logger: false }).log;
 const cleanup: (() => unknown)[] = [];
@@ -36,6 +39,22 @@ describe('Shelly-Client (lokal, nur lesend)', () => {
     expect(r.currentA).toBeCloseTo(87.5 / 230.4, 2);
     expect(r.energyTotalWh).toBeGreaterThan(12_345);
     expect(statusPath('pm1:0')).toBe('/rpc/PM1.GetStatus?id=0');
+  });
+
+  it('liest die aufgezeichneten Antworten eines echten Shelly Plug PM Gen3 (Firmware 2.1.1)', async () => {
+    const pm1Status = recorded.pm1Status;
+    const server = http.createServer((req, res) => {
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      if (req.url === '/shelly') return res.end(JSON.stringify(recorded.shelly));
+      if (req.url === '/rpc/Shelly.GetStatus') return res.end(JSON.stringify({ 'pm1:0': pm1Status }));
+      return res.end(JSON.stringify(pm1Status));
+    });
+    await new Promise<void>((r) => server.listen(0, '127.0.0.1', r));
+    cleanup.push(() => new Promise((r) => server.close(r)));
+    const c = new ShellyClient({ baseUrl: `http://127.0.0.1:${(server.address() as AddressInfo).port}`, timeoutMs: 800 });
+    cleanup.push(() => c.close());
+    expect(await c.identify()).toEqual({ id: 'shellyplugpmg3-000000000000', model: 'S3PL-30116EU', generation: 3, firmware: '2.1.1', component: 'pm1:0' });
+    expect(await c.read('pm1:0')).toMatchObject({ powerW: 68.8, voltageV: 237, currentA: 0.416, energyTotalWh: 57.605 });
   });
 
   it('unterstützt auch Geräte mit Relais (Switch-Komponente), ohne zu schalten', async () => {

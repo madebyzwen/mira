@@ -71,6 +71,19 @@ Die **Antwortzeiten des echten Shelly** sind erst am Gerät messbar. Nach der Fr
 Stunde ist im [Betriebshandbuch](../../shelly-logger/README.md#6-prüfen) beschrieben. Alternativ kann der
 Lasttest mit `--shelly http://<SHELLY_IP>` laufen, auch er nur lesend.
 
+## Gerät (bestätigt 2026-11-10)
+
+| | |
+| --- | --- |
+| Modell | Shelly Plug PM Gen3 (`S3PL-30116EU`, App `PlugPMG3`), reines Messgerät ohne Relais |
+| Firmware | 2.1.1 |
+| Messkomponente | `pm1:0` → `GET /rpc/PM1.GetStatus?id=0` (Felder `apower`, `voltage`, `current`, `aenergy.total` wie erwartet) |
+| Anmeldung | Passwort gesetzt (`auth_en: true`), Digest mit Anmeldedomäne = Geräte-ID |
+| Netz | IoT-VLAN, feste Adresse (`<SHELLY_IP>`, nur im Stack und in der OPNsense) |
+
+Die aufgezeichneten Antworten liegen anonymisiert als Testfall in
+`shelly-logger/test/fixtures/plug-pm-gen3.json`.
+
 ## Abnahme
 
 - [ ] Gerät erkannt (Modell, Generation, Komponente) und Live-Werte plausibel im Vergleich zur Shelly-App
@@ -84,8 +97,6 @@ Lasttest mit `--shelly http://<SHELLY_IP>` laufen, auch er nur lesend.
 
 | Angabe | Wofür |
 | --- | --- |
-| Ausgabe von `http://<SHELLY_IP>/shelly` (Modell, Generation, `auth_en`) | Bestätigung der Komponente (`pm1` oder `switch`) |
-| Passwort der lokalen Shelly-Oberfläche gesetzt? | Datei `secrets/shelly_password.txt` |
-| feste IP des Shelly im IoT-VLAN (DHCP-Reservierung) | `LOGGER_SHELLY_URL`, OPNsense-Regel |
+| ~~Ausgabe von `/shelly`, Passwort, feste IP~~ | ✅ geklärt (siehe Gerät) |
 | Ablageort `LOGGER_APPDATA` auf Asgard | Stack |
 | Sichtbarkeit des Images in der GitHub Container Registry | Asgard muss das Image ohne Anmeldung laden können |
