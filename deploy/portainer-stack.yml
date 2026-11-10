@@ -45,8 +45,11 @@ services:
       MIRA_AI_SERVER_URL: ${MIRA_AI_SERVER_URL:-}
       MIRA_AI_SERVER_CERT_FINGERPRINT: ${MIRA_AI_SERVER_CERT_FINGERPRINT:-}
       MIRA_AI_SERVER_TOKEN_FILE: /secrets/ai_server_token.txt
-      # Shelly Plug: Messwerte vom Shelly-Logger (Lese-API nur im internen Netz)
-      MIRA_SHELLY_LOGGER_URL: ${MIRA_SHELLY_LOGGER_URL:-http://mira-shelly-logger:8090}
+      # Shelly Plug: Messwerte vom Shelly-Logger (Lese-API nur im internen Netz).
+      # Feste interne Adresse statt Container-Name: MIRA und Logger teilen sich zwei Netze
+      # (macvlan und mira-intern) – der Name könnte sonst zur macvlan-Adresse aufgelöst werden,
+      # auf der der Logger bewusst keinen Port öffnet. Wert = LOGGER_INTERN_IP des Logger-Stacks.
+      MIRA_SHELLY_LOGGER_URL: ${MIRA_SHELLY_LOGGER_URL:-http://172.31.250.10:8090}
     volumes:
       - ${MIRA_APPDATA:?MIRA_APPDATA setzen, z. B. /volume2/…/appdata/mira}/data:/data
       - ${MIRA_APPDATA}/secrets:/secrets:ro

@@ -1,7 +1,7 @@
 {
   "name": "@mira/backend",
   "private": true,
-  "version": "0.8.0",
+  "version": "0.8.1",
   "description": "MIRA – Backend (Core und Fachmodule)",
   "type": "module",
   "engines": {

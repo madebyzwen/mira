@@ -45,7 +45,7 @@ const envSchema = z.object({
   MIRA_AI_SERVER_POLL_SECONDS: z.coerce.number().min(1).max(3600).default(2),
   /** Der KI-Server gilt als nicht erreichbar, wenn so lange keine Antwort kam */
   MIRA_AI_SERVER_OFFLINE_SECONDS: z.coerce.number().int().min(2).max(3600).default(10),
-  /** Shelly-Logger (Lese-API im internen Netz), z. B. `http://mira-shelly-logger:8090` */
+  /** Shelly-Logger (Lese-API im internen Netz), z. B. `http://172.31.250.10:8090` (feste Adresse im internen Netz) */
   MIRA_SHELLY_LOGGER_URL: opt(z.url({ protocol: /^https?$/ })),
   /** Datei mit dem Token der Logger-API (nur nötig, wenn der Logger eines verlangt) */
   MIRA_SHELLY_LOGGER_TOKEN_FILE: opt(z.string()),
