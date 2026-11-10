@@ -82,8 +82,14 @@ funktionieren – mit AMD-GPU (ROCm) ist das nicht selbstverständlich.
 2. **Schlafen und Aufwachen von Hand:** `sudo systemctl suspend`, dann per Tastatur wecken. Prüfen:
    Netzwerk wieder da, MIRA zeigt den KI-Server wieder online, ein LLM in Open WebUI antwortet
    (GPU nach dem Aufwachen funktionsfähig).
-3. **Aufwachen per Wake-on-LAN** (sobald 1. erfüllt ist): von einem Rechner im Server-Netz,
-   z. B. Asgard: `wakeonlan <MAC>` bzw. `etherwake`, oder später direkt aus MIRA.
+3. **Aufwachen per Wake-on-LAN** (sobald 1. erfüllt ist und der KI-Server schläft): Das Magic Packet
+   muss aus dem Server-Netz kommen. Der Homeserver selbst liegt in einem anderen Netz – deshalb aus dem
+   MIRA-Container senden (macvlan im Server-Netz; UDP-Broadcast, keine Sonderrechte nötig):
+   ```bash
+   sudo docker exec mira node -e "const d=require('dgram').createSocket('udp4');const m='<MAC>'.split(':').join('');const p=Buffer.from('ff'.repeat(6)+m.repeat(16),'hex');d.bind(()=>{d.setBroadcast(true);d.send(p,9,'<SERVER_NETZ_BROADCAST>',()=>d.close())})"
+   ```
+   `<MAC>` aus Prüfung 1 (Format `aa:bb:cc:dd:ee:ff`), `<SERVER_NETZ_BROADCAST>` z. B. die `.255`-Adresse
+   des Server-Netzes. Genau so sendet MIRA später selbst.
 4. **Leistung im Schlaf:** Wert in der Shelly-App bzw. MIRA notieren – daraus ergibt sich die
    Schwelle `MIRA_AI_SERVER_SLEEP_POWER_W`.
 
