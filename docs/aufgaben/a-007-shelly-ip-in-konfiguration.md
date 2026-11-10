@@ -27,10 +27,12 @@ Gewünscht: Die Zeile heißt **„Shelly-IP“** und zeigt die Adresse des eigen
    zusätzlich die Adresse aus `LOGGER_SHELLY_URL` liefern (z. B. Feld `address`, nur Host,
    ohne Zugangsdaten). Als optionales Feld abwärtsverträglich → Logger 0.2.0.
 2. **MIRA:** Zeile „Shelly-Logger“ in „Shelly-IP“ umbenennen und `live.device.address` anzeigen;
-   solange ein älterer Logger keine Adresse meldet: „–“. Die interne Logger-Adresse entfällt in
-   der Anzeige (sie ist eine reine Betriebsangabe und steht im Stack).
+   solange ein älterer Logger keine Adresse meldet: „–“. Die interne Logger-Adresse wird in der
+   Oberfläche **nirgends** mehr angezeigt (Entscheidung 2026-11-10) – sie ist eine reine
+   Betriebsangabe und steht im Stack.
 3. Optional dieselbe Angabe in Systeme › Shelly Plug › „Gerätedetails & Messung“.
 
-## Offene Fragen
+## Entscheidungen
 
-- Die interne Logger-Adresse ganz ausblenden oder z. B. als Hinweis/Tooltip an „Verbindung“ behalten?
+- 2026-11-10: Die Adresse des Loggers im Docker-Netz wird in MIRA nicht angezeigt – auch nicht als
+  Hinweis oder Tooltip. Die Zeile „Verbindung“ zeigt weiter „verbunden · Version …“ bzw. den Fehler.
