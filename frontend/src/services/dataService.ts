@@ -1,4 +1,3 @@
-import { HISTORY_GRID } from '@mira/shared';
 /**
  * Datenzugriffsschicht der Weboberfläche.
  *
@@ -13,19 +12,16 @@ import { HISTORY_GRID } from '@mira/shared';
 import * as demo from '../data/demoData';
 import type {
   Agent,
-  ChartRange,
   Disk,
   DockerContainer,
   LlmDownload,
   LlmModel,
   NetworkInterface,
   NetworkShare,
-  PowerMeterInfo,
   ServerInfo,
   ServerUtilization,
   SystemEntry,
   Temperature,
-  TimeSeries,
 } from '../types/models';
 
 export const isDemoMode = true;
@@ -42,15 +38,7 @@ export const dataService = {
 
   getDockerContainers: (): DockerContainer[] => demo.demoDockerContainers,
 
-  getShellyPlug: (): PowerMeterInfo => demo.demoShellyPlug,
   /** Beispielwerte, auf das einheitliche Zeitraster bis jetzt gelegt */
-  getShellyPowerHistory: (range: ChartRange): TimeSeries => {
-    const { points, stepSeconds } = HISTORY_GRID[range];
-    const step = stepSeconds * 1000;
-    const last = Math.floor(Date.now() / step) * step;
-    const timestamps = Array.from({ length: points }, (_, i) => new Date(last - (points - 1 - i) * step).toISOString());
-    return { range, stepSeconds, timestamps, values: demo.demoShellyPowerHistory[range] };
-  },
 
   getAgents: (): Agent[] => demo.demoAgents,
 

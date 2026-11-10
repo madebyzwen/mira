@@ -9,6 +9,8 @@ import { DevicePhoto } from '../components/illustrations/DevicePhoto';
 import { useNotice } from '../components/ui/Notice';
 import { useCurrentUser } from '../auth/AuthContext';
 import { useAiServerName } from '../components/layout/Systems';
+import { usePolling } from '../lib/usePolling';
+import { systemsService } from '../services/systemsService';
 import { dataService } from '../services/dataService';
 import { formatNumber, formatPercent, percentOf } from '../lib/format';
 import type { ContainerState } from '../types/models';
@@ -26,8 +28,11 @@ export function DashboardPage() {
   const server = dataService.getAiServer();
   const serverName = useAiServerName();
   const util = dataService.getAiServerUtilization();
-  const shelly = dataService.getShellyPlug();
-  const powerSeries = dataService.getShellyPowerHistory('24h').values;
+  // Verbrauch: Live-Leistung und Verlauf der letzten 4 Stunden vom Shelly-Logger (über MIRA)
+  const { data: shelly } = usePolling(systemsService.getShelly, 2_000);
+  const { data: powerHistory } = usePolling(() => systemsService.getShellyHistory('24h'), 5 * 60_000);
+  const livePower = shelly?.live?.state === 'online' ? shelly.live.powerW : null;
+  const powerSeries = (powerHistory?.points.slice(-48) ?? []).map((p) => p.avgW).filter((v): v is number => v !== null);
   const containers = dataService.getDockerContainers();
   const agents = dataService.getAgents();
   const llms = dataService.getLlmModels().filter((m) => m.availableInOpenWebUi);
@@ -101,8 +106,10 @@ export function DashboardPage() {
               <Zap size={22} className="accent-icon" /> Verbrauch (Gesamt)
             </span>
             <div className="overview__power-row">
-              <span className="overview__power-value">{formatNumber(shelly.currentPowerW, 1, 1)} W</span>
-              <Sparkline values={powerSeries.slice(-48)} min={0} max={110} className="overview__sparkline" />
+              <span className="overview__power-value">{livePower !== null ? `${formatNumber(livePower, 1, 1)} W` : '–'}</span>
+              {powerSeries.length > 1 && (
+                <Sparkline values={powerSeries} min={0} max={Math.max(100, ...powerSeries) * 1.1} className="overview__sparkline" />
+              )}
             </div>
           </div>
         </div>

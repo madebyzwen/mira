@@ -21,15 +21,6 @@ export interface ChartTick {
   at: number;
 }
 
-/** Verlauf im einheitlichen Zeitraster (wie die Verlaufs-API) */
-export interface TimeSeries {
-  range: ChartRange;
-  stepSeconds: number;
-  /** Beginn je Zeitabschnitt (ISO) */
-  timestamps: string[];
-  values: number[];
-}
-
 /* ---------- KI-Server ---------- */
 
 export interface ServerHardware {
@@ -97,25 +88,6 @@ export interface DockerContainer {
 }
 
 /* ---------- Shelly Plug ---------- */
-
-export interface PowerMeterInfo {
-  id: string;
-  name: string;
-  deviceName: string;
-  description: string;
-  status: OnlineStatus;
-  currentPowerW: number;
-  energyTodayKwh: number;
-  energyMonthKwh: number;
-  costTodayEur: number;
-  costMonthEur: number;
-  ipAddress: string;
-  connection: string;
-  wifiSignalDbm: number;
-  firmware: string;
-  measureIntervalS: number;
-  host: string;
-}
 
 /* ---------- Agents ---------- */
 

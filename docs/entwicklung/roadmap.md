@@ -14,7 +14,7 @@ Status: ✅ abgeschlossen · 🔍 umgesetzt, Abnahme ausstehend · 🚧 in Umset
 | [3](stufe-03-messwert-historie.md) | Messwert-Historie: Scheduler, Speicherung, Verdichtung, Aufbewahrung; echte Diagramme des KI-Servers; Backup-Konzept | nein | ✅ |
 | [3a](stufe-03a-ki-server-bereinigung.md) | Bereinigung: durchgängig „KI-Server“, Name konfigurierbar (`MIRA_AI_SERVER_NAME`), Agent `mira-agent` ([ADR 0009](../adr/0009-ki-server-als-rolle-agent-mira-agent.md)); **Voraussetzung für Stufe 4** | KI-Server: Agent neu installieren (übernimmt die Altinstallation) · Asgard: Stack-Variablen, Secret umbenennen | ✅ |
 | [4a](stufe-04a-shelly-logger.md) | Shelly-Logger: eigener Container mit eigener SQLite-Datenbank, Abfrage 1 s (lokal, nur lesend), 30-s-Verdichtung, Tag/Woche/Monat/Jahr, interne Lese-API ([ADR 0010](../adr/0010-shelly-logger-als-eigener-container.md)); ersetzt die Planung in [Stufe 4](stufe-04-shelly.md) | Asgard: eigener Stack mit macvlan-IP · OPNsense: `<LOGGER_IP>` → `<SHELLY_IP>`, TCP 80 | 🔍 |
-| [4b](stufe-04b-shelly-mira-integration.md) | Shelly in MIRA: Anbindung an den Logger, Live-Leistung, Verbrauch, Kosten, Verlauf, Dashboard-Widget „Verbrauch“ – nach gesonderter Freigabe | MIRA-Stack: internes Netz `mira-intern` | ⏳ |
+| [4b](stufe-04b-shelly-mira-integration.md) | Shelly in MIRA: Anbindung an den Logger, Live-Leistung, Verbrauch, Kosten (Strompreis mit Gültigkeitsdatum), Verlauf, Dashboard-Widget „Verbrauch“ | MIRA-Stack: internes Netz `mira-intern` | 🔍 |
 | 5 | Energiesteuerung: Wake-on-LAN, Suspend, Herunterfahren, Neustart, Windows-Neustart, Verfügbarkeitsprüfung | KI-Server: sudo-Regeln, GRUB · OPNsense: os-wol | ⏳ |
 | 6 | Dashboard mit echten Daten: Docker-Status, Ressourcen, Strom, LLMs | KI-Server: sudo-Regel `docker ps` | ⏳ |
 | 7 | LLM-Übersicht: auflisten, Info, löschen mit Sicherheitsabfrage | KI-Server: Leserechte Modellverzeichnis | ⏳ |
@@ -45,7 +45,6 @@ Konfigurations-Widgets entstehen jeweils **mit ihrer Stufe** (z. B. Verbindung z
 | Thema | Benötigt bis |
 | --- | --- |
 | Shelly: Ausgabe von `/shelly`, feste IP, Passwort, Ablageort ([Stufe 4a](stufe-04a-shelly-logger.md#offene-angaben-vom-betreiber)) | Inbetriebnahme 4a |
-| Strompreis und Gültigkeitsbeginn ([Stufe 4b](stufe-04b-shelly-mira-integration.md)) | Stufe 4b |
 | Wake-on-LAN über OPNsense ([ADR 0007](../adr/0007-wake-on-lan-ueber-opnsense.md)) | Stufe 5 |
 | MAC von `eno1`, WoL im BIOS, GRUB-Eintrag für Windows | Stufe 5 |
 | Modellverzeichnis, Aufbau von llama.cpp/Containern auf dem KI-Server | Stufe 6–8 |

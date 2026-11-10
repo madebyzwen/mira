@@ -668,6 +668,27 @@
   margin-top: 0.25rem;
 }
 
+/* Shelly: Verbrauch & Kosten je Zeitraum */
+.spec-strip--periods .stat {
+  flex: 1;
+  min-width: 10rem;
+}
+
+.spec-strip--periods .stat__value {
+  font-size: var(--fs-xl);
+  margin-top: 0.125rem;
+}
+
+.spec-strip--periods .stat__detail {
+  display: flex;
+  flex-direction: column;
+}
+
+.stat__note {
+  font-size: var(--fs-xs);
+  color: var(--color-text-dim);
+}
+
 .hero-card--plug .stat {
   flex-direction: row;
 }
@@ -1399,4 +1420,54 @@
   .spin {
     animation: none;
   }
+}
+
+/* Konfiguration › Shelly Plug: Strompreis mit Gültigkeitsdatum */
+.price-editor {
+  margin-top: var(--space-4);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--color-divider);
+}
+
+.price-editor__title {
+  margin: 0 0 var(--space-3);
+  font-size: var(--fs-md);
+  font-weight: 600;
+}
+
+.price-editor__title span {
+  font-weight: 400;
+  color: var(--color-text-muted);
+}
+
+.price-editor__list {
+  list-style: none;
+  margin: 0 0 var(--space-3);
+  padding: 0;
+}
+
+.price-editor__list li {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-1) 0;
+}
+
+.price-editor__list li span {
+  flex: 1;
+  color: var(--color-text-muted);
+}
+
+.price-editor__form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--space-3);
+}
+
+.price-editor__form label {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 10rem;
 }

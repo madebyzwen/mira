@@ -23,6 +23,8 @@ services:
       server:
         ipv4_address: ${MIRA_IP:?MIRA_IP setzen (feste Adresse im Server-Netz)}
       proxy: {}
+      # internes Netz zum Shelly-Logger (ab MIRA 0.8.0, Stufe 4b) – vom Logger-Stack angelegt
+      mira-intern: {}
     # Port 80 ohne Root-Rechte: erlaubt nur im Netzwerk-Namensraum dieses Containers
     sysctls:
       net.ipv4.ip_unprivileged_port_start: ${MIRA_PORT:-80}
@@ -43,6 +45,8 @@ services:
       MIRA_AI_SERVER_URL: ${MIRA_AI_SERVER_URL:-}
       MIRA_AI_SERVER_CERT_FINGERPRINT: ${MIRA_AI_SERVER_CERT_FINGERPRINT:-}
       MIRA_AI_SERVER_TOKEN_FILE: /secrets/ai_server_token.txt
+      # Shelly Plug: Messwerte vom Shelly-Logger (Lese-API nur im internen Netz)
+      MIRA_SHELLY_LOGGER_URL: ${MIRA_SHELLY_LOGGER_URL:-http://mira-shelly-logger:8090}
     volumes:
       - ${MIRA_APPDATA:?MIRA_APPDATA setzen, z. B. /volume2/…/appdata/mira}/data:/data
       - ${MIRA_APPDATA}/secrets:/secrets:ro
@@ -60,4 +64,8 @@ networks:
   proxy:
     # vorhandenes Backend-Netz des Reverse Proxys (Nginx Proxy Manager)
     name: ${MIRA_PROXY_NETWORK:-npm-server_npm_backend}
+    external: true
+  mira-intern:
+    # internes Netz (internal: true) des Shelly-Logger-Stacks; muss vor diesem Stack existieren
+    name: mira-intern
     external: true

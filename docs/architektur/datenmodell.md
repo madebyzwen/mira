@@ -23,12 +23,12 @@ Legende: ✅ umgesetzt · 🔜 geplant (Stufe) · ⏸ zurückgestellt
 
 | Tabelle | Inhalt | Status |
 | --- | --- | --- |
-| `systems` | id, slug, name, kind (`server` \| `power_meter`), description, created_at – der KI-Server als erster Eintrag (fester Slug `ai-server`, Name aus `MIRA_AI_SERVER_NAME`) | ✅ Stufe 2 |
+| `systems` | id, slug, name, kind (`server` \| `power_meter`), description, created_at – der KI-Server (fester Slug `ai-server`, Name aus `MIRA_AI_SERVER_NAME`) und ab Stufe 4b der Shelly Plug (`shelly-plug`, `power_meter`) | ✅ Stufe 2 |
 | `server_connections` | system_id, api_url, zertifikats-Fingerprint, token_ref (Datei), wol-Parameter – bis die Verbindung über die Oberfläche bearbeitbar ist, kommen die Werte aus `MIRA_AI_SERVER_*` | 🔜 später |
 | `system_state` | system_id, state (`online`/`offline`/`unknown`; `sleeping`/`windows` ab Stufe 5), since, last_seen_at, last_error | ✅ Stufe 2 |
 | `server_samples` | system_id, ts (Minutenbeginn, UTC), samples, cpu/gpu Mittel + Max, ram/vram, load1, Temperaturen CPU/GPU/NVMe Mittel + Max – 1 Datensatz je Minute, 7 Tage | ✅ Stufe 3 |
 | `server_samples_hourly` | wie `server_samples`, je Stunde (nach Messungen gewichtet), 365 Tage | ✅ Stufe 3 |
-| `energy_prices` | gültig ab, Preis ct/kWh – Kosten bleiben bei Tarifwechsel richtig; der Strompreis bleibt in MIRA, nicht im Shelly-Logger | 🔜 Stufe 4b |
+| `energy_prices` | id, valid_from (Kalendertag, eindeutig), cents_per_kwh, created_at – Kosten je Tag mit dem an diesem Tag gültigen Preis; der Strompreis bleibt in MIRA, nicht im Shelly-Logger | ✅ Stufe 4b |
 
 Die Messwerte des Shelly speichert **nicht** MIRA, sondern der eigenständige Shelly-Logger in
 seiner eigenen Datenbank ([ADR 0010](../adr/0010-shelly-logger-als-eigener-container.md)).
