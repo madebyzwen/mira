@@ -29,6 +29,7 @@ const envSchema = z.object({
   LOGGER_MAX_POWER_W: withDefault(z.coerce.number().min(100).max(20_000).default(3680)),
   LOGGER_TIMEZONE: withDefault(z.string().default('Europe/Berlin')),
   LOGGER_DATA_DIR: withDefault(z.string().default('/data')),
+  /** Adresse, auf der die API lauscht; im Stack die feste Adresse im internen Netz (auf der macvlan-Adresse kein Port) */
   LOGGER_HOST: withDefault(z.string().default('0.0.0.0')),
   LOGGER_PORT: withDefault(z.coerce.number().int().min(1).max(65535).default(8090)),
   /** Datei mit einem Token; gesetzt = jede API-Anfrage (außer /health) braucht `Authorization: Bearer …` */

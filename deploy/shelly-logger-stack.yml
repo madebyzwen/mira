@@ -1,15 +1,15 @@
 # MIRA Shelly-Logger – eigener Stack für Portainer (Asgard)
 #
-# VORSCHLAG (Stufe 4a) – Inbetriebnahme erst nach ausdrücklicher Freigabe.
 # Anleitung: shelly-logger/README.md, Abschnitt „Inbetriebnahme“.
 #
 # Der Logger läuft unabhängig von MIRA und vom KI-Server und erfasst den Stromverbrauch
-# über den Shelly Plug (lokale HTTP-API, nur lesend). Er veröffentlicht KEINE Ports:
-# - Netz „shelly-egress“: eigenes Bridge-Netz nur für den Logger – der Weg zum Shelly
-#   führt über Asgards Adresse (NAT). In der OPNsense genau eine Regel:
-#   <ASGARD_IP> → <SHELLY_IP>, TCP 80.
-# - Netz „mira-intern“: internes Netz ohne Verbindung nach außen. Hier ist die API
-#   erreichbar; MIRA tritt diesem Netz erst in Stufe 4b bei.
+# über den Shelly Plug (lokale HTTP-API, nur lesend). Netze:
+# - „server“ (vorhandenes macvlan-Netz, wie MIRA): eigene feste IP <LOGGER_IP> im Server-Netz.
+#   Nur darüber erreicht der Logger den Shelly. In der OPNsense genau eine Regel:
+#   <LOGGER_IP> → <SHELLY_IP>, TCP 80. Auf dieser Adresse ist KEIN Port offen.
+# - „mira-intern“ (internal: true, festes Subnetz): Nur hier lauscht die Lese-API
+#   (LOGGER_HOST = feste Adresse in diesem Netz). MIRA tritt diesem Netz in Stufe 4b bei.
+# Es werden keine Ports veröffentlicht.
 #
 # Erwartete Ordnerstruktur unter LOGGER_APPDATA (gehört UID 1000):
 #   data/                         Datenbank shelly-logger.db (wird angelegt)
@@ -21,8 +21,10 @@ services:
     container_name: mira-shelly-logger
     restart: unless-stopped
     networks:
-      shelly-egress: {}
-      mira-intern: {}
+      server:
+        ipv4_address: ${LOGGER_IP:?LOGGER_IP setzen (feste Adresse im Server-Netz, außerhalb des DHCP-Bereichs)}
+      mira-intern:
+        ipv4_address: ${LOGGER_INTERN_IP:-172.31.250.10}
     environment:
       LOGGER_SHELLY_URL: ${LOGGER_SHELLY_URL:?LOGGER_SHELLY_URL setzen, z. B. http://<SHELLY_IP>}
       # leer lassen, wenn der Shelly kein Passwort hat (nicht empfohlen)
@@ -30,6 +32,8 @@ services:
       # 1000 (Standard) oder 2000 – ohne Codeänderung umstellbar
       LOGGER_POLL_INTERVAL_MS: ${LOGGER_POLL_INTERVAL_MS:-1000}
       LOGGER_TIMEZONE: Europe/Berlin
+      # API nur im internen Netz – auf der macvlan-Adresse ist kein Port offen
+      LOGGER_HOST: ${LOGGER_INTERN_IP:-172.31.250.10}
       LOGGER_LOG_LEVEL: ${LOGGER_LOG_LEVEL:-info}
     volumes:
       - ${LOGGER_APPDATA:?LOGGER_APPDATA setzen, z. B. /volume2/…/appdata/mira-shelly-logger}/data:/data
@@ -45,9 +49,15 @@ services:
     stop_grace_period: 20s
 
 networks:
-  shelly-egress:
-    driver: bridge
+  server:
+    # vorhandenes macvlan-Netz des Server-VLANs (wie im MIRA-Stack; nicht durch diesen Stack angelegt)
+    name: ${LOGGER_NETWORK:-macvlan_server}
+    external: true
   mira-intern:
-    # festgelegter Name, damit der MIRA-Stack in Stufe 4b als „external“ beitreten kann
+    # internes Netz ohne Verbindung nach außen; fester Name, damit der MIRA-Stack in Stufe 4b
+    # als „external“ beitreten kann; festes Subnetz für die feste API-Adresse
     name: mira-intern
     internal: true
+    ipam:
+      config:
+        - subnet: ${MIRA_INTERN_SUBNET:-172.31.250.0/28}

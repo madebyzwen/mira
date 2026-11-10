@@ -24,7 +24,7 @@ einer kleinen internen Lese-API. Die MIRA-Oberfläche bleibt in dieser Stufe unv
 | Neustart | laufendes Intervall wird beim Beenden geschrieben; der zuletzt verbuchte Zählerstand liegt in derselben Transaktion – keine Doppelzählung |
 | Statistik | Tagessummen in `Europe/Berlin` (DST-sicher); Woche ab Montag, Monat, Jahr aus den Tagessummen; auch abgeschlossene Zeiträume (`date=`) |
 | Aufbewahrung | keine automatische Löschung; tägliche Sicherung (SQLite-Backup-API), die letzten 7 |
-| Netz | keine veröffentlichten Ports; API im internen Netz `mira-intern`; zum Shelly über eigenes Bridge-Netz und Asgards Adresse; OPNsense: `<ASGARD_IP>` → `<SHELLY_IP>`, TCP 80 |
+| Netz | keine veröffentlichten Ports; eigene macvlan-IP `<LOGGER_IP>` im Server-Netz nur für den Weg zum Shelly (dort kein Port offen); API nur im internen Netz `mira-intern`; OPNsense: `<LOGGER_IP>` → `<SHELLY_IP>`, TCP 80 (Änderung 2026-11-10, siehe Nachtrag in ADR 0010) |
 | Betrieb | eigenes Image `ghcr.io/madebyzwen/mira-shelly-logger`, Tags `shelly-logger-vX.Y.Z`; unprivilegiert (UID 1000), read-only, keine Capabilities, Healthcheck |
 
 ## Umsetzung
