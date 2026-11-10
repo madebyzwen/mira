@@ -27,7 +27,7 @@ export class LoggerClientError extends Error {
 const MAX_BODY = 2 * 1024 * 1024;
 
 export interface LoggerClientOptions {
-  /** z. B. `http://mira-shelly-logger:8090` */
+  /** z. B. `http://172.31.250.10:8090` */
   url: string;
   token?: string;
   timeoutMs?: number;

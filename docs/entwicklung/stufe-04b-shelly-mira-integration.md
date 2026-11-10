@@ -14,8 +14,8 @@ Die Beispieldaten auf der Shelly-Seite und im Dashboard-Widget „Verbrauch“ e
 
 | | Festlegung |
 | --- | --- |
-| Netz | Der MIRA-Stack tritt dem internen Netz `mira-intern` bei (`external: true`); der Logger ist dort als `http://mira-shelly-logger:8090` erreichbar. Keine Ports veröffentlicht. |
-| Konfiguration | `MIRA_SHELLY_LOGGER_URL` (Stack: `http://mira-shelly-logger:8090`), optional `MIRA_SHELLY_LOGGER_TOKEN_FILE` – vorerst ohne Token, die Netztrennung genügt |
+| Netz | Der MIRA-Stack tritt dem internen Netz `mira-intern` bei (`external: true`); der Logger ist dort unter seiner festen Adresse `http://172.31.250.10:8090` erreichbar. Keine Ports veröffentlicht. **Nicht** über den Container-Namen: MIRA und Logger teilen sich auch das macvlan-Netz, der Name kann zur macvlan-Adresse aufgelöst werden (dort kein Port – im Betrieb am 2026-11-10 aufgefallen, behoben in MIRA 0.8.1). |
+| Konfiguration | `MIRA_SHELLY_LOGGER_URL` (Stack: `http://172.31.250.10:8090`), optional `MIRA_SHELLY_LOGGER_TOKEN_FILE` – vorerst ohne Token, die Netztrennung genügt |
 | Live | Shelly-Seite: jede Sekunde, nur solange sichtbar (`usePolling`); Dashboard-Kachel alle 2 s. MIRA reicht den Live-Wert des Loggers durch – kein WebSocket/SSE |
 | Kosten | Strompreis (Arbeitspreis brutto, ct/kWh) mit Gültigkeitsdatum in MIRA; Kosten **je Kalendertag** mit dem an diesem Tag gültigen Preis – im Jahr über die Tageswerte jedes Monats; Tage ohne Preis → „unvollständig“ |
 | Zwischenspeicher | Verbrauch laufender Zeiträume 15 s, abgeschlossene dauerhaft; Verlauf 30 s; Datenbankstatistik 60 s |

@@ -63,6 +63,13 @@ export async function buildApp(config: AppConfig, options: BuildOptions = {}): P
     bodyLimit: 64 * 1024,
   });
 
+  // Lesende Abfragen (z. B. Live-Werte im Sekundentakt) nicht zeilenweise protokollieren –
+  // Warnungen und Fehler bleiben; ändernde Anfragen (POST, DELETE, …) werden weiter protokolliert.
+  app.addHook('onRoute', (route) => {
+    const methods = Array.isArray(route.method) ? route.method : [route.method];
+    if (!route.logLevel && methods.every((m) => m === 'GET' || m === 'HEAD')) route.logLevel = 'warn';
+  });
+
   const audit = new AuditLog(db);
   const users = new UserRepository(db);
   const sessions = new SessionStore(db, config.sessionTtlMs);
