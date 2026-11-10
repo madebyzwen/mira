@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { parseConfig, type OdinApiConfig } from '../src/config.ts';
+import { parseConfig, type AgentConfig } from '../src/config.ts';
 
 /** Kleine Hybrid-CPU: 2 P-Kerne mit SMT (4 Threads) + 2 E-Kerne. */
 const CPUINFO = [
@@ -31,7 +31,7 @@ const FILES: Record<string, string> = {
     '//nas/Freigabe\\040Ordner /mnt/smb cifs rw 0 0',
     'systemd-1 /mnt/nas autofs rw,relatime 0 0',
   ].join('\n'),
-  // wie auf Odin: CIFS-Freigabe per systemd-Automount, dazu ein eingetragenes, nicht eingehängtes NFS-Laufwerk
+  // wie auf dem KI-Server: CIFS-Freigabe per systemd-Automount, dazu ein eingetragenes, nicht eingehängtes NFS-Laufwerk
   'etc/fstab': [
     '# /etc/fstab',
     '/dev/disk/by-uuid/35684b68 / ext4 defaults 0 1',
@@ -39,7 +39,7 @@ const FILES: Record<string, string> = {
     '10.11.40.1:/volume1/ki /mnt/asgard nfs4 defaults 0 0',
     '10.11.40.1:/volume1/backup /mnt/backup nfs4 noauto 0 0',
   ].join('\n'),
-  'proc/sys/kernel/hostname': 'odin\n',
+  'proc/sys/kernel/hostname': 'ki-server\n',
   'proc/sys/kernel/osrelease': '7.0.0-42-generic\n',
   'etc/os-release': 'NAME="Ubuntu"\nPRETTY_NAME="Ubuntu 26.04.1 LTS"\nVERSION_ID="26.04"\n',
   'sys/devices/cpu_core/cpus': '0-3\n',
@@ -76,7 +76,7 @@ const FILES: Record<string, string> = {
 };
 
 export function createFixtureRoot(overrides: Record<string, string | null> = {}): string {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'odin-fixture-'));
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'ai-server-fixture-'));
   for (const [rel, content] of Object.entries({ ...FILES, ...overrides })) {
     if (content === null) continue;
     const file = path.join(root, rel);
@@ -86,7 +86,7 @@ export function createFixtureRoot(overrides: Record<string, string | null> = {})
   return root;
 }
 
-/** Netzwerkadressen wie auf Odin (os.networkInterfaces()-Format). */
+/** Netzwerkadressen wie auf dem KI-Server (os.networkInterfaces()-Format). */
 export const fixtureAddresses = () => ({
   lo: [{ address: '127.0.0.1', netmask: '255.0.0.0', family: 'IPv4' as const, mac: '00:00:00:00:00:00', internal: true, cidr: '127.0.0.1/8' }],
   eno1: [{ address: 'fe80::1', netmask: 'ffff:ffff:ffff:ffff::', family: 'IPv6' as const, mac: 'aa:aa:aa:aa:aa:aa', internal: false, cidr: 'fe80::1/64', scopeid: 2 }],
@@ -103,7 +103,7 @@ export const fixtureStatFs = async (mount: string) => {
   throw new Error(`ENOENT: ${mount}`);
 };
 
-export function fixtureConfig(root: string, overrides: Partial<Record<string, unknown>> = {}): OdinApiConfig {
+export function fixtureConfig(root: string, overrides: Partial<Record<string, unknown>> = {}): AgentConfig {
   return parseConfig({
     listen: { host: '127.0.0.1', port: 8443 },
     tls: { certFile: 'unused', keyFile: 'unused' },

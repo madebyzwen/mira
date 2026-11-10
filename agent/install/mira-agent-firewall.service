@@ -1,0 +1,13 @@
+[Unit]
+Description=MIRA-Agent – Firewall-Regel (nur der Port des Agents, nur MIRA)
+After=nftables.service
+Before=mira-agent.service network-online.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/sbin/nft -f /etc/mira-agent/firewall.nft
+ExecStop=/usr/sbin/nft delete table inet mira_agent
+
+[Install]
+WantedBy=multi-user.target

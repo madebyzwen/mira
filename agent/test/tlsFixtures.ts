@@ -5,10 +5,10 @@ import selfsigned from 'selfsigned';
  * Test-Zertifikate werden zur Laufzeit erzeugt – es liegen bewusst keine
  * privaten Schlüssel im (öffentlichen) Repository.
  *
- * - `odin-sim`: Zertifikat des simulierten Odin
+ * - `ai-server-sim`: Zertifikat des simulierten KI-Servers
  * - `fremd`:    anderes Zertifikat für den Test „falsches Zertifikat wird abgelehnt“
  */
-export type TestCertName = 'odin-sim' | 'fremd';
+export type TestCertName = 'ai-server-sim' | 'fremd';
 
 export interface TestTls {
   cert: string;

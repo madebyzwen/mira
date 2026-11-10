@@ -4,12 +4,12 @@ import path from 'node:path';
 import type { AddressInfo } from 'node:net';
 import { afterEach, describe, expect, it } from 'vitest';
 import type { FastifyInstance } from 'fastify';
-import { buildServer, Host } from '@mira/odin-api';
+import { buildServer, Host } from '@mira/agent';
 import { historyResponseSchema, aiServerStatusResponseSchema, updateStatusResponseSchema } from '@mira/shared';
 import { buildApp } from '../app.ts';
 import { SystemsModule } from '../modules/systems/index.ts';
-import { createFixtureRoot, fixtureAddresses, fixtureConfig, fixtureStatFs } from '../../odin-api/test/fixtureHost.ts';
-import { testTls, type TestCertName } from '../../odin-api/test/tlsFixtures.ts';
+import { createFixtureRoot, fixtureAddresses, fixtureConfig, fixtureStatFs } from '../../agent/test/fixtureHost.ts';
+import { testTls, type TestCertName } from '../../agent/test/tlsFixtures.ts';
 import { loginCookie, testConfig } from './helpers.ts';
 
 const TOKEN = 'agent-test-token-abcdefghijklmnopqrstuvwxyz0123456789';
@@ -23,7 +23,7 @@ afterEach(async () => {
 async function startAgent(options: { certName?: TestCertName; token?: string; version?: string } = {}) {
   const root = createFixtureRoot();
   const config = fixtureConfig(root);
-  const { cert, key } = await testTls(options.certName ?? 'odin-sim');
+  const { cert, key } = await testTls(options.certName ?? 'ai-server-sim');
   const app = buildServer({
     config,
     tls: { cert, key },
@@ -66,7 +66,7 @@ async function startMira(
     config.aiServer = {
       ...config.aiServer,
       url: `https://127.0.0.1:${agent.port}`,
-      certFingerprint: agent.fingerprint ?? (await testTls('odin-sim')).fingerprint256,
+      certFingerprint: agent.fingerprint ?? (await testTls('ai-server-sim')).fingerprint256,
       tokenFile,
       pollSeconds: 3600,
       offlineSeconds: agent.offlineSeconds ?? 10,
@@ -115,7 +115,7 @@ describe('Systeme › KI-Server', () => {
 
   it('lehnt einen Server mit anderem Zertifikat ab – das Token wird nie gesendet', async () => {
     const agent = await startAgent({ certName: 'fremd' });
-    const { app, monitor, cookie } = await startMira({ port: agent.port, fingerprint: (await testTls('odin-sim')).fingerprint256 });
+    const { app, monitor, cookie } = await startMira({ port: agent.port, fingerprint: (await testTls('ai-server-sim')).fingerprint256 });
     await monitor.poll();
     const status = await aiServerStatus(app, cookie);
     expect(status.system.status).toMatchObject({ state: 'offline', lastError: 'certificate_mismatch' });

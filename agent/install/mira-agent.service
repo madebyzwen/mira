@@ -1,14 +1,14 @@
 [Unit]
-Description=MIRA Odin-API (liefert Systemdaten an MIRA, nur lesend)
-Documentation=https://github.com/madebyzwen/mira/blob/main/docs/architektur/odin-api.md
-After=network-online.target mira-odin-api-firewall.service
+Description=MIRA-Agent (liefert Systemdaten des KI-Servers an MIRA, nur lesend)
+Documentation=https://github.com/madebyzwen/mira/blob/main/docs/architektur/agent.md
+After=network-online.target mira-agent-firewall.service
 Wants=network-online.target
 
 [Service]
 Type=simple
 User=mira-agent
 Group=mira-agent
-ExecStart=__NODE_BIN__ /opt/mira-odin-api/odin-api.mjs --config /etc/mira-odin-api/config.json
+ExecStart=__NODE_BIN__ /opt/mira-agent/mira-agent.mjs --config /etc/mira-agent/config.json
 Environment=NODE_ENV=production
 Restart=on-failure
 RestartSec=5

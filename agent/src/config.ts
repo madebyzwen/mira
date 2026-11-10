@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import { z } from 'zod';
 
 /**
- * Konfiguration der Odin-API (`/etc/mira-odin-api/config.json`).
+ * Konfiguration des MIRA-Agents (`/etc/mira-agent/config.json`).
  * Wird vom Installationsskript angelegt und kann danach von Hand angepasst werden.
  */
 const configSchema = z.object({
@@ -17,7 +17,7 @@ const configSchema = z.object({
   }),
   /** Datei mit dem SHA-256-Hash (hex) des Zugriffstokens */
   tokenHashFile: z.string(),
-  /** IP-Adressen, die überhaupt eine Verbindung aufbauen dürfen (Asgard) */
+  /** IP-Adressen, die überhaupt eine Verbindung aufbauen dürfen (MIRA) */
   allowedClients: z.array(z.string().min(1)).min(1),
   /** Anzuzeigende Datenträger (Einhängepunkte) */
   disks: z
@@ -48,12 +48,12 @@ const configSchema = z.object({
     .default({ proc: '/proc', sys: '/sys', etc: '/etc' }),
 });
 
-export type OdinApiConfig = z.infer<typeof configSchema>;
+export type AgentConfig = z.infer<typeof configSchema>;
 
-export function parseConfig(raw: unknown): OdinApiConfig {
+export function parseConfig(raw: unknown): AgentConfig {
   return configSchema.parse(raw);
 }
 
-export function loadConfigFile(file: string): OdinApiConfig {
+export function loadConfigFile(file: string): AgentConfig {
   return parseConfig(JSON.parse(fs.readFileSync(file, 'utf8')));
 }

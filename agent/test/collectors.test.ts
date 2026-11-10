@@ -188,7 +188,7 @@ describe('Gesamtdaten', () => {
     const metrics = systemMetricsSchema.parse(await host.metrics());
     expect(info.gpu?.model).toBe('Radeon AI Pro R9700');
     expect(info.memory.type).toBe('DDR4-3200');
-    expect(info.hostname).toBe('odin');
+    expect(info.hostname).toBe('ki-server');
     expect(metrics.uptimeSeconds).toBe(307620);
     expect(metrics.load).toEqual({ one: 0.1, five: 0.25, fifteen: 0.3 });
   });

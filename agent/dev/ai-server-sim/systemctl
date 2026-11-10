@@ -1,0 +1,63 @@
+#!/bin/bash
+# Ersatz für systemctl im Test-Container (dort läuft kein systemd).
+# Wertet die Unit-Dateien in /etc/systemd/system aus: Dienste laufen als der in der
+# Unit angegebene Benutzer im Hintergrund, Oneshot-Units führen ExecStart/ExecStop aus.
+set -u
+UNIT_DIR=/etc/systemd/system
+cmd="${1:-}"; shift || true
+now=0; units=()
+for a in "$@"; do
+  case "$a" in
+    --now) now=1 ;;
+    -*) ;;
+    *) units+=("${a%.service}") ;;
+  esac
+done
+
+field() { sed -n "s/^$2=//p" "$UNIT_DIR/$1.service" 2>/dev/null | head -n 1; }
+program() { field "$1" ExecStart | awk '{print $2}'; } # z. B. /opt/mira-agent/mira-agent.mjs
+oneshot() { [ "$(field "$1" Type)" = oneshot ]; }
+
+start_unit() {
+  local u=$1 line
+  line=$(field "$u" ExecStart)
+  [ -n "$line" ] || { echo "Unit $u.service nicht gefunden" >&2; return 5; }
+  if oneshot "$u"; then
+    $line && touch "/run/fake-systemd-$u.active"
+    return
+  fi
+  stop_unit "$u"
+  setsid nohup runuser -u "$(field "$u" User)" -- $line >>"/var/log/$u.log" 2>&1 </dev/null &
+}
+
+stop_unit() {
+  local u=$1 line prog
+  if oneshot "$u"; then
+    line=$(field "$u" ExecStop)
+    [ -z "$line" ] || $line 2>/dev/null || true
+    rm -f "/run/fake-systemd-$u.active"
+    return 0
+  fi
+  prog=$(program "$u")
+  if [ -n "$prog" ] && pkill -f "$prog" 2>/dev/null; then sleep 0.5; fi
+  return 0
+}
+
+active() {
+  local u=$1 prog
+  if oneshot "$u"; then [ -f "/run/fake-systemd-$u.active" ]; return; fi
+  prog=$(program "$u")
+  [ -n "$prog" ] && pgrep -f "$prog" >/dev/null
+}
+
+rc=0
+case "$cmd" in
+  start | restart) for u in "${units[@]}"; do start_unit "$u" || rc=1; done ;;
+  stop) for u in "${units[@]}"; do stop_unit "$u"; done ;;
+  enable) if [ "$now" -eq 1 ]; then for u in "${units[@]}"; do start_unit "$u" || rc=1; done; fi ;;
+  disable) if [ "$now" -eq 1 ]; then for u in "${units[@]}"; do stop_unit "$u"; done; fi ;;
+  is-active) for u in "${units[@]}"; do active "$u" || rc=3; done ;;
+  list-unit-files) for u in "${units[@]}"; do [ -f "$UNIT_DIR/$u.service" ] || rc=1; done ;;
+  *) ;;
+esac
+exit $rc

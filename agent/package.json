@@ -1,8 +1,8 @@
 {
-  "name": "@mira/odin-api",
+  "name": "@mira/agent",
   "private": true,
-  "version": "0.1.4",
-  "description": "MIRA – Odin-API: liefert Systemdaten von Odin an MIRA (nur lesend, HTTPS + Token)",
+  "version": "0.2.0",
+  "description": "MIRA-Agent: liefert Systemdaten des KI-Servers an MIRA (nur lesend, HTTPS + Token)",
   "type": "module",
   "engines": {
     "node": ">=22"

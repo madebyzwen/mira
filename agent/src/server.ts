@@ -2,11 +2,11 @@ import { createHash, timingSafeEqual } from 'node:crypto';
 import type { Socket } from 'node:net';
 import Fastify, { type FastifyInstance, type FastifyServerOptions } from 'fastify';
 import { AGENT_API_VERSION, type AgentHealth, type SystemInfo, type SystemMetrics } from '@mira/shared';
-import type { OdinApiConfig } from './config.ts';
+import type { AgentConfig } from './config.ts';
 import type { Host } from './host.ts';
 
 export interface ServerOptions {
-  config: OdinApiConfig;
+  config: AgentConfig;
   tls: { key: Buffer | string; cert: Buffer | string };
   /** SHA-256 des Tokens als Hex */
   tokenHash: string;
@@ -33,7 +33,7 @@ function tokenMatches(header: string | undefined, expectedHex: string): boolean 
 const errorBody = (code: string, message: string) => ({ error: { code, message } });
 
 /**
- * HTTPS-Server der Odin-API.
+ * HTTPS-Server des MIRA-Agents.
  * Schutzebenen: (1) nur erlaubte Client-IPs dürfen überhaupt verbinden,
  * (2) TLS, (3) Bearer-Token auf jeder Anfrage, (4) ausschließlich lesende Endpunkte.
  */

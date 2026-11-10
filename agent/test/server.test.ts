@@ -20,7 +20,7 @@ afterEach(async () => {
 async function start(allowedClients = ['127.0.0.1'], version?: string): Promise<number> {
   const root = createFixtureRoot();
   const config = fixtureConfig(root, { allowedClients });
-  const { key, cert } = await testTls('odin-sim');
+  const { key, cert } = await testTls('ai-server-sim');
   app = buildServer({
     config,
     tls: { key, cert },
@@ -34,7 +34,7 @@ async function start(allowedClients = ['127.0.0.1'], version?: string): Promise<
 }
 
 async function get(port: number, path: string, token?: string): Promise<{ status: number; body: any }> {
-  const { cert } = await testTls('odin-sim');
+  const { cert } = await testTls('ai-server-sim');
   return new Promise((resolve, reject) => {
     const req = https.request(
       { host: '127.0.0.1', port, path, ca: cert, checkServerIdentity: () => undefined, headers: token ? { authorization: `Bearer ${token}` } : {} },
@@ -49,7 +49,7 @@ async function get(port: number, path: string, token?: string): Promise<{ status
   });
 }
 
-describe('Odin-API', () => {
+describe('MIRA-Agent', () => {
   it('lehnt Anfragen ohne Token ab', async () => {
     const port = await start();
     const res = await get(port, '/v1/system/metrics');
@@ -65,12 +65,12 @@ describe('Odin-API', () => {
   it('liefert mit gültigem Token Health, Info und Messwerte', async () => {
     const port = await start();
     const health = await get(port, '/v1/health', TOKEN);
-    expect(health.body).toEqual({ status: 'ok', apiVersion: '1', hostname: 'odin' });
+    expect(health.body).toEqual({ status: 'ok', apiVersion: '1', hostname: 'ki-server' });
   });
 
   it('meldet die Paketversion in Health, wenn sie bekannt ist', async () => {
-    const port = await start(['127.0.0.1'], '0.1.4');
-    expect((await get(port, '/v1/health', TOKEN)).body).toEqual({ status: 'ok', apiVersion: '1', hostname: 'odin', version: '0.1.4' });
+    const port = await start(['127.0.0.1'], '0.2.0');
+    expect((await get(port, '/v1/health', TOKEN)).body).toEqual({ status: 'ok', apiVersion: '1', hostname: 'ki-server', version: '0.2.0' });
   });
 
   it('liefert Info und Messwerte', async () => {
@@ -113,7 +113,7 @@ describe('Protokollierung', () => {
     });
     const root = createFixtureRoot();
     const config = fixtureConfig(root);
-    const { key, cert } = await testTls('odin-sim');
+    const { key, cert } = await testTls('ai-server-sim');
     app = buildServer({
       config,
       tls: { key, cert },

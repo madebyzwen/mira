@@ -1,5 +1,5 @@
 import type { SystemInfo, SystemMetrics } from '@mira/shared';
-import type { OdinApiConfig } from './config.ts';
+import type { AgentConfig } from './config.ts';
 import { CpuUsageSampler, readCpuInfo } from './collectors/cpu.ts';
 import { readGpu, readTemperatures } from './collectors/hardware.ts';
 import { readNetwork, type InterfaceAddresses } from './collectors/network.ts';
@@ -11,13 +11,13 @@ export interface HostDeps {
   addresses?: InterfaceAddresses;
 }
 
-/** Liest alle Systemdaten von Odin – ausschließlich lesend. */
+/** Liest alle Systemdaten des KI-Servers – ausschließlich lesend. */
 export class Host {
-  private readonly config: OdinApiConfig;
+  private readonly config: AgentConfig;
   private readonly deps: HostDeps;
   private readonly cpu: CpuUsageSampler;
 
-  constructor(config: OdinApiConfig, deps: HostDeps = {}) {
+  constructor(config: AgentConfig, deps: HostDeps = {}) {
     this.config = config;
     this.deps = deps;
     this.cpu = new CpuUsageSampler(config.paths.proc);
