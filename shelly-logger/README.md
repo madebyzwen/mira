@@ -37,7 +37,7 @@ Shelly Plug (IoT-VLAN) ◀── HTTP GET, 1×/s ── Poller ──▶ Live-We
 | Auswertung | Tag, Woche, Monat, Jahr in `Europe/Berlin` aus Tagessummen; zwischengespeichert |
 | API | Fastify, nur `GET`; optional Bearer-Token |
 
-**Netz auf Asgard** (siehe [`deploy/shelly-logger-stack.yml`](../deploy/shelly-logger-stack.yml)):
+**Netz auf dem Homeserver** (siehe [`deploy/shelly-logger-stack.yml`](../deploy/shelly-logger-stack.yml)):
 
 | Netz | Zweck |
 | --- | --- |
@@ -45,7 +45,7 @@ Shelly Plug (IoT-VLAN) ◀── HTTP GET, 1×/s ── Poller ──▶ Live-We
 | `mira-intern` (`internal: true`, festes Subnetz) | Lese-API für MIRA (ab Stufe 4b) – der Logger lauscht nur hier (`LOGGER_HOST`); keine Verbindung nach außen |
 
 Es werden keine Ports veröffentlicht. Aus dem Heimnetz ist die API nicht erreichbar, und die
-Firewall-Regel zum Shelly gilt nur für die Adresse des Loggers, nicht für ganz Asgard.
+Firewall-Regel zum Shelly gilt nur für die Adresse des Loggers, nicht für den ganzen Homeserver.
 
 ## Konfiguration
 
@@ -69,7 +69,7 @@ Geheimnisse nur als Datei ([ADR 0006](../docs/adr/0006-geheimnisse-als-dateien.m
 
 ## Inbetriebnahme
 
-> Erst nach ausdrücklicher Freigabe. Änderungen an Shelly, OPNsense und Asgard nimmt der Betreiber selbst vor.
+> Erst nach ausdrücklicher Freigabe. Änderungen an Shelly, OPNsense und Homeserver nimmt der Betreiber selbst vor.
 
 ### 1. Shelly vorbereiten
 
@@ -92,7 +92,7 @@ Geheimnisse nur als Datei ([ADR 0006](../docs/adr/0006-geheimnisse-als-dateien.m
 Alles andere vom und zum IoT-VLAN bleibt gesperrt. Der Logger braucht keinen Internetzugang.
 `<LOGGER_IP>` ist eine freie, feste Adresse im Server-Netz außerhalb des DHCP-Bereichs (wie `<MIRA_IP>`).
 
-### 3. Asgard: Ordner und Passwort-Datei (per SSH)
+### 3. Homeserver: Ordner und Passwort-Datei (per SSH)
 
 ```bash
 APPDATA=<APPDATA_PFAD>/mira-shelly-logger
@@ -107,7 +107,7 @@ sudo chown -R 1000:1000 "$APPDATA"
 
 Das Image `ghcr.io/madebyzwen/mira-shelly-logger` entsteht bei jedem Push auf `main` (`:main`)
 und bei Tags `shelly-logger-vX.Y.Z` (`:X.Y.Z`, `:latest`). Es ist wie das MIRA-Image öffentlich
-abrufbar – Asgard braucht keine Anmeldung bei der Registry.
+abrufbar – der Homeserver braucht keine Anmeldung bei der Registry.
 
 ### 5. Stack in Portainer
 
@@ -122,10 +122,10 @@ Stacks → Add stack → Name `mira-shelly-logger` → Web editor: Inhalt von
 | `LOGGER_SHELLY_URL` | `http://<SHELLY_IP>` |
 | `LOGGER_VERSION` | `0.1.1` (Standard `latest`) |
 | `LOGGER_POLL_INTERVAL_MS` | `1000` |
-| `MIRA_INTERN_SUBNET` / `LOGGER_INTERN_IP` | `172.31.250.0/28` / `172.31.250.10` – nur ändern, falls das Subnetz auf Asgard schon belegt ist |
+| `MIRA_INTERN_SUBNET` / `LOGGER_INTERN_IP` | `172.31.250.0/28` / `172.31.250.10` – nur ändern, falls das Subnetz auf dem Homeserver schon belegt ist |
 
 Der MIRA-Stack bleibt unverändert; MIRA tritt dem Netz `mira-intern` erst in Stufe 4b bei.
-Der macvlan-Container kann – wie MIRA – Asgard selbst nicht erreichen; das ist hier nicht nötig.
+Der macvlan-Container kann – wie MIRA – den Homeserver selbst nicht erreichen; das ist hier nicht nötig.
 
 ### 6. Prüfen
 
@@ -261,7 +261,7 @@ Ein 30-Tage-Verlauf aus 86 400 Intervallen ist in rund 30 ms berechnet.
 Täglich um `LOGGER_BACKUP_TIME` (Standard 03:45, Ortszeit) erzeugt der Logger im laufenden Betrieb
 eine konsistente Kopie (SQLite-Backup-API) unter `data/backups/shelly-logger-JJJJ-MM-TT.db`. Die
 letzten 7 bleiben erhalten. Jede Sicherung ist eine einzelne, eigenständige Datei. Für zusätzliche
-Sicherheit `backups/` in die Sicherung von Asgard aufnehmen.
+Sicherheit `backups/` in die Sicherung des Homeservers aufnehmen.
 
 Wiederherstellen:
 

@@ -13,7 +13,6 @@ import type {
   LlmDownload,
   LlmModel,
   NetworkInterface,
-  NetworkShare,
   ServerInfo,
   ServerUtilization,
   SystemEntry,
@@ -66,13 +65,6 @@ export const demoAiServerDisks: Disk[] = [
   { name: 'NVMe (System)', usedGb: 811, totalGb: 1024 },
   { name: 'SSD (Daten)', usedGb: 312, totalGb: 1024 },
 ];
-
-export const demoAiServerNas: NetworkShare = {
-  mountPoint: '/mnt/asgard',
-  source: '10.10.40.1 (Asgard)',
-  usedTb: 1.44,
-  totalTb: 4,
-};
 
 export const demoAiServerNetwork: NetworkInterface[] = [
   { name: 'Server-VLAN', device: 'eno1.40', address: '10.10.40.10 / 24', kind: 'vlan' },

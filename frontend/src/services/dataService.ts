@@ -17,7 +17,6 @@ import type {
   LlmDownload,
   LlmModel,
   NetworkInterface,
-  NetworkShare,
   ServerInfo,
   ServerUtilization,
   SystemEntry,
@@ -32,7 +31,6 @@ export const dataService = {
   getAiServer: (): ServerInfo => demo.demoAiServer,
   getAiServerUtilization: (): ServerUtilization => demo.demoAiServerUtilization,
   getAiServerDisks: (): Disk[] => demo.demoAiServerDisks,
-  getAiServerNetworkShare: (): NetworkShare => demo.demoAiServerNas,
   getAiServerNetworkInterfaces: (): NetworkInterface[] => demo.demoAiServerNetwork,
   getAiServerTemperatures: (): Temperature[] => demo.demoAiServerTemperatures,
 

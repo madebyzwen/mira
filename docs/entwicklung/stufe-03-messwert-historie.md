@@ -6,6 +6,7 @@
 > **Hinweis (2026-11-10):** Historisches Dokument – es beschreibt den damaligen Stand. Seit
 > [Stufe 3a](stufe-03a-ki-server-bereinigung.md) heißt der Rechner allgemein **KI-Server**
 > (Name konfigurierbar) und die Software darauf **MIRA-Agent** ([ADR 0009](../adr/0009-ki-server-als-rolle-agent-mira-agent.md)).
+> Das NAS, auf dem MIRA läuft, heißt allgemein **Homeserver**.
 
 ## Ziel
 

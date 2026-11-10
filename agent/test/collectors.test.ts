@@ -110,7 +110,7 @@ describe('Datenträger, Netzlaufwerke und Netzwerk', () => {
     ]);
     expect(result.networkShares).toEqual([
       { mount: '/mnt/nas', source: '//192.0.2.9/nas-freigabe', fsType: 'cifs', state: 'automount', totalBytes: null, usedBytes: null },
-      { mount: '/mnt/asgard', source: '10.11.40.1:/volume1/ki', fsType: 'nfs4', state: 'mounted', totalBytes: 1_000_000_000 * 4096, usedBytes: 360_000_000 * 4096 },
+      { mount: '/mnt/homeserver', source: '10.11.40.1:/volume1/ki', fsType: 'nfs4', state: 'mounted', totalBytes: 1_000_000_000 * 4096, usedBytes: 360_000_000 * 4096 },
       { mount: '/mnt/backup', source: '10.11.40.1:/volume1/backup', fsType: 'nfs4', state: 'unmounted', totalBytes: null, usedBytes: null },
       { mount: '/mnt/smb', source: '//nas/Freigabe Ordner', fsType: 'cifs', state: 'mounted', totalBytes: null, usedBytes: null },
     ]);
