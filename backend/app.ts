@@ -121,7 +121,7 @@ export async function buildApp(config: AppConfig, options: BuildOptions = {}): P
     });
   }
 
-  // Tägliche Update-Prüfung (MIRA und Odin-API in einer Abfrage)
+  // Tägliche Update-Prüfung (MIRA und MIRA-Agent in einer Abfrage)
   if (config.updateCheck.enabled) {
     scheduler.dailyAt('core.update_pruefung', config.updateCheck.time, () => updates.checkScheduled());
   }

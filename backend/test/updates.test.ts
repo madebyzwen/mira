@@ -21,7 +21,7 @@ function githubBody(overrides: Record<string, unknown> = {}) {
     prerelease: false,
     published_at: '2026-11-12T08:00:00Z',
     html_url: RELEASE_URL,
-    assets: [{ name: 'mira-odin-api-0.1.4.tar.gz' }, { name: 'mira-odin-api-0.1.4.tar.gz.sha256' }],
+    assets: [{ name: 'mira-agent-0.2.0.tar.gz' }, { name: 'mira-agent-0.2.0.tar.gz.sha256' }],
     ...overrides,
   };
 }
@@ -88,11 +88,11 @@ async function start({ config, version = '0.5.1', env = {}, manualCheckIntervalM
 }
 
 describe('Update-Prüfung › GitHub-Antwort', () => {
-  it('übernimmt Version, Odin-API-Paket, Datum und Link', () => {
+  it('übernimmt Version, Agent-Paket, Datum und Link', () => {
     expect(parseRelease(githubBody())).toEqual({
       tag: 'v0.5.2',
       version: '0.5.2',
-      odinApiVersion: '0.1.4',
+      agentVersion: '0.2.0',
       publishedAt: '2026-11-12T08:00:00Z',
       url: RELEASE_URL,
     });
@@ -104,8 +104,13 @@ describe('Update-Prüfung › GitHub-Antwort', () => {
     }
   });
 
-  it('kommt ohne Odin-API-Paket aus', () => {
-    expect(parseRelease(githubBody({ assets: [] })).odinApiVersion).toBeNull();
+  it('kommt ohne Agent-Paket aus', () => {
+    expect(parseRelease(githubBody({ assets: [] })).agentVersion).toBeNull();
+  });
+
+  it('erkennt nur das Agent-Paket selbst, keine Prüfsummen oder ähnlich benannten Dateien', () => {
+    const assets = [{ name: 'mira-agent-0.3.0.tar.gz.sha256' }, { name: 'mira-agent-x.tar.gz' }, { name: 'xmira-agent-0.3.0.tar.gz' }];
+    expect(parseRelease(githubBody({ assets })).agentVersion).toBeNull();
   });
 
   it('vergleicht Versionen numerisch', () => {
@@ -305,32 +310,42 @@ describe('Update-Prüfung › Meldungen', () => {
     expect((await updated.status()).components[0]).toMatchObject({ installed: '0.5.2', latest: '0.5.2', updateAvailable: false });
   });
 
-  it('Odin-API ohne Versionsmeldung (≤ 0.1.3) erhält einen Hinweis; nach dem Update verschwindet er sofort', async () => {
+  it('Agent ohne Versionsmeldung (≤ 0.1.3) erhält einen Hinweis für den KI-Server; nach dem Update verschwindet er sofort', async () => {
     const m = await start({ version: '0.5.2' });
     await m.updates.checkScheduled();
-    expect((await m.list()).notifications).toEqual([]); // Odin noch nie erreicht
+    expect((await m.list()).notifications).toEqual([]); // KI-Server noch nie erreicht
 
-    m.updates.reportOdinApiVersion(null);
+    m.updates.reportAgentVersion(null);
     let list = await m.list();
     expect(list.notifications).toHaveLength(1);
-    expect(list.notifications[0]).toMatchObject({ key: 'update:odin-api', title: 'Odin-API 0.1.4 verfügbar' });
-    expect(list.notifications[0].message).toContain('Installiert auf Odin: 0.1.3 oder älter');
+    expect(list.notifications[0]).toMatchObject({ key: 'update:agent', title: 'Update für den KI-Server: MIRA-Agent 0.2.0' });
+    expect(list.notifications[0].message).toContain('Installiert: 0.1.3 oder älter');
+    expect(list.notifications[0].message).toContain('Update auf dem KI-Server');
     expect(list.notifications[0].links.map((l) => l.label)).toEqual(['Release auf GitHub', 'Anleitung']);
+    expect(list.notifications[0].links[1].url).toMatch(/\/agent\/install\/README\.md$/);
 
-    m.updates.reportOdinApiVersion('0.1.4');
+    m.updates.reportAgentVersion('0.2.0');
     list = await m.list();
     expect(list.notifications).toEqual([]);
     expect(m.gh.calls).toBe(1);
-    expect((await m.status()).components[1]).toMatchObject({ component: 'odin-api', installed: '0.1.4', installedAtMost: false, updateAvailable: false });
+    expect((await m.status()).components[1]).toMatchObject({ component: 'agent', installed: '0.2.0', installedAtMost: false, updateAvailable: false });
+  });
+
+  it('meldet für einen Agent mit älterer Version ein Update', async () => {
+    const m = await start({ version: '0.5.2' });
+    m.updates.reportAgentVersion('0.1.4');
+    await m.updates.checkScheduled();
+    expect((await m.status()).components[1]).toMatchObject({ component: 'agent', installed: '0.1.4', latest: '0.2.0', updateAvailable: true });
+    expect((await m.list()).notifications[0].message).toContain('Installiert: 0.1.4 ·');
   });
 
   it('meldet beide Komponenten getrennt', async () => {
     const m = await start();
-    m.updates.reportOdinApiVersion('0.1.3');
+    m.updates.reportAgentVersion('0.1.3');
     await m.updates.checkScheduled();
     const list = await m.list();
     expect(list.unread).toBe(2);
-    expect(list.notifications.map((n) => n.key).sort()).toEqual(['update:mira', 'update:odin-api']);
+    expect(list.notifications.map((n) => n.key).sort()).toEqual(['update:agent', 'update:mira']);
   });
 
   it('ausblenden, gelesen markieren und nur angemeldet', async () => {

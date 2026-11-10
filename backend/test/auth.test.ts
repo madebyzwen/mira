@@ -29,7 +29,7 @@ describe('Zugriffsschutz', () => {
 
   it('sperrt alle /api-Routen ohne Session – auch unbekannte', async () => {
     await start();
-    for (const url of ['/api/v1/auth/session', '/api/v1/systems/odin', '/api/irgendwas']) {
+    for (const url of ['/api/v1/auth/session', '/api/v1/systems/ai-server', '/api/irgendwas']) {
       const res = await app.inject({ method: 'GET', url });
       expect(res.statusCode, url).toBe(401);
       expect(res.json()).toEqual({ error: { code: 'unauthorized', message: 'Anmeldung erforderlich.' } });

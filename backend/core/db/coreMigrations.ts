@@ -70,5 +70,15 @@ export const coreMigrations: ModuleMigrations = {
         );
       `,
     },
+    {
+      version: 3,
+      name: 'update_component_agent',
+      sql: `
+        -- Stufe 3a: Die Update-Komponente heißt „agent“. Alte Meldung und gespeicherter
+        -- Prüfstand (altes Format) werden verworfen; die nächste Prüfung füllt beides neu.
+        DELETE FROM notifications WHERE key = 'update:odin-api';
+        DELETE FROM settings WHERE module = 'core' AND key = 'update_check';
+      `,
+    },
   ],
 };

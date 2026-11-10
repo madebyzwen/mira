@@ -1,8 +1,8 @@
 import type { FastifyBaseLogger } from 'fastify';
-import type { ConnectionError, SystemInfo, SystemMetrics, SystemState } from '@mira/shared';
+import { AI_SERVER_SLUG, type ConnectionError, type SystemInfo, type SystemMetrics, type SystemState } from '@mira/shared';
 import type { Db } from '../../core/db/database.ts';
 import { nowIso } from '../../core/db/database.ts';
-import { OdinClientError, type OdinClient } from './odinClient.ts';
+import { AgentClientError, type AgentClient } from './agentClient.ts';
 import type { SampleAggregator } from './sampleAggregator.ts';
 
 /** Info (Hardware, OS) ändert sich selten – nur nach Wiederverbindung bzw. alle 10 Minuten neu laden. */
@@ -14,31 +14,31 @@ interface StateRow {
   last_seen_at: string | null;
 }
 
-export interface OdinMonitorOptions {
+export interface AiServerMonitorOptions {
   db: Db;
   systemId: number;
-  client: OdinClient | null;
+  client: AgentClient | null;
   log: FastifyBaseLogger;
   intervalMs: number;
-  /** Ohne Antwort seit so vielen ms gilt Odin als nicht erreichbar */
+  /** Ohne Antwort seit so vielen ms gilt der KI-Server als nicht erreichbar */
   offlineAfterMs: number;
   aggregator?: SampleAggregator;
-  /** Version der Odin-API (Paket); `null` = Odin meldet keine Version (≤ 0.1.3). Aufruf bei jedem Neuladen der Info. */
+  /** Version des Agents (Paket); `null` = der Agent meldet keine Version (≤ 0.1.3). Aufruf bei jedem Neuladen der Info. */
   onApiVersion?: (version: string | null) => void;
   /** Für Tests: Uhr ersetzen */
   now?: () => number;
 }
 
 /**
- * Fragt Odin im festen Intervall ab – im Backend, unabhängig davon, ob die
+ * Fragt den KI-Server im festen Intervall ab – im Backend, unabhängig davon, ob die
  * Weboberfläche offen ist – und hält den aktuellen Zustand für die Live-Anzeige
  * vor. Jede Messung fließt in die Minuten-Verdichtung für den Verlauf.
  * Nur Zustandswechsel werden protokolliert.
  */
-export class OdinMonitor {
+export class AiServerMonitor {
   private readonly db: Db;
   private readonly systemId: number;
-  private readonly client: OdinClient | null;
+  private readonly client: AgentClient | null;
   private readonly log: FastifyBaseLogger;
   private readonly intervalMs: number;
   private readonly offlineAfterMs: number;
@@ -55,7 +55,7 @@ export class OdinMonitor {
   private timer: NodeJS.Timeout | undefined;
   private inFlight: Promise<void> | null = null;
 
-  constructor(options: OdinMonitorOptions) {
+  constructor(options: AiServerMonitorOptions) {
     this.db = options.db;
     this.systemId = options.systemId;
     this.client = options.client;
@@ -82,7 +82,7 @@ export class OdinMonitor {
 
   start(): void {
     if (!this.client) {
-      this.log.warn('Odin-API nicht konfiguriert (MIRA_ODIN_API_URL, MIRA_ODIN_CERT_FINGERPRINT, MIRA_ODIN_TOKEN_FILE)');
+      this.log.warn('Verbindung zum KI-Server nicht konfiguriert (MIRA_AI_SERVER_URL, MIRA_AI_SERVER_CERT_FINGERPRINT, MIRA_AI_SERVER_TOKEN_FILE)');
       this.persist(true);
       return;
     }
@@ -116,8 +116,8 @@ export class OdinMonitor {
         try {
           this.onApiVersion?.(health.version ?? null);
         } catch (err) {
-          // Fehler beim Abgleich der Update-Meldungen dürfen die Verbindung zu Odin nicht als gestört melden
-          this.log.error({ err }, 'Version der Odin-API konnte nicht übernommen werden');
+          // Fehler beim Abgleich der Update-Meldungen dürfen die Verbindung zum KI-Server nicht als gestört melden
+          this.log.error({ err }, 'Version des Agents konnte nicht übernommen werden');
         }
         this.info = await client.info();
         this.infoLoadedAt = this.now();
@@ -126,7 +126,7 @@ export class OdinMonitor {
       this.aggregator?.add(this.metrics, new Date(this.now()));
       this.onSuccess();
     } catch (err) {
-      this.onFailure(err instanceof OdinClientError ? err.code : 'unreachable', err);
+      this.onFailure(err instanceof AgentClientError ? err.code : 'unreachable', err);
     }
   }
 
@@ -135,7 +135,7 @@ export class OdinMonitor {
     const now = new Date(this.lastSuccessAt).toISOString();
     const changed = this.status.state !== 'online';
     this.status = { state: 'online', since: changed ? now : this.status.since, lastSeenAt: now, lastError: null };
-    if (changed) this.log.info({ system: 'odin' }, 'Odin ist erreichbar');
+    if (changed) this.log.info({ system: AI_SERVER_SLUG }, 'KI-Server ist erreichbar');
     this.persist(changed);
   }
 
@@ -153,7 +153,7 @@ export class OdinMonitor {
       lastError: code,
     };
     if (changed) {
-      this.log.warn({ system: 'odin', reason: code, detail: err instanceof Error ? err.message : undefined }, 'Odin ist nicht erreichbar');
+      this.log.warn({ system: AI_SERVER_SLUG, reason: code, detail: err instanceof Error ? err.message : undefined }, 'KI-Server ist nicht erreichbar');
       this.persist(true);
     }
   }

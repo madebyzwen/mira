@@ -74,4 +74,13 @@ export const systemsMigrations: Migration[] = [
       ) WITHOUT ROWID;
     `,
   },
+  {
+    version: 3,
+    name: 'ai_server_slug',
+    sql: `
+      -- Stufe 3a: Der KI-Server hat einen festen, namensunabhängigen Schlüssel.
+      -- Der Anzeigename kommt beim Start aus MIRA_AI_SERVER_NAME; system_id und Verlauf bleiben erhalten.
+      UPDATE systems SET slug = 'ai-server', name = 'KI-Server' WHERE slug = 'odin';
+    `,
+  },
 ];

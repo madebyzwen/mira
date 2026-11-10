@@ -5,19 +5,19 @@ import { parseVersion } from './semver.ts';
 /** Feste Adressen – bewusst nicht konfigurierbar. */
 export const GITHUB_LATEST_RELEASE_URL = 'https://api.github.com/repos/madebyzwen/mira/releases/latest';
 export const GITHUB_RELEASES_PREFIX = 'https://github.com/madebyzwen/mira/releases/';
-export const ODIN_API_GUIDE_URL = 'https://github.com/madebyzwen/mira/blob/main/odin-api/install/README.md';
+export const AGENT_GUIDE_URL = 'https://github.com/madebyzwen/mira/blob/main/agent/install/README.md';
 
 const TIMEOUT_MS = 10_000;
 const MAX_BODY_BYTES = 2 * 1024 * 1024;
-const ODIN_PACKAGE = /^mira-odin-api-(\d+\.\d+\.\d+)\.tar\.gz$/;
+const AGENT_PACKAGE = /^mira-agent-(\d+\.\d+\.\d+)\.tar\.gz$/;
 
 export interface LatestRelease {
   /** z. B. `v0.5.2` */
   tag: string;
   /** Version von MIRA, z. B. `0.5.2` */
   version: string;
-  /** Version des Odin-API-Pakets im Release, `null` wenn keines enthalten ist */
-  odinApiVersion: string | null;
+  /** Version des Agent-Pakets (KI-Server) im Release, `null` wenn keines enthalten ist */
+  agentVersion: string | null;
   publishedAt: string;
   url: string;
 }
@@ -50,8 +50,8 @@ export function parseRelease(body: unknown): LatestRelease {
   const version = /^v(\d+\.\d+\.\d+)$/.exec(r.tag_name)?.[1];
   if (!version || !parseVersion(version)) throw new UpdateCheckFailure('invalid_response', `Unerwarteter Tag „${r.tag_name}“`);
   if (!r.html_url.startsWith(GITHUB_RELEASES_PREFIX)) throw new UpdateCheckFailure('invalid_response', 'Link zum Release zeigt auf eine fremde Adresse');
-  const odinApiVersion = r.assets.map((a) => ODIN_PACKAGE.exec(a.name)?.[1]).find((v) => v !== undefined) ?? null;
-  return { tag: r.tag_name, version, odinApiVersion, publishedAt: r.published_at, url: r.html_url };
+  const agentVersion = r.assets.map((a) => AGENT_PACKAGE.exec(a.name)?.[1]).find((v) => v !== undefined) ?? null;
+  return { tag: r.tag_name, version, agentVersion, publishedAt: r.published_at, url: r.html_url };
 }
 
 /** Fragt das neueste veröffentlichte Release bei GitHub ab (ohne Token, nur GET). */

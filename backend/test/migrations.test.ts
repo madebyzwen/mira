@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { openDatabase } from '../core/db/database.ts';
 import { coreMigrations } from '../core/db/coreMigrations.ts';
 import { runMigrations, type ModuleMigrations } from '../core/db/migrations.ts';
+import { systemsMigrations } from '../modules/systems/migrations.ts';
 
 const exampleModule: ModuleMigrations = {
   module: 'beispiel',
@@ -22,7 +23,7 @@ describe('Migrationen', () => {
   it('legt die Core-Tabellen an und protokolliert die Version', () => {
     const db = openDatabase(':memory:');
     const [result] = runMigrations(db, [coreMigrations]);
-    expect(result).toEqual({ module: 'core', applied: [1, 2] });
+    expect(result).toEqual({ module: 'core', applied: [1, 2, 3] });
     expect(tables(db)).toEqual(expect.arrayContaining(['users', 'sessions', 'settings', 'audit_log', 'notifications', 'schema_migrations']));
   });
 
@@ -44,6 +45,7 @@ describe('Migrationen', () => {
       { module: 'beispiel', version: 2 },
       { module: 'core', version: 1 },
       { module: 'core', version: 2 },
+      { module: 'core', version: 3 },
     ]);
   });
 
@@ -71,5 +73,33 @@ describe('Migrationen', () => {
     expect(() => runMigrations(db, [broken])).toThrow();
     expect(tables(db)).not.toContain('halb');
     expect(db.prepare("SELECT COUNT(*) AS n FROM schema_migrations WHERE module = 'kaputt'").get()).toEqual({ n: 0 });
+  });
+
+  it('Stufe 3a: stellt eine bestehende Datenbank auf den KI-Server um – Verlauf bleibt, alter Update-Stand wird verworfen', () => {
+    const db = openDatabase(':memory:');
+    // Stand vor Stufe 3a (MIRA 0.6.x)
+    runMigrations(db, [
+      { ...coreMigrations, migrations: coreMigrations.migrations.slice(0, 2) },
+      { module: 'systems', migrations: systemsMigrations.slice(0, 2) },
+    ]);
+    const before = db.prepare<[], { id: number; slug: string }>('SELECT id, slug FROM systems').get()!;
+    expect(before.slug).toBe('odin');
+    db.prepare("INSERT INTO server_samples (system_id, ts, samples, cpu_avg) VALUES (?, '2026-11-09T10:00:00.000Z', 30, 12.5)").run(before.id);
+    const notify = db.prepare("INSERT INTO notifications (key, ref, level, title, message, created_at) VALUES (?, '1', 'info', 't', 'm', '2026-11-09')");
+    notify.run('update:odin-api');
+    notify.run('update:mira');
+    db.prepare("INSERT INTO settings (module, key, value, updated_at) VALUES ('core', 'update_check', '{}', '2026-11-09')").run();
+
+    const results = runMigrations(db, [coreMigrations, { module: 'systems', migrations: systemsMigrations }]);
+    expect(results).toEqual([
+      { module: 'core', applied: [3] },
+      { module: 'systems', applied: [3] },
+    ]);
+    expect(db.prepare('SELECT id, slug, name, description FROM systems').all()).toEqual([
+      { id: before.id, slug: 'ai-server', name: 'KI-Server', description: 'KI-Server' },
+    ]);
+    expect(db.prepare('SELECT system_id, cpu_avg FROM server_samples').all()).toEqual([{ system_id: before.id, cpu_avg: 12.5 }]);
+    expect(db.prepare('SELECT key FROM notifications').all()).toEqual([{ key: 'update:mira' }]);
+    expect(db.prepare("SELECT COUNT(*) AS n FROM settings WHERE key = 'update_check'").get()).toEqual({ n: 0 });
   });
 });

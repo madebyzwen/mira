@@ -1,22 +1,22 @@
 import { z } from 'zod';
 
 /**
- * Verträge der Odin-API (Odin → MIRA).
+ * Verträge des MIRA-Agents (KI-Server → MIRA).
  * Werte, die auf einem System nicht ermittelbar sind, werden als `null`
  * geliefert – es wird nie geschätzt.
  */
 
-export const ODIN_API_VERSION = '1';
+export const AGENT_API_VERSION = '1';
 
-export const odinHealthSchema = z.object({
+export const agentHealthSchema = z.object({
   status: z.literal('ok'),
   /** Version des Protokolls (Verträge), nicht des Pakets */
   apiVersion: z.string(),
   hostname: z.string(),
-  /** Paketversion der Odin-API (z. B. `0.1.4`) – erst ab 0.1.4 gemeldet */
+  /** Paketversion des Agents (z. B. `0.2.0`) – erst ab 0.1.4 gemeldet */
   version: z.string().optional(),
 });
-export type OdinHealth = z.infer<typeof odinHealthSchema>;
+export type AgentHealth = z.infer<typeof agentHealthSchema>;
 
 export const systemInfoSchema = z.object({
   hostname: z.string(),
@@ -72,7 +72,7 @@ export const networkShareSchema = z.object({
    * mounted   = eingehängt (Belegung bekannt)
    * automount = eingetragen mit x-systemd.automount, wartet auf den ersten Zugriff
    * unmounted = in /etc/fstab eingetragen, aber nicht eingehängt
-   * Fehlt bei Odin-API ≤ 0.1.1 (dort wurden nur eingehängte Laufwerke geliefert).
+   * Fehlt bei Agent-Versionen ≤ 0.1.1 (dort wurden nur eingehängte Laufwerke geliefert).
    */
   state: z.enum(NETWORK_SHARE_STATES).optional(),
   totalBytes: z.number().nullable(),

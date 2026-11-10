@@ -4,16 +4,16 @@ import type { Duplex } from 'node:stream';
 import tls from 'node:tls';
 import type { z } from 'zod';
 import {
-  odinHealthSchema,
+  agentHealthSchema,
   systemInfoSchema,
   systemMetricsSchema,
   type ConnectionError,
-  type OdinHealth,
+  type AgentHealth,
   type SystemInfo,
   type SystemMetrics,
 } from '@mira/shared';
 
-export class OdinClientError extends Error {
+export class AgentClientError extends Error {
   readonly code: ConnectionError;
 
   constructor(code: ConnectionError, message: string) {
@@ -26,7 +26,7 @@ export function normalizeFingerprint(value: string): string {
   return value.replace(/[^0-9a-f]/gi, '').toUpperCase();
 }
 
-export interface OdinClientOptions {
+export interface AgentClientOptions {
   url: string;
   certFingerprint: string;
   token: string;
@@ -58,14 +58,14 @@ class PinnedAgent extends https.Agent {
       servername: net.isIP(host) ? undefined : host,
       ALPNProtocols: ['http/1.1'],
     });
-    const onError = (err: Error) => done(new OdinClientError('unreachable', err.message), socket);
+    const onError = (err: Error) => done(new AgentClientError('unreachable', err.message), socket);
     socket.once('error', onError);
     socket.once('secureConnect', () => {
       socket.off('error', onError);
       const actual = normalizeFingerprint(socket.getPeerCertificate().fingerprint256 ?? '');
       if (actual !== this.fingerprint) {
         socket.destroy();
-        done(new OdinClientError('certificate_mismatch', 'Zertifikat von Odin stimmt nicht mit dem hinterlegten Fingerprint überein'), socket);
+        done(new AgentClientError('certificate_mismatch', 'Zertifikat des KI-Servers stimmt nicht mit dem hinterlegten Fingerprint überein'), socket);
         return;
       }
       done(null, socket);
@@ -74,15 +74,15 @@ class PinnedAgent extends https.Agent {
   }
 }
 
-/** Client für die Odin-API (HTTPS, festgelegtes Zertifikat, Token). */
-export class OdinClient {
+/** Client für den MIRA-Agent auf dem KI-Server (HTTPS, festgelegtes Zertifikat, Token). */
+export class AgentClient {
   private readonly url: URL;
   private readonly fingerprint: string;
   private readonly token: string;
   private readonly timeoutMs: number;
   private readonly agent: PinnedAgent;
 
-  constructor(options: OdinClientOptions) {
+  constructor(options: AgentClientOptions) {
     this.url = new URL(options.url);
     this.fingerprint = normalizeFingerprint(options.certFingerprint);
     this.token = options.token;
@@ -94,8 +94,8 @@ export class OdinClient {
     return this.url.host;
   }
 
-  health(): Promise<OdinHealth> {
-    return this.get('/v1/health', odinHealthSchema);
+  health(): Promise<AgentHealth> {
+    return this.get('/v1/health', agentHealthSchema);
   }
 
   info(): Promise<SystemInfo> {
@@ -131,31 +131,31 @@ export class OdinClient {
             res.setEncoding('utf8');
             res.on('data', (chunk: string) => {
               data += chunk;
-              if (data.length > 1_000_000) req.destroy(new OdinClientError('invalid_response', 'Antwort zu groß'));
+              if (data.length > 1_000_000) req.destroy(new AgentClientError('invalid_response', 'Antwort zu groß'));
             });
             res.on('end', () => resolve({ status: res.statusCode ?? 0, body: data }));
             res.on('error', reject);
           },
         );
-        req.on('error', (err) => reject(controller.signal.aborted ? new OdinClientError('timeout', 'Zeitüberschreitung') : err));
+        req.on('error', (err) => reject(controller.signal.aborted ? new AgentClientError('timeout', 'Zeitüberschreitung') : err));
         req.end();
       });
 
-      if (status === 401) throw new OdinClientError('unauthorized', 'Token wurde von Odin abgelehnt');
-      if (status !== 200) throw new OdinClientError('invalid_response', `Unerwarteter Status ${status}`);
+      if (status === 401) throw new AgentClientError('unauthorized', 'Token wurde vom KI-Server abgelehnt');
+      if (status !== 200) throw new AgentClientError('invalid_response', `Unerwarteter Status ${status}`);
       let json: unknown;
       try {
         json = JSON.parse(body);
       } catch {
-        throw new OdinClientError('invalid_response', 'Antwort ist kein gültiges JSON');
+        throw new AgentClientError('invalid_response', 'Antwort ist kein gültiges JSON');
       }
       const parsed = schema.safeParse(json);
-      if (!parsed.success) throw new OdinClientError('invalid_response', 'Antwort entspricht nicht dem Vertrag');
+      if (!parsed.success) throw new AgentClientError('invalid_response', 'Antwort entspricht nicht dem Vertrag');
       return parsed.data;
     } catch (err) {
-      if (err instanceof OdinClientError) throw err;
-      if (controller.signal.aborted) throw new OdinClientError('timeout', 'Zeitüberschreitung');
-      throw new OdinClientError('unreachable', err instanceof Error ? err.message : String(err));
+      if (err instanceof AgentClientError) throw err;
+      if (controller.signal.aborted) throw new AgentClientError('timeout', 'Zeitüberschreitung');
+      throw new AgentClientError('unreachable', err instanceof Error ? err.message : String(err));
     } finally {
       clearTimeout(timer);
     }

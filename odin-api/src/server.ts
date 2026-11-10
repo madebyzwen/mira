@@ -1,7 +1,7 @@
 import { createHash, timingSafeEqual } from 'node:crypto';
 import type { Socket } from 'node:net';
 import Fastify, { type FastifyInstance, type FastifyServerOptions } from 'fastify';
-import { ODIN_API_VERSION, type OdinHealth, type SystemInfo, type SystemMetrics } from '@mira/shared';
+import { AGENT_API_VERSION, type AgentHealth, type SystemInfo, type SystemMetrics } from '@mira/shared';
 import type { OdinApiConfig } from './config.ts';
 import type { Host } from './host.ts';
 
@@ -78,9 +78,9 @@ export function buildServer(options: ServerOptions): FastifyInstance {
     return reply.status(500).send(errorBody('internal_error', 'Systemdaten konnten nicht gelesen werden.'));
   });
 
-  app.get('/v1/health', quiet, async (): Promise<OdinHealth> => {
+  app.get('/v1/health', quiet, async (): Promise<AgentHealth> => {
     const info = await host.info();
-    const health: OdinHealth = { status: 'ok', apiVersion: ODIN_API_VERSION, hostname: info.hostname };
+    const health: AgentHealth = { status: 'ok', apiVersion: AGENT_API_VERSION, hostname: info.hostname };
     if (options.version) health.version = options.version;
     return health;
   });

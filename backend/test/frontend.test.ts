@@ -21,7 +21,7 @@ function staticFixture(): string {
 describe('Auslieferung der Weboberfläche', () => {
   it('liefert index.html für App-Routen (Single-Page-App)', async () => {
     ({ app } = await startApp(testConfig({ MIRA_STATIC_DIR: staticFixture() })));
-    for (const url of ['/', '/login', '/dashboard', '/systeme/odin', '/konfiguration/systeme']) {
+    for (const url of ['/', '/login', '/dashboard', '/systeme/ki-server', '/konfiguration/systeme']) {
       const res = await app.inject({ method: 'GET', url });
       expect(res.statusCode, url).toBe(200);
       expect(res.body).toContain('<title>MIRA</title>');
