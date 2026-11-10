@@ -24,7 +24,8 @@ auf dem NAS **Asgard** und verwaltet von dort den KI-Server **Odin**.
 | 1 | Fundament: Backend, SQLite, echte Anmeldung, ein Container | ✅ abgeschlossen |
 | 2 | Odin-API: Live-Daten von Odin in der Odin-Ansicht | ✅ abgeschlossen |
 | 3 | Messwert-Historie: echte Verlaufsdiagramme, tägliche Sicherung | ✅ abgeschlossen |
-| 4 | Shelly Plug: Stromverbrauch, Verlauf und Kosten | ⏳ als Nächstes |
+| 3a | Bereinigung: „KI-Server“ statt fest verdrahtetem „Odin“, Name konfigurierbar | ⏳ als Nächstes |
+| 4 | Shelly Plug: Stromverbrauch, Verlauf und Kosten | ⏳ geplant |
 
 Alle Stufen: [Roadmap](docs/entwicklung/roadmap.md). Echt sind die Anmeldung,
 die Odin-Ansicht (Live-Werte alle 2 s und Verlauf von Auslastung und Temperaturen über 1 h / 24 h / 7 / 30 Tage) sowie
