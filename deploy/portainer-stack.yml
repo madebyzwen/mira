@@ -1,4 +1,4 @@
-# MIRA – Stack für Portainer (Asgard)
+# MIRA – Stack für Portainer (Homeserver)
 #
 # Nutzt das fertige Image aus der GitHub Container Registry. MIRA erhält über
 # ein vorhandenes macvlan-Netz eine eigene IP im Server-Netz (dort liegt auch
@@ -7,7 +7,7 @@
 # unter http://mira:80 – macvlan-Adressen sind für Bridge-Container nicht erreichbar.
 #
 # In Portainer: Stacks → Add stack → Web editor → diesen Inhalt einfügen,
-# darunter die Umgebungsvariablen setzen (siehe README, „Betrieb auf Asgard“).
+# darunter die Umgebungsvariablen setzen (siehe README, „Betrieb auf dem Homeserver“).
 #
 # Erwartete Ordnerstruktur unter MIRA_APPDATA (gehört UID 1000):
 #   data/                       Datenbank (wird von MIRA angelegt)
