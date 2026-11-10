@@ -26,6 +26,7 @@ services:
       MIRA_AI_SERVER_URL: ${MIRA_AI_SERVER_URL:-}
       MIRA_AI_SERVER_CERT_FINGERPRINT: ${MIRA_AI_SERVER_CERT_FINGERPRINT:-}
       MIRA_AI_SERVER_TOKEN_FILE: /secrets/ai_server_token.txt
+      MIRA_SHELLY_LOGGER_URL: ${MIRA_SHELLY_LOGGER_URL:-}
     volumes:
       - ${MIRA_APPDATA:-./appdata}/data:/data
       - ${MIRA_APPDATA:-./appdata}/secrets:/secrets:ro

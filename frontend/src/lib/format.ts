@@ -43,6 +43,25 @@ export function formatEuro(value: number): string {
   return `${formatNumber(value, 2)} €`;
 }
 
+/** Kosten: Beträge unter einem Cent nicht als „0,00 €“ verschleiern */
+export function formatCost(eur: number): string {
+  return eur > 0 && eur < 0.005 ? '< 0,01 €' : formatEuro(eur);
+}
+
+/** Energie: unter 1 kWh in Wh, darüber in kWh */
+export function formatEnergy(wh: number): string {
+  if (wh < 1000) return `${formatNumber(wh, wh < 10 ? 1 : 0, wh < 10 ? 1 : 0)} Wh`;
+  const kwh = wh / 1000;
+  return `${formatNumber(kwh, kwh < 100 ? 2 : 1, kwh < 100 ? 2 : 1)} kWh`;
+}
+
+/** Dateigröße mit passender Einheit (KB, MB, GB; Basis 1024) */
+export function formatFileSize(bytes: number): string {
+  if (bytes < 1024 ** 2) return `${formatNumber(bytes / 1024, 0)} KB`;
+  if (bytes < 1024 ** 3) return `${formatNumber(bytes / 1024 ** 2, 1, 1)} MB`;
+  return formatBytes(bytes);
+}
+
 const GIB = 1024 ** 3;
 const TIB = 1024 ** 4;
 

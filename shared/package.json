@@ -1,7 +1,7 @@
 {
   "name": "@mira/shared",
   "private": true,
-  "version": "0.7.1",
+  "version": "0.8.0",
   "description": "MIRA – gemeinsame API-Verträge (zod-Schemas und Typen) für Frontend, Backend und MIRA-Agent",
   "type": "module",
   "exports": {

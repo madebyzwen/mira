@@ -45,6 +45,10 @@ const envSchema = z.object({
   MIRA_AI_SERVER_POLL_SECONDS: z.coerce.number().min(1).max(3600).default(2),
   /** Der KI-Server gilt als nicht erreichbar, wenn so lange keine Antwort kam */
   MIRA_AI_SERVER_OFFLINE_SECONDS: z.coerce.number().int().min(2).max(3600).default(10),
+  /** Shelly-Logger (Lese-API im internen Netz), z. B. `http://mira-shelly-logger:8090` */
+  MIRA_SHELLY_LOGGER_URL: opt(z.url({ protocol: /^https?$/ })),
+  /** Datei mit dem Token der Logger-API (nur nötig, wenn der Logger eines verlangt) */
+  MIRA_SHELLY_LOGGER_TOKEN_FILE: opt(z.string()),
   MIRA_HISTORY_RAW_DAYS: z.coerce.number().int().min(1).max(90).default(7),
   MIRA_HISTORY_HOURLY_DAYS: z.coerce.number().int().min(7).max(3650).default(365),
   MIRA_BACKUP_KEEP: z.coerce.number().int().min(1).max(365).default(7),
@@ -79,6 +83,7 @@ export interface AppConfig {
     pollSeconds: number;
     offlineSeconds: number;
   };
+  shellyLogger: { url?: string; tokenFile?: string };
   history: { rawDays: number; hourlyDays: number };
   backup: { keep: number; time: string };
   updateCheck: { enabled: boolean; time: string };
@@ -114,6 +119,10 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env, version = '0.0.
       tokenFile: e.MIRA_AI_SERVER_TOKEN_FILE ? path.resolve(e.MIRA_AI_SERVER_TOKEN_FILE) : undefined,
       pollSeconds: e.MIRA_AI_SERVER_POLL_SECONDS,
       offlineSeconds: e.MIRA_AI_SERVER_OFFLINE_SECONDS,
+    },
+    shellyLogger: {
+      url: e.MIRA_SHELLY_LOGGER_URL?.replace(/\/+$/, ''),
+      tokenFile: e.MIRA_SHELLY_LOGGER_TOKEN_FILE ? path.resolve(e.MIRA_SHELLY_LOGGER_TOKEN_FILE) : undefined,
     },
     history: { rawDays: e.MIRA_HISTORY_RAW_DAYS, hourlyDays: e.MIRA_HISTORY_HOURLY_DAYS },
     backup: { keep: e.MIRA_BACKUP_KEEP, time: e.MIRA_BACKUP_TIME },

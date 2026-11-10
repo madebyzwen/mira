@@ -6,75 +6,19 @@
  * `src/services/dataService.ts`. Dadurch lässt sich die Datenquelle später
  * durch das MIRA-Backend ersetzen, ohne Seiten oder Komponenten anzupassen.
  */
-import { HISTORY_GRID } from '@mira/shared';
 import type {
   Agent,
-  ChartRange,
   Disk,
   DockerContainer,
   LlmDownload,
   LlmModel,
   NetworkInterface,
   NetworkShare,
-  PowerMeterInfo,
   ServerInfo,
   ServerUtilization,
   SystemEntry,
   Temperature,
 } from '../types/models';
-
-/* ------------------------------------------------------------------ */
-/* Hilfsfunktionen zum Erzeugen reproduzierbarer Beispiel-Zeitreihen  */
-/* ------------------------------------------------------------------ */
-
-/** Deterministischer Pseudo-Zufallsgenerator (mulberry32). */
-function seededRandom(seed: number): () => number {
-  let a = seed >>> 0;
-  return () => {
-    a = (a + 0x6d2b79f5) >>> 0;
-    let t = a;
-    t = Math.imul(t ^ (t >>> 15), t | 1);
-    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
-
-interface Bump {
-  /** Position 0..1 */
-  at: number;
-  /** Breite (Standardabweichung) 0..1 */
-  width: number;
-  height: number;
-}
-
-function generateSeries(options: {
-  count: number;
-  base: number;
-  noise: number;
-  seed: number;
-  bumps?: Bump[];
-  last?: number;
-  min?: number;
-}): number[] {
-  const rand = seededRandom(options.seed);
-  const values: number[] = [];
-  let drift = 0;
-  for (let i = 0; i < options.count; i += 1) {
-    const x = i / (options.count - 1);
-    drift = drift * 0.82 + (rand() - 0.5) * options.noise;
-    const bumpSum = (options.bumps ?? []).reduce(
-      (sum, b) => sum + b.height * Math.exp(-((x - b.at) ** 2) / (2 * b.width ** 2)),
-      0,
-    );
-    values.push(Math.max(options.min ?? 0, options.base + drift + bumpSum));
-  }
-  if (options.last !== undefined) {
-    values[values.length - 1] = options.last;
-  }
-  return values;
-}
-
-const pointsByRange = (range: ChartRange) => HISTORY_GRID[range].points;
 
 /* ------------------------------------------------------------------ */
 /* Systeme                                                             */
@@ -149,81 +93,6 @@ export const demoDockerContainers: DockerContainer[] = [
   { name: 'llama-server', state: 'healthy', uptime: 'Up 18 min' },
   { name: 'portainer_agent', state: 'running', uptime: 'Up 18 min' },
 ];
-
-/* ------------------------------------------------------------------ */
-/* Shelly Plug                                                         */
-/* ------------------------------------------------------------------ */
-
-export const demoShellyPlug: PowerMeterInfo = {
-  id: 'shelly-plug',
-  name: 'Shelly Plug',
-  deviceName: 'Shelly Plug PM',
-  description: 'Strommessung für den KI-Server',
-  status: 'online',
-  currentPowerW: 75.5,
-  energyTodayKwh: 1.84,
-  energyMonthKwh: 47.6,
-  costTodayEur: 0.55,
-  costMonthEur: 14.28,
-  ipAddress: '10.10.40.25',
-  connection: 'Lokal',
-  wifiSignalDbm: -58,
-  firmware: '1.5.2',
-  measureIntervalS: 10,
-  host: 'KI-Server',
-};
-
-/** Beispielwerte im einheitlichen Zeitraster (Zeitpunkte setzt der dataService) */
-export const demoShellyPowerHistory: Record<ChartRange, number[]> = {
-  '1h': generateSeries({
-    count: pointsByRange('1h'),
-    base: 70,
-    noise: 2.5,
-    seed: 40,
-    min: 40,
-    last: demoShellyPlug.currentPowerW,
-    bumps: [{ at: 0.55, width: 0.05, height: 16 }],
-  }),
-  '24h': generateSeries({
-    count: pointsByRange('24h'),
-    base: 69,
-    noise: 3.2,
-    seed: 41,
-    min: 40,
-    last: demoShellyPlug.currentPowerW,
-    bumps: [
-      { at: 0.47, width: 0.06, height: 20 },
-      { at: 0.66, width: 0.035, height: 18 },
-      { at: 0.8, width: 0.05, height: 12 },
-      { at: 0.6, width: 0.06, height: 8 },
-    ],
-  }),
-  '7d': generateSeries({
-    count: pointsByRange('7d'),
-    base: 72,
-    noise: 6,
-    seed: 42,
-    min: 40,
-    last: demoShellyPlug.currentPowerW,
-    bumps: [
-      { at: 0.22, width: 0.02, height: 35 },
-      { at: 0.58, width: 0.03, height: 42 },
-      { at: 0.86, width: 0.02, height: 20 },
-    ],
-  }),
-  '30d': generateSeries({
-    count: pointsByRange('30d'),
-    base: 70,
-    noise: 7,
-    seed: 43,
-    min: 40,
-    last: demoShellyPlug.currentPowerW,
-    bumps: [
-      { at: 0.3, width: 0.03, height: 30 },
-      { at: 0.7, width: 0.04, height: 38 },
-    ],
-  }),
-};
 
 /* ------------------------------------------------------------------ */
 /* Agents                                                              */

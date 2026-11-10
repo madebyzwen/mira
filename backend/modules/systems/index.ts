@@ -3,6 +3,7 @@ import type { FastifyInstance } from 'fastify';
 import {
   AI_SERVER_ROLE,
   AI_SERVER_SLUG,
+  SHELLY_SLUG,
   historyQuerySchema,
   type AiServerStatusResponse,
   type HistoryResponse,
@@ -15,6 +16,10 @@ import { AgentClient } from './agentClient.ts';
 import { AiServerMonitor } from './aiServerMonitor.ts';
 import { SampleAggregator } from './sampleAggregator.ts';
 import { ServerHistory } from './history.ts';
+import { EnergyPrices } from './shelly/energyPrices.ts';
+import { LoggerClient } from './shelly/loggerClient.ts';
+import { registerShellyRoutes } from './shelly/routes.ts';
+import { ShellyService } from './shelly/shellyService.ts';
 
 interface SystemRow {
   id: number;
@@ -28,7 +33,8 @@ interface SystemRow {
  * Fachmodul „Systeme“: den KI-Server lesend überwachen (Stufe 2) und den Verlauf
  * speichern (Stufe 3).
  * Routen: `GET /api/v1/systems`, `GET /api/v1/systems/ai-server`,
- * `GET /api/v1/systems/ai-server/history?range=1h|24h|7d|30d`.
+ * `GET /api/v1/systems/ai-server/history?range=1h|24h|7d|30d`,
+ * Shelly Plug (ab Stufe 4b, Daten vom Shelly-Logger): `/api/v1/systems/shelly-plug…`.
  */
 export class SystemsModule implements MiraModule {
   readonly name = 'systems';
@@ -36,9 +42,10 @@ export class SystemsModule implements MiraModule {
   /** Für Tests zugänglich (z. B. um eine Abfrage gezielt auszulösen). */
   monitor: AiServerMonitor | undefined;
   history: ServerHistory | undefined;
+  shelly: ShellyService | undefined;
 
   registerRoutes(app: FastifyInstance, ctx: CoreContext): void {
-    const { db, config, scheduler, updates } = ctx;
+    const { db, config, scheduler, updates, audit } = ctx;
     const found = db.prepare<[string], SystemRow>('SELECT id, slug, name, kind, description FROM systems WHERE slug = ?').get(AI_SERVER_SLUG);
     if (!found) throw new Error(`System „${AI_SERVER_SLUG}“ fehlt in der Datenbank`);
     // Anzeigename aus der Konfiguration übernehmen (ohne Angabe: „KI-Server“)
@@ -83,7 +90,22 @@ export class SystemsModule implements MiraModule {
       status: monitor.snapshot.status,
     });
 
-    app.get('/api/v1/systems', async (): Promise<SystemsListResponse> => ({ systems: [summary()] }));
+    // Shelly Plug: Messwerte ausschließlich über die Lese-API des Shelly-Loggers (ADR 0010)
+    const shellyRow = db.prepare<[string], SystemRow>('SELECT id, slug, name, kind, description FROM systems WHERE slug = ?').get(SHELLY_SLUG);
+    if (!shellyRow) throw new Error(`System „${SHELLY_SLUG}“ fehlt in der Datenbank`);
+    const prices = new EnergyPrices(db);
+    const shelly = new ShellyService({ client: createLoggerClient(config.shellyLogger, app), prices, system: shellyRow, log: app.log });
+    this.shelly = shelly;
+    if (shelly.configured) {
+      // Zustand für Navigation und Systemliste im Hintergrund aktuell halten
+      scheduler.every('systems.shelly-zustand', 15_000, () => shelly.status(), { runNow: true });
+    } else {
+      app.log.warn('Shelly-Logger nicht konfiguriert (MIRA_SHELLY_LOGGER_URL)');
+    }
+    app.addHook('onClose', async () => shelly.close());
+    registerShellyRoutes(app, { service: shelly, prices, audit });
+
+    app.get('/api/v1/systems', async (): Promise<SystemsListResponse> => ({ systems: [summary(), shelly.summary()] }));
 
     app.get(`/api/v1/systems/${AI_SERVER_SLUG}/history`, async (request): Promise<HistoryResponse> => {
       const { range } = historyQuerySchema.parse(request.query);
@@ -116,4 +138,18 @@ function createClient(aiServer: CoreContext['config']['aiServer'], app: FastifyI
     return null;
   }
   return new AgentClient({ url: aiServer.url, certFingerprint: aiServer.certFingerprint, token });
+}
+
+function createLoggerClient(cfg: CoreContext['config']['shellyLogger'], app: FastifyInstance): LoggerClient | null {
+  if (!cfg.url) return null;
+  let token: string | undefined;
+  if (cfg.tokenFile) {
+    try {
+      token = fs.readFileSync(cfg.tokenFile, 'utf8').trim() || undefined;
+    } catch (err) {
+      app.log.error({ err, file: cfg.tokenFile }, 'Token-Datei für den Shelly-Logger nicht lesbar');
+      return null;
+    }
+  }
+  return new LoggerClient({ url: cfg.url, token });
 }

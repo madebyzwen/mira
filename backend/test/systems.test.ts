@@ -155,13 +155,15 @@ describe('Systeme › KI-Server', () => {
     const res = await app.inject({ method: 'GET', url: '/api/v1/systems', cookies: { mira_session: cookie } });
     expect(res.json().systems).toEqual([
       expect.objectContaining({ slug: 'ai-server', name: 'KI-Server', kind: 'server', description: 'KI-Server', status: expect.objectContaining({ state: 'online' }) }),
+      // Shelly Plug (Stufe 4b) – hier ohne Shelly-Logger: nicht eingerichtet
+      expect.objectContaining({ slug: 'shelly-plug', kind: 'power_meter', status: expect.objectContaining({ state: 'unknown', lastError: 'not_configured' }) }),
     ]);
   });
 
   it('übernimmt den Namen des KI-Servers aus MIRA_AI_SERVER_NAME', async () => {
     const { app, cookie } = await startMira(null, { MIRA_AI_SERVER_NAME: '  Walhall ' });
     const res = await app.inject({ method: 'GET', url: '/api/v1/systems', cookies: { mira_session: cookie } });
-    expect(res.json().systems).toEqual([expect.objectContaining({ slug: 'ai-server', name: 'Walhall', description: 'KI-Server' })]);
+    expect(res.json().systems[0]).toEqual(expect.objectContaining({ slug: 'ai-server', name: 'Walhall', description: 'KI-Server' }));
     expect((await aiServerStatus(app, cookie)).system.name).toBe('Walhall');
   });
 

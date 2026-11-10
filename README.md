@@ -27,10 +27,12 @@ ist frei wählbar (`MIRA_AI_SERVER_NAME`); ohne Angabe heißt er „KI-Server“
 | 3 | Messwert-Historie: echte Verlaufsdiagramme, tägliche Sicherung | ✅ abgeschlossen |
 | 3a | Bereinigung: durchgängig „KI-Server“, Name konfigurierbar, Agent `mira-agent` | ✅ abgeschlossen |
 | 4a | Shelly-Logger: eigener Container erfasst den Stromverbrauch (eigene Datenbank, Lese-API) | 🔍 umgesetzt, Inbetriebnahme ausstehend |
-| 4b | Shelly in MIRA: Leistung, Verbrauch, Kosten und Verlauf aus dem Logger | ⏳ nach Freigabe |
+| 4b | Shelly in MIRA: Leistung, Verbrauch, Kosten und Verlauf aus dem Logger | 🔍 umgesetzt, Abnahme ausstehend |
 
 Alle Stufen: [Roadmap](docs/entwicklung/roadmap.md). Echt sind die Anmeldung,
-die Ansicht des KI-Servers (Live-Werte alle 2 s und Verlauf von Auslastung und Temperaturen über 1 h / 24 h / 7 / 30 Tage) sowie
+die Ansicht des KI-Servers (Live-Werte alle 2 s und Verlauf von Auslastung und Temperaturen über 1 h / 24 h / 7 / 30 Tage),
+der Shelly Plug (Live-Leistung jede Sekunde, Verbrauch und Kosten für Tag/Woche/Monat/Jahr, Verlauf; Strompreis unter
+Konfiguration › Systeme), die Kachel „Verbrauch“ im Dashboard sowie
 die Update-Hinweise über die Glocke in der Kopfzeile (Konfiguration › MIRA); alle
 übrigen Ansichten zeigen noch **Beispieldaten** und führen keine Aktionen aus.
 
@@ -230,6 +232,8 @@ Wiederherstellen (per SSH auf Asgard):
 | `MIRA_AI_SERVER_TOKEN_FILE` | – | Datei mit dem Zugriffstoken |
 | `MIRA_AI_SERVER_POLL_SECONDS` | `2` | Abfrageintervall des Agents (läuft im Backend, auch ohne geöffnete Weboberfläche) |
 | `MIRA_AI_SERVER_OFFLINE_SECONDS` | `10` | Ohne Antwort seit so vielen Sekunden gilt der KI-Server als „offline“ |
+| `MIRA_SHELLY_LOGGER_URL` | – (Stack: `http://mira-shelly-logger:8090`) | Lese-API des [Shelly-Loggers](shelly-logger/README.md) im internen Netz `mira-intern` |
+| `MIRA_SHELLY_LOGGER_TOKEN_FILE` | – | Datei mit dem Token, falls der Logger eines verlangt (`LOGGER_API_TOKEN_FILE`) |
 | `MIRA_HISTORY_RAW_DAYS` | `7` | Aufbewahrung der Minutenwerte |
 | `MIRA_HISTORY_HOURLY_DAYS` | `365` | Aufbewahrung der Stundenwerte |
 | `MIRA_BACKUP_TIME` | `03:30` | Uhrzeit der täglichen Sicherung (Ortszeit, `HH:MM`) |

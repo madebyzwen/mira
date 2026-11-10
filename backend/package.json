@@ -1,7 +1,7 @@
 {
   "name": "@mira/backend",
   "private": true,
-  "version": "0.7.1",
+  "version": "0.8.0",
   "description": "MIRA – Backend (Core und Fachmodule)",
   "type": "module",
   "engines": {
@@ -23,6 +23,7 @@
   },
   "devDependencies": {
     "@mira/agent": "*",
+    "@mira/shelly-logger": "*",
     "@types/better-sqlite3": "^9.6.0",
     "@types/node": "^22",
     "typescript": "~5.9",
