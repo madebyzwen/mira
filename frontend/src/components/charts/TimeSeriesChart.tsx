@@ -1,5 +1,6 @@
 import { useId, useState, type PointerEvent } from 'react';
 import type { ChartTick } from '../../types/models';
+import { rem } from '../../lib/size';
 
 export type SeriesColor = 'violet' | 'cyan';
 
@@ -25,7 +26,7 @@ export interface ChartPanel {
   formatY: (value: number) => string;
   /** Darstellung der Werte in der Werteanzeige (Standard: wie die y-Achse) */
   formatValue?: (value: number) => string;
-  /** Höhe der Zeichenfläche in px */
+  /** Höhe der Zeichenfläche in px (Entwurf; gesetzt als rem, skaliert mit der Grundgröße) */
   height: number;
   /** Flächenfüllung unter den Linien */
   area?: 'strong' | 'soft' | 'none';
@@ -46,7 +47,7 @@ interface MultiPanelChartProps {
 
 const VB_W = 1000;
 const VB_H = 300;
-/** Abstand zwischen zwei Ebenen in px */
+/** Abstand zwischen zwei Ebenen in px (Entwurf; gesetzt als rem) */
 const PANEL_GAP = 28;
 const X_AXIS_HEIGHT = 30;
 
@@ -107,7 +108,7 @@ export function MultiPanelChart({ panels, ticks, ariaLabel, legend = false, empt
   // Oberkante jeder Ebene (px), für die Punkte der Werteanzeige
   const tops = panels.map((_, i) => panels.slice(0, i).reduce((sum, p) => sum + p.height + PANEL_GAP, 0));
   const plotsHeight = tops[tops.length - 1] + panels[panels.length - 1].height;
-  const rows = panels.flatMap((p, i) => (i === 0 ? [`${p.height}px`] : [`${PANEL_GAP}px`, `${p.height}px`]));
+  const rows = panels.flatMap((p, i) => (i === 0 ? [rem(p.height)] : [rem(PANEL_GAP), rem(p.height)]));
   const rowOf = (i: number) => i * 2 + 1;
   const xRow = rows.length + 1;
 
@@ -127,7 +128,7 @@ export function MultiPanelChart({ panels, ticks, ariaLabel, legend = false, empt
 
   return (
     <figure className="ts-chart" aria-label={ariaLabel} role="img">
-      <div className="ts-chart__grid" style={{ gridTemplateRows: `${rows.join(' ')} ${X_AXIS_HEIGHT}px` }}>
+      <div className="ts-chart__grid" style={{ gridTemplateRows: `${rows.join(' ')} ${rem(X_AXIS_HEIGHT)}` }}>
         {panels.map((panel, pi) => {
           const yTicks = yTicksOf(panel.yMax, panel.yStep);
           const area = panel.area ?? 'soft';
@@ -252,13 +253,13 @@ interface HoverInfoProps {
 function HoverInfo({ index, left, label, panels, tops, plotsHeight }: HoverInfoProps) {
   return (
     <>
-      <span className="ts-chart__cursor" style={{ left: `${left}%`, height: plotsHeight }} />
+      <span className="ts-chart__cursor" style={{ left: `${left}%`, height: rem(plotsHeight) }} />
       {panels.flatMap((panel, pi) =>
         panel.series.map((s) => {
           const v = s.values[index];
           if (v === null || v === undefined) return null;
           const top = tops[pi] + (1 - clampTo(v, panel.yMax) / panel.yMax) * panel.height;
-          return <span key={`${pi}-${s.label}`} className={`ts-chart__dot ts-chart__dot--${s.color}`} style={{ left: `${left}%`, top }} />;
+          return <span key={`${pi}-${s.label}`} className={`ts-chart__dot ts-chart__dot--${s.color}`} style={{ left: `${left}%`, top: rem(top) }} />;
         }),
       )}
       <div className={['ts-chart__tooltip', left > 60 && 'is-left'].filter(Boolean).join(' ')} style={{ left: `${left}%` }} role="status">
@@ -295,7 +296,7 @@ interface TimeSeriesChartProps {
   /** Markierung + Wert am rechten Ende der ersten Reihe */
   endLabel?: string;
   legend?: boolean;
-  /** Gesamthöhe inkl. Zeitachse in px */
+  /** Gesamthöhe inkl. Zeitachse in px (Entwurf; gesetzt als rem) */
   height?: number;
   ariaLabel: string;
   emptyText?: string;
