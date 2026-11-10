@@ -12,3 +12,4 @@ export * from './agent.ts';
 export * from './systems.ts';
 export * from './notifications.ts';
 export * from './shellyLogger.ts';
+export * from './shellyPlug.ts';

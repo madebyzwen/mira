@@ -8,6 +8,8 @@ export const ERROR_CODES = [
   'rate_limited',
   'forbidden_origin',
   'not_found',
+  /** Ein angebundener Dienst (z. B. der Shelly-Logger) ist nicht erreichbar */
+  'service_unavailable',
   'internal_error',
 ] as const;
 

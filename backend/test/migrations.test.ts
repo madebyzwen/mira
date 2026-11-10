@@ -93,9 +93,9 @@ describe('Migrationen', () => {
     const results = runMigrations(db, [coreMigrations, { module: 'systems', migrations: systemsMigrations }]);
     expect(results).toEqual([
       { module: 'core', applied: [3] },
-      { module: 'systems', applied: [3] },
+      { module: 'systems', applied: [3, 4] },
     ]);
-    expect(db.prepare('SELECT id, slug, name, description FROM systems').all()).toEqual([
+    expect(db.prepare("SELECT id, slug, name, description FROM systems WHERE kind = 'server'").all()).toEqual([
       { id: before.id, slug: 'ai-server', name: 'KI-Server', description: 'KI-Server' },
     ]);
     expect(db.prepare('SELECT system_id, cpu_avg FROM server_samples').all()).toEqual([{ system_id: before.id, cpu_avg: 12.5 }]);

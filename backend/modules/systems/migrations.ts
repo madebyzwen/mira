@@ -83,4 +83,21 @@ export const systemsMigrations: Migration[] = [
       UPDATE systems SET slug = 'ai-server', name = 'KI-Server' WHERE slug = 'odin';
     `,
   },
+  {
+    version: 4,
+    name: 'shelly_plug_energy_prices',
+    sql: `
+      -- Stufe 4b: Shelly Plug als System (Messwerte liest MIRA beim Shelly-Logger, ADR 0010)
+      INSERT INTO systems (slug, name, kind, description, created_at)
+      VALUES ('shelly-plug', 'Shelly Plug', 'power_meter', 'Strommessung für den KI-Server', strftime('%Y-%m-%dT%H:%M:%fZ', 'now'));
+
+      -- Strompreis mit Gültigkeitsdatum (Kalendertag, Ortszeit) – ein Eintrag je Tag
+      CREATE TABLE energy_prices (
+        id              INTEGER PRIMARY KEY AUTOINCREMENT,
+        valid_from      TEXT    NOT NULL UNIQUE,
+        cents_per_kwh   REAL    NOT NULL CHECK (cents_per_kwh > 0),
+        created_at      TEXT    NOT NULL
+      );
+    `,
+  },
 ];
