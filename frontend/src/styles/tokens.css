@@ -2,7 +2,22 @@
  * MIRA Design-Tokens
  * Alle Farben, Abstände, Radien und Schriftgrößen werden hier zentral definiert
  * und in den übrigen Stylesheets ausschließlich über Variablen verwendet.
+ *
+ * Größen stehen in rem (Entwurf: 1rem = 16 px). Die Grundgröße wächst mit der
+ * Fensterbreite: Ab 1920 px entspricht die Oberfläche dem Entwurf (100 %), darunter
+ * wird sie stufenlos kleiner, höchstens auf 80 % (bei etwa 1536 px und schmaler).
+ * Die Handy-Ansicht (≤ 900 px) behält die volle Größe.
  */
+html {
+  font-size: clamp(12.8px, calc(100vw / 120), 16px);
+}
+
+@media (max-width: 900px) {
+  html {
+    font-size: 16px;
+  }
+}
+
 :root {
   color-scheme: dark;
 
@@ -53,8 +68,8 @@
   --color-red-bg: rgba(240, 70, 70, 0.12);
 
   /* Leuchteffekte */
-  --glow-accent: drop-shadow(0 0 6px rgba(227, 94, 244, 0.55));
-  --glow-primary: 0 0 24px rgba(140, 45, 245, 0.45);
+  --glow-accent: drop-shadow(0 0 0.375rem rgba(227, 94, 244, 0.55));
+  --glow-primary: 0 0 1.5rem rgba(140, 45, 245, 0.45);
 
   /* Typografie */
   --font-sans: 'Inter Variable', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -68,25 +83,25 @@
   --fs-3xl: 2.25rem;    /* 36 */
 
   /* Abstände */
-  --space-1: 4px;
-  --space-2: 8px;
-  --space-3: 12px;
-  --space-4: 16px;
-  --space-5: 20px;
-  --space-6: 24px;
-  --space-8: 32px;
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
 
   /* Radien */
-  --radius-sm: 8px;
-  --radius-md: 10px;
-  --radius-lg: 14px;
+  --radius-sm: 0.5rem;
+  --radius-md: 0.625rem;
+  --radius-lg: 0.875rem;
   --radius-pill: 999px;
 
   /* Layout */
-  --sidebar-width: 292px;
-  --sidebar-width-collapsed: 88px;
-  --topbar-height: 74px;
-  --page-padding: 28px;
+  --sidebar-width: 18.25rem;
+  --sidebar-width-collapsed: 5.5rem;
+  --topbar-height: 4.625rem;
+  --page-padding: 1.75rem;
 
   --transition: 160ms ease;
 }

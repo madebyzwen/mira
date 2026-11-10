@@ -1,4 +1,5 @@
 import { useId } from 'react';
+import { rem } from '../../lib/size';
 
 interface MiraLogoProps {
   size?: number;
@@ -12,8 +13,8 @@ export function MiraLogo({ size = 40, glow = true, className }: MiraLogoProps) {
   return (
     <svg
       className={className}
-      width={size}
-      height={(size * 76) / 100}
+      width={rem(size)}
+      height={rem((size * 76) / 100)}
       viewBox="0 0 100 76"
       role="img"
       aria-label="MIRA"
