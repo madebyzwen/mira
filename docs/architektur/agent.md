@@ -43,7 +43,7 @@ Entscheidungen (z. B. „nach 45 Minuten schlafen“) trifft ausschließlich MIR
 | TLS mit selbst erstelltem Zertifikat, Fingerprint in MIRA hinterlegt | Verschlüsselung und Schutz vor untergeschobenem Server |
 | Langes Zufallstoken pro Anfrage; auf dem KI-Server nur der Hash, auf Asgard als Secret-Datei | Nur MIRA darf den Agent nutzen |
 | Nur fest definierte Endpunkte, keine Ausführung beliebiger Befehle | Kleine Angriffsfläche |
-| Privilegierte Aktionen über `/etc/sudoers.d/mira-agent` mit **exakten** Befehlszeilen | Keine pauschalen Root-Rechte |
+| Energieaktionen (Schlafen, Neustart) über logind mit einer eng begrenzten **polkit-Regel** für `mira-agent` ([ADR 0011](../adr/0011-energiesteuerung-polkit-und-direktes-wake-on-lan.md)); der Dienst bleibt bei `NoNewPrivileges` | Keine pauschalen Root-Rechte, kein sudo |
 | Docker-Status über exakte sudo-Regel für `docker ps --all --format json` statt Gruppe `docker` | Gruppe `docker` wäre faktisch Root |
 | Protokollierung im systemd-Journal (KI-Server) und im Audit-Log (MIRA) | Nachvollziehbarkeit |
 
@@ -57,7 +57,8 @@ Der bestehende administrative SSH-Zugang zum KI-Server bleibt unverändert.
 | `GET /v1/system/info` | OS, Kernel, CPU (inkl. P-/E-Kerne), RAM, GPU, Startzeit | 2 ✅ |
 | `GET /v1/system/metrics` | CPU, RAM, GPU, VRAM, Last, Temperaturen, Datenträger, NFS/CIFS-Mounts, Netzwerk | 2 ✅ |
 | `GET /v1/docker/containers` | Containerstatus (read-only) | 6 |
-| `POST /v1/power/suspend` · `/poweroff` · `/reboot` · `/reboot-windows` | Energiesteuerung | 5 |
+| `POST /v1/power/suspend` · `/reboot` | Schlafen, Neustart | 5a |
+| `POST /v1/power/poweroff` · `/reboot-windows` | Herunterfahren, Neustart in Windows | 5 |
 | `GET /v1/llm/models` · `DELETE /v1/llm/models/{id}` | Modellverzeichnis | 7 |
 | `POST /v1/llm/downloads` · `GET …/{id}` · `DELETE …/{id}` | Downloads mit Fortschritt und Abbruch | 8 |
 | `GET /v1/activity` | Aktivität von llama.cpp (für Schlafmodus) | 9 |
@@ -97,5 +98,5 @@ Die Installation auf dem KI-Server führt der Betreiber nach Anleitung selbst au
 
 Ein schlafender KI-Server hat keinen erreichbaren Agent. Wake-on-LAN ist daher ein eigener Weg. Da
 MIRA per macvlan im selben Netz wie der KI-Server liegt, kann es das Magic Packet direkt
-senden; der Umweg über die OPNsense ([ADR 0007](../adr/0007-wake-on-lan-ueber-opnsense.md))
-wird vor Stufe 5 neu bewertet.
+senden – vorgesehen in [ADR 0011](../adr/0011-energiesteuerung-polkit-und-direktes-wake-on-lan.md),
+die den Umweg über die OPNsense ([ADR 0007](../adr/0007-wake-on-lan-ueber-opnsense.md)) ersetzt.

@@ -1,6 +1,6 @@
 # 0007 – Wake-on-LAN über die OPNsense-API
 
-- Status: **vorgeschlagen** (Entscheidung vor Stufe 5)
+- Status: ersetzt durch [0011](0011-energiesteuerung-polkit-und-direktes-wake-on-lan.md) (2026-11-10, sobald 0011 angenommen ist)
 - Datum: 2026-11-05
 
 > **Nachtrag 2026-11-06:** MIRA erhält per macvlan eine eigene IP im Server-Netz

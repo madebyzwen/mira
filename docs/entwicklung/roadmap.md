@@ -15,7 +15,8 @@ Status: ✅ abgeschlossen · 🔍 umgesetzt, Abnahme ausstehend · 🚧 in Umset
 | [3a](stufe-03a-ki-server-bereinigung.md) | Bereinigung: durchgängig „KI-Server“, Name konfigurierbar (`MIRA_AI_SERVER_NAME`), Agent `mira-agent` ([ADR 0009](../adr/0009-ki-server-als-rolle-agent-mira-agent.md)); **Voraussetzung für Stufe 4** | KI-Server: Agent neu installieren (übernimmt die Altinstallation) · Asgard: Stack-Variablen, Secret umbenennen | ✅ |
 | [4a](stufe-04a-shelly-logger.md) | Shelly-Logger: eigener Container mit eigener SQLite-Datenbank, Abfrage 1 s (lokal, nur lesend), 30-s-Verdichtung, Tag/Woche/Monat/Jahr, interne Lese-API ([ADR 0010](../adr/0010-shelly-logger-als-eigener-container.md)); ersetzt die Planung in [Stufe 4](stufe-04-shelly.md) | Asgard: eigener Stack mit macvlan-IP · OPNsense: `<LOGGER_IP>` → `<SHELLY_IP>`, TCP 80 | 🔍 |
 | [4b](stufe-04b-shelly-mira-integration.md) | Shelly in MIRA: Anbindung an den Logger, Live-Leistung, Verbrauch, Kosten (Strompreis mit Gültigkeitsdatum), Verlauf, Dashboard-Widget „Verbrauch“ | MIRA-Stack: internes Netz `mira-intern` | 🔍 |
-| 5 | Energiesteuerung: Wake-on-LAN, Suspend, Herunterfahren, Neustart, Windows-Neustart, Verfügbarkeitsprüfung | KI-Server: sudo-Regeln, GRUB · OPNsense: os-wol | ⏳ |
+| [5a](stufe-05a-schlafen-aufwecken-neustart.md) | Vorgezogen: KI-Server per Knopf schlafen legen, aufwecken (Wake-on-LAN direkt aus MIRA), neu starten; Zustand „schläft“ ([ADR 0011](../adr/0011-energiesteuerung-polkit-und-direktes-wake-on-lan.md)) | KI-Server: polkit-Regel, Wake-on-LAN (BIOS, `eno1`) | ⏳ |
+| 5 | Energiesteuerung (Rest): Herunterfahren, Neustart in Windows, Verfügbarkeitsprüfung | KI-Server: polkit-Regel, GRUB | ⏳ |
 | 6 | Dashboard mit echten Daten: Docker-Status, Ressourcen, Strom, LLMs | KI-Server: sudo-Regel `docker ps` | ⏳ |
 | 7 | LLM-Übersicht: auflisten, Info, löschen mit Sicherheitsabfrage | KI-Server: Leserechte Modellverzeichnis | ⏳ |
 | 8 | LLM-Downloads: serverseitig auf dem KI-Server, Fortschritt, Abbruch | KI-Server: Schreibrechte Modellverzeichnis | ⏳ |
@@ -44,9 +45,8 @@ Konfigurations-Widgets entstehen jeweils **mit ihrer Stufe** (z. B. Verbindung z
 
 | Thema | Benötigt bis |
 | --- | --- |
-| Shelly: Ausgabe von `/shelly`, feste IP, Passwort, Ablageort ([Stufe 4a](stufe-04a-shelly-logger.md#offene-angaben-vom-betreiber)) | Inbetriebnahme 4a |
-| Wake-on-LAN über OPNsense ([ADR 0007](../adr/0007-wake-on-lan-ueber-opnsense.md)) | Stufe 5 |
-| MAC von `eno1`, WoL im BIOS, GRUB-Eintrag für Windows | Stufe 5 |
+| Suspend/Resume mit GPU geprüft, MAC und `Wake-on` von `eno1`, Leistung im Schlaf ([Stufe 5a](stufe-05a-schlafen-aufwecken-neustart.md#offene-angaben-vom-betreiber)) | Stufe 5a |
+| GRUB-Eintrag für Windows, Wake-on-LAN aus dem ausgeschalteten Zustand | Stufe 5 |
 | Modellverzeichnis, Aufbau von llama.cpp/Containern auf dem KI-Server | Stufe 6–8 |
 | Automatisches Aufwecken bei Anfragen aus Open WebUI (neue Funktion) | vor Stufe 9 |
 | Datenquelle „Verfügbare LLMs“: Open WebUI oder Dateien auf dem KI-Server | Stufe 6 |
