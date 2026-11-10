@@ -1,6 +1,6 @@
 # Stufe 3a – KI-Server statt Odin (Bereinigung)
 
-- Status: 🚧 in Umsetzung (Konzept freigegeben 2026-11-10, PR #1)
+- Status: ✅ abgeschlossen (abgenommen 2026-11-10, MIRA 0.7.0 / Agent 0.2.0, PR #1)
 - Muss abgeschlossen sein **vor** [Stufe 4](stufe-04-shelly.md)
 - Zielversionen: MIRA **0.7.0**, Agent **0.2.0** (bisher Odin-API 0.1.4)
 
@@ -222,14 +222,14 @@ Dafür wird eine eigene Aufgabe in `docs/aufgaben/` angelegt.
 
 ## Abnahme
 
-- [ ] Ohne `MIRA_AI_SERVER_NAME` steht in der gesamten Oberfläche „KI-Server“, nirgends „Odin“.
-- [ ] Mit `MIRA_AI_SERVER_NAME=Odin` heißen Navigation, Seitentitel und Dashboard-Kachel „Odin“.
+- [x] Ohne `MIRA_AI_SERVER_NAME` steht in der gesamten Oberfläche „KI-Server“, nirgends „Odin“.
+- [x] Mit `MIRA_AI_SERVER_NAME=Odin` heißen Navigation, Seitentitel und Dashboard-Kachel „Odin“.
       Update-Hinweise und Konfiguration sprechen weiter vom KI-Server.
-- [ ] Der Update-Hinweis lautet „Update für den KI-Server: MIRA-Agent X.Y.Z“, mit Anleitung unter `agent/install/README.md`.
-- [ ] Das Release v0.7.0 enthält kein Asset mit „odin“ im Namen.
-- [ ] Auf dem KI-Server gibt es keine Dienste, Pfade oder nft-Tabellen mit „odin“ mehr. `systemctl status mira-agent` ist aktiv.
-- [ ] Die Messwert-Historie läuft lückenlos weiter. Die einzige Lücke ist das Umstellungsfenster.
-- [ ] `git grep -i odin` trifft nur noch Stellen auf der Ausnahmeliste, und die CI-Prüfung läuft.
+- [x] Der Update-Hinweis lautet „Update für den KI-Server: MIRA-Agent X.Y.Z“, mit Anleitung unter `agent/install/README.md`.
+- [x] Das Release v0.7.0 enthält kein Asset mit „odin“ im Namen.
+- [x] Auf dem KI-Server gibt es keine Dienste, Pfade oder nft-Tabellen mit „odin“ mehr. `systemctl status mira-agent` ist aktiv.
+- [x] Die Messwert-Historie läuft lückenlos weiter. Die einzige Lücke ist das Umstellungsfenster.
+- [x] `git grep -i odin` trifft nur noch Stellen auf der Ausnahmeliste, und die CI-Prüfung läuft.
 - [x] Die Übernahme 0.1.4 → 0.2.0 wurde in `ai-server-sim` getestet (2026-11-10, siehe Umsetzung).
 
 ## Entscheidungen (getroffen 2026-11-10, wie vorgeschlagen)
@@ -269,5 +269,9 @@ Geprüft:
   mehr. Fehlerfall (ungültige Konfiguration): Altinstallation läuft unverändert weiter.
   Zweiter Lauf ändert nichts; Neuinstallation und `uninstall.sh --purge` funktionieren.
 
-Offen: Paket 6 (Release v0.7.0 und Umstellung im Betrieb) nach dem Merge, Paket 7 als
-[A-006](../aufgaben/a-006-uebergang-ki-server-aufraeumen.md).
+Paket 6 (2026-11-10): Release v0.7.0 veröffentlicht. Die Umstellung wurde vorher lokal
+vollständig geprobt: MIRA 0.6.1 mit Odin-API 0.1.4 → Agent 0.2.0, Secret umbenannt, MIRA 0.7.0
+mit und ohne `MIRA_AI_SERVER_NAME`. Die Oberfläche wurde dabei geprüft, der Verlauf blieb erhalten.
+Danach folgte die Umstellung im Betrieb auf dem KI-Server und auf Asgard; sie läuft.
+
+Paket 7 folgt als [A-006](../aufgaben/a-006-uebergang-ki-server-aufraeumen.md).

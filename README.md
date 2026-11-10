@@ -25,8 +25,8 @@ ist frei wählbar (`MIRA_AI_SERVER_NAME`); ohne Angabe heißt er „KI-Server“
 | 1 | Fundament: Backend, SQLite, echte Anmeldung, ein Container | ✅ abgeschlossen |
 | 2 | KI-Server lesen: Live-Daten über den MIRA-Agent | ✅ abgeschlossen |
 | 3 | Messwert-Historie: echte Verlaufsdiagramme, tägliche Sicherung | ✅ abgeschlossen |
-| 3a | Bereinigung: durchgängig „KI-Server“, Name konfigurierbar, Agent `mira-agent` | 🚧 in Umsetzung |
-| 4 | Shelly Plug: Stromverbrauch, Verlauf und Kosten | ⏳ geplant |
+| 3a | Bereinigung: durchgängig „KI-Server“, Name konfigurierbar, Agent `mira-agent` | ✅ abgeschlossen |
+| 4 | Shelly Plug: Stromverbrauch, Verlauf und Kosten | ⏳ als Nächstes |
 
 Alle Stufen: [Roadmap](docs/entwicklung/roadmap.md). Echt sind die Anmeldung,
 die Ansicht des KI-Servers (Live-Werte alle 2 s und Verlauf von Auslastung und Temperaturen über 1 h / 24 h / 7 / 30 Tage) sowie
