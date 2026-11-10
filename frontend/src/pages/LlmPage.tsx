@@ -21,6 +21,7 @@ import { Card } from '../components/ui/Card';
 import { Modal } from '../components/ui/Modal';
 import { Button, IconButton, Pill, ProgressBar } from '../components/ui/Primitives';
 import { useNotice } from '../components/ui/Notice';
+import { useAiServerName } from '../components/layout/Systems';
 import { dataService } from '../services/dataService';
 import { formatDateTime, formatNumber, percentOf } from '../lib/format';
 import type { LlmModel } from '../types/models';
@@ -29,6 +30,7 @@ type SortDir = 'none' | 'asc' | 'desc';
 
 export function LlmPage() {
   const { notAvailable, notify } = useNotice();
+  const serverName = useAiServerName();
   const models = dataService.getLlmModels();
   const targetDirs = dataService.getLlmTargetDirectories();
   const downloads = dataService.getLlmDownloads();
@@ -67,14 +69,14 @@ export function LlmPage() {
   return (
     <Page
       title="LLM"
-      subtitle="Lokale Sprachmodelle verwalten, herunterladen und auf Odin bereitstellen."
+      subtitle="Lokale Sprachmodelle verwalten, herunterladen und auf dem KI-Server bereitstellen."
       icon={<Layers size={44} strokeWidth={1.6} />}
       className="llm-page"
     >
       <Card
         title={
           <>
-            Installierte LLMs <Pill tone="violet">Odin</Pill>
+            Installierte LLMs <Pill tone="violet">{serverName}</Pill>
           </>
         }
         icon={<Database size={30} />}
@@ -109,7 +111,7 @@ export function LlmPage() {
             </select>
             <ChevronDown size={20} className="select__chevron" aria-hidden />
           </label>
-          <IconButton label="Liste aktualisieren" className="toolbar__refresh" onClick={() => notify('Demo-Daten – es wurde keine Verbindung zu Odin aufgebaut.')}>
+          <IconButton label="Liste aktualisieren" className="toolbar__refresh" onClick={() => notify('Demo-Daten – es wurde keine Verbindung zum KI-Server aufgebaut.')}>
             <RefreshCw size={22} />
           </IconButton>
         </div>
@@ -178,7 +180,7 @@ export function LlmPage() {
 
       <Card
         title="Neues LLM herunterladen"
-        subtitle={`Ein Sprachmodell per Download-Link direkt auf Odin (${targetDirs[0] ?? '/models'}) herunterladen.`}
+        subtitle={`Ein Sprachmodell per Download-Link direkt auf den KI-Server (${targetDirs[0] ?? '/models'}) herunterladen.`}
         icon={<Download size={36} />}
       >
         <form className="download-form" onSubmit={onDownload}>
@@ -190,7 +192,7 @@ export function LlmPage() {
             </span>
           </label>
           <label className="download-form__dir">
-            <span className="form-label">Zielverzeichnis (Odin)</span>
+            <span className="form-label">Zielverzeichnis ({serverName})</span>
             <span className="select select--icon">
               <Folder size={22} className="select__icon" aria-hidden />
               <select value={targetDir} onChange={(e) => setTargetDir(e.target.value)}>
@@ -244,7 +246,7 @@ export function LlmPage() {
               <dd>{infoModel.fileName}</dd>
             </div>
             <div>
-              <dt>Pfad (Odin)</dt>
+              <dt>Pfad ({serverName})</dt>
               <dd>{infoModel.path}</dd>
             </div>
             <div>

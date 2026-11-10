@@ -81,20 +81,20 @@ const pointsByRange = (range: ChartRange) => HISTORY_GRID[range].points;
 /* ------------------------------------------------------------------ */
 
 export const demoSystems: SystemEntry[] = [
-  { id: 'odin', label: 'Odin', path: '/systeme/odin', status: 'online', kind: 'server', description: 'KI-Server' },
+  { id: 'ai-server', label: 'KI-Server', path: '/systeme/ki-server', status: 'online', kind: 'server', description: 'KI-Server' },
   {
     id: 'shelly-plug',
     label: 'Shelly Plug',
     path: '/systeme/shelly-plug',
     status: 'online',
     kind: 'power-meter',
-    description: 'Strommessung für Odin',
+    description: 'Strommessung für den KI-Server',
   },
 ];
 
-export const demoOdin: ServerInfo = {
-  id: 'odin',
-  name: 'Odin',
+export const demoAiServer: ServerInfo = {
+  id: 'ai-server',
+  name: 'KI-Server',
   role: 'KI-Server',
   status: 'online',
   os: 'Ubuntu Server 26.04 LTS',
@@ -110,7 +110,7 @@ export const demoOdin: ServerInfo = {
   },
 };
 
-export const demoOdinUtilization: ServerUtilization = {
+export const demoAiServerUtilization: ServerUtilization = {
   cpuPercent: 3,
   ramUsedGb: 6.4,
   gpuPercent: 2,
@@ -118,24 +118,24 @@ export const demoOdinUtilization: ServerUtilization = {
   systemLoad: 0.1,
 };
 
-export const demoOdinDisks: Disk[] = [
+export const demoAiServerDisks: Disk[] = [
   { name: 'NVMe (System)', usedGb: 811, totalGb: 1024 },
   { name: 'SSD (Daten)', usedGb: 312, totalGb: 1024 },
 ];
 
-export const demoOdinNas: NetworkShare = {
+export const demoAiServerNas: NetworkShare = {
   mountPoint: '/mnt/asgard',
   source: '10.10.40.1 (Asgard)',
   usedTb: 1.44,
   totalTb: 4,
 };
 
-export const demoOdinNetwork: NetworkInterface[] = [
+export const demoAiServerNetwork: NetworkInterface[] = [
   { name: 'Server-VLAN', device: 'eno1.40', address: '10.10.40.10 / 24', kind: 'vlan' },
   { name: '10-GbE P2P', device: 'enp8s0f1', address: '10.11.40.10 / 24', kind: 'p2p' },
 ];
 
-export const demoOdinTemperatures: Temperature[] = [
+export const demoAiServerTemperatures: Temperature[] = [
   { sensor: 'cpu', label: 'CPU', celsius: 42 },
   { sensor: 'gpu', label: 'GPU', celsius: 38 },
   { sensor: 'nvme', label: 'NVMe', celsius: 36 },
@@ -146,7 +146,7 @@ export const demoOdinTemperatures: Temperature[] = [
 /* ------------------------------------------------------------------ */
 
 export const demoDockerContainers: DockerContainer[] = [
-  { name: 'odin-llama-server', state: 'healthy', uptime: 'Up 18 min' },
+  { name: 'llama-server', state: 'healthy', uptime: 'Up 18 min' },
   { name: 'portainer_agent', state: 'running', uptime: 'Up 18 min' },
 ];
 
@@ -157,8 +157,8 @@ export const demoDockerContainers: DockerContainer[] = [
 export const demoShellyPlug: PowerMeterInfo = {
   id: 'shelly-plug',
   name: 'Shelly Plug',
-  deviceName: 'Shelly Plug PM – Odin',
-  description: 'Strommessung für Odin',
+  deviceName: 'Shelly Plug PM',
+  description: 'Strommessung für den KI-Server',
   status: 'online',
   currentPowerW: 75.5,
   energyTodayKwh: 1.84,
@@ -170,7 +170,7 @@ export const demoShellyPlug: PowerMeterInfo = {
   wifiSignalDbm: -58,
   firmware: '1.5.2',
   measureIntervalS: 10,
-  host: 'Odin',
+  host: 'KI-Server',
 };
 
 /** Beispielwerte im einheitlichen Zeitraster (Zeitpunkte setzt der dataService) */

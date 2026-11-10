@@ -11,11 +11,11 @@ import { formatDateTime } from '../../lib/format';
 
 const componentLabel: Record<ComponentUpdate['component'], string> = {
   mira: 'MIRA',
-  'odin-api': 'Odin-API',
+  agent: 'KI-Server (MIRA-Agent)',
 };
 
 function installedText(c: ComponentUpdate): string {
-  if (!c.installed) return c.component === 'odin-api' ? 'unbekannt – Odin noch nicht erreicht' : 'unbekannt (Entwicklungsversion)';
+  if (!c.installed) return c.component === 'agent' ? 'unbekannt – KI-Server noch nicht erreicht' : 'unbekannt (Entwicklungsversion)';
   return c.installedAtMost ? `${c.installed} oder älter` : c.installed;
 }
 
@@ -118,7 +118,7 @@ function CheckNow({ status, onChecked }: { status: UpdateStatusResponse; onCheck
 
 function UpdatesCard({ status, checking, onChecked }: { status: UpdateStatusResponse | null; checking: boolean; onChecked: (status: UpdateStatusResponse) => void }) {
   return (
-    <Card className="config-widget" icon={<Download size={28} />} title="Updates" subtitle="Neue Versionen von MIRA und der Odin-API auf GitHub" divider>
+    <Card className="config-widget" icon={<Download size={28} />} title="Updates" subtitle="Neue Versionen von MIRA und des Agents auf dem KI-Server (GitHub)" divider>
       {!status ? (
         <p className="widget-note">Wird geladen …</p>
       ) : (
@@ -144,7 +144,7 @@ function UpdatesCard({ status, checking, onChecked }: { status: UpdateStatusResp
                   <p className="update-list__hint">
                     {c.component === 'mira'
                       ? 'Update in Portainer: Stack „mira“ → „Update the stack“ mit „Re-pull image“.'
-                      : 'Update auf Odin: Paket laden, Prüfsumme prüfen, sudo ./install.sh – Konfiguration, Zertifikat und Token bleiben erhalten.'}
+                      : 'Update auf dem KI-Server: Paket laden, Prüfsumme prüfen, sudo ./install.sh – Konfiguration, Zertifikat und Token bleiben erhalten.'}
                   </p>
                 )}
               </li>

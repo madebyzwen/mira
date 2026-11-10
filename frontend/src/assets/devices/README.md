@@ -6,7 +6,7 @@ sofern eine passende Datei vorhanden ist:
 | Datei                                   | Verwendet auf                         |
 | --------------------------------------- | ------------------------------------- |
 | `shelly-plug.png` / `.webp` / `.jpg`    | Systeme › Shelly Plug                 |
-| `odin.png` / `.webp` / `.jpg`           | Systeme › Odin, Dashboard             |
+| `ki-server.png` / `.webp` / `.jpg`      | Systeme › KI-Server, Dashboard        |
 
 Empfehlung: PNG oder WebP mit **transparentem Hintergrund**, ca. 400–600 px.
 

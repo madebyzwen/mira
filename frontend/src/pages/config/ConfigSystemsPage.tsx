@@ -1,5 +1,5 @@
 import { Info, Pencil, Plug, Server } from 'lucide-react';
-import type { OdinStatusResponse } from '@mira/shared';
+import { AI_SERVER_ROLE, AI_SERVER_SLUG, type AiServerStatusResponse } from '@mira/shared';
 import { Page } from '../../components/layout/AppLayout';
 import { Card } from '../../components/ui/Card';
 import { Button, OnlinePill } from '../../components/ui/Primitives';
@@ -15,8 +15,8 @@ const kindIcon: Record<SystemEntry['kind'], typeof Server> = {
   'power-meter': Plug,
 };
 
-/** Odin: Verbindung zur Odin-API (Stufe 2, nur lesend – Bearbeiten folgt). */
-function OdinConnection({ data }: { data: OdinStatusResponse | null }) {
+/** KI-Server: Name und Verbindung zum Agent (Stufe 2, nur lesend – Bearbeiten folgt). */
+function AiServerConnection({ data }: { data: AiServerStatusResponse | null }) {
   if (!data) return <p className="widget-note">Wird geladen …</p>;
   const { connection, system } = data;
   const status = system.status;
@@ -24,7 +24,11 @@ function OdinConnection({ data }: { data: OdinStatusResponse | null }) {
     <>
       <dl className="connection-list">
         <div>
-          <dt>Odin-API</dt>
+          <dt>Name</dt>
+          <dd>{system.name === AI_SERVER_ROLE ? 'nicht festgelegt (MIRA_AI_SERVER_NAME)' : system.name}</dd>
+        </div>
+        <div>
+          <dt>Agent-Adresse</dt>
           <dd>{connection.endpoint ?? 'nicht eingerichtet'}</dd>
         </div>
         <div>
@@ -50,7 +54,7 @@ function OdinConnection({ data }: { data: OdinStatusResponse | null }) {
         <Info size={20} strokeWidth={1.6} />
         {connection.configured
           ? 'Die Verbindungsdaten werden derzeit über die Konfiguration des Containers festgelegt.'
-          : 'Verbindung über MIRA_ODIN_API_URL, MIRA_ODIN_CERT_FINGERPRINT und MIRA_ODIN_TOKEN_FILE einrichten (siehe README).'}
+          : 'Verbindung über MIRA_AI_SERVER_URL, MIRA_AI_SERVER_CERT_FINGERPRINT und MIRA_AI_SERVER_TOKEN_FILE einrichten (siehe README).'}
       </p>
     </>
   );
@@ -77,21 +81,22 @@ function Placeholder({ label }: { label: string }) {
 
 /**
  * Konfiguration › Systeme – je System ein Widget.
- * Odin zeigt seit Stufe 2 den echten Verbindungsstatus (nur lesend);
+ * Der KI-Server zeigt seit Stufe 2 den echten Verbindungsstatus (nur lesend);
  * die übrigen Systeme bleiben Platzhalter bis zu ihrer Stufe.
  */
 export function ConfigSystemsPage() {
   const { notAvailable } = useNotice();
   const systems = dataService.getSystems();
-  const { data: odin } = usePolling(systemsService.getOdin, 10000);
+  const { data: aiServer } = usePolling(systemsService.getAiServer, 10000);
 
   return (
     <Page breadcrumb={[{ label: 'Konfiguration', to: '/konfiguration' }, { label: 'Systeme' }]} className="config-page">
       <div className="config-systems">
         {systems.map((system) => {
           const Icon = kindIcon[system.kind];
-          const isOdin = system.id === 'odin';
-          const status = isOdin ? (odin?.system.status.state ?? 'unknown') : system.status;
+          const isAiServer = system.id === AI_SERVER_SLUG;
+          const status = isAiServer ? (aiServer?.system.status.state ?? 'unknown') : system.status;
+          const label = isAiServer ? (aiServer?.system.name ?? system.label) : system.label;
           return (
             <Card
               key={system.id}
@@ -99,7 +104,7 @@ export function ConfigSystemsPage() {
               icon={<Icon size={28} />}
               title={
                 <>
-                  {system.label} <OnlinePill status={status} />
+                  {label} <OnlinePill status={status} />
                 </>
               }
               subtitle={system.description}
@@ -109,13 +114,13 @@ export function ConfigSystemsPage() {
                   variant="outline"
                   className="button--sm"
                   icon={<Pencil size={18} />}
-                  onClick={() => notAvailable(`${system.label} konfigurieren`)}
+                  onClick={() => notAvailable(`${label} konfigurieren`)}
                 >
                   Bearbeiten
                 </Button>
               }
             >
-              {isOdin ? <OdinConnection data={odin} /> : <Placeholder label={system.label} />}
+              {isAiServer ? <AiServerConnection data={aiServer} /> : <Placeholder label={label} />}
             </Card>
           );
         })}

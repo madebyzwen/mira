@@ -19,13 +19,14 @@ import {
   Thermometer,
 } from 'lucide-react';
 import { DEFAULT_HISTORY_RANGE } from '@mira/shared';
-import type { NetworkShare, OdinStatusResponse, SystemInfo, SystemMetrics, Temperature } from '@mira/shared';
+import { AI_SERVER_ROLE, type AiServerStatusResponse, type NetworkShare, type SystemInfo, type SystemMetrics, type Temperature } from '@mira/shared';
 import { Page } from '../../components/layout/AppLayout';
 import { Card } from '../../components/ui/Card';
 import { IconTile, OnlinePill, ProgressBar, RangeTabs, Stat, rangeTitleSuffix } from '../../components/ui/Primitives';
 import { MultiPanelChart } from '../../components/charts/TimeSeriesChart';
 import { ServerTower } from '../../components/illustrations/ServerTower';
 import { DevicePhoto } from '../../components/illustrations/DevicePhoto';
+import { useAiServerName } from '../../components/layout/Systems';
 import { connectionErrorText, systemsService } from '../../services/systemsService';
 import { usePolling } from '../../lib/usePolling';
 import { historyPointLabels, historyTicks } from '../../lib/historyTicks';
@@ -42,7 +43,7 @@ import {
 } from '../../lib/format';
 import type { ChartRange } from '../../types/models';
 
-/** Live-Werte: alle 2 s, solange die Seite sichtbar ist (MIRA fragt Odin selbst ebenfalls alle 2 s ab). */
+/** Live-Werte: alle 2 s, solange die Seite sichtbar ist (MIRA fragt den KI-Server selbst ebenfalls alle 2 s ab). */
 const POLL_MS = 2000;
 /** Verlauf: neue Minutenwerte kommen einmal pro Minute hinzu. */
 const HISTORY_POLL_MS = 60_000;
@@ -50,7 +51,7 @@ const DASH = '–';
 
 const tempIcon: Record<Temperature['sensor'], typeof Cpu> = { cpu: Cpu, gpu: Gpu, nvme: HardDrive };
 
-/** Ältere Odin-API-Versionen liefern keinen Status – dort waren alle gelieferten Laufwerke eingehängt. */
+/** Ältere Agent-Versionen (≤ 0.1.1) liefern keinen Status – dort waren alle gelieferten Laufwerke eingehängt. */
 const shareStateText: Record<NonNullable<NetworkShare['state']>, string> = {
   mounted: 'eingehängt',
   automount: 'bereit (wird bei Zugriff eingehängt)',
@@ -65,7 +66,7 @@ function coresText(cpu: SystemInfo['cpu']): string | undefined {
   return `${cpu.threads} Threads`;
 }
 
-function StatusLine({ data }: { data: OdinStatusResponse }) {
+function StatusLine({ data }: { data: AiServerStatusResponse }) {
   const { status } = data.system;
   if (status.state === 'online') return null;
   const reason = status.lastError ? connectionErrorText[status.lastError] : 'Status wird ermittelt';
@@ -94,7 +95,7 @@ function tempScaleMax(values: (number | null)[]): number {
  */
 function UsageHistoryCard() {
   const [range, setRange] = useState<ChartRange>(DEFAULT_HISTORY_RANGE);
-  const { data, error } = usePolling(() => systemsService.getOdinHistory(range), HISTORY_POLL_MS, range);
+  const { data, error } = usePolling(() => systemsService.getAiServerHistory(range), HISTORY_POLL_MS, range);
   const points = data?.points ?? [];
   const timestamps = points.map((p) => p.ts);
   const tempCpu = points.map((p) => p.tempCpu);
@@ -150,8 +151,9 @@ function UsageHistoryCard() {
   );
 }
 
-export function OdinPage() {
-  const { data } = usePolling(systemsService.getOdin, POLL_MS);
+export function AiServerPage() {
+  const { data } = usePolling(systemsService.getAiServer, POLL_MS);
+  const configuredName = useAiServerName();
 
   const info: SystemInfo | null = data?.info ?? null;
   const metrics: SystemMetrics | null = data?.metrics ?? null;
@@ -192,10 +194,11 @@ export function OdinPage() {
     },
   ];
 
-  const name = data?.system.name ?? 'Odin';
+  const name = data?.system.name ?? configuredName;
+  const role = data?.system.description ?? AI_SERVER_ROLE;
 
   return (
-    <Page breadcrumb={[{ label: 'Systeme', to: '/systeme/odin' }, { label: name }]} className="system-page">
+    <Page breadcrumb={[{ label: 'Systeme', to: '/systeme/ki-server' }, { label: name }]} className="system-page">
       <div className="page-header">
         <IconTile>
           <Server size={34} strokeWidth={1.6} />
@@ -203,15 +206,15 @@ export function OdinPage() {
         <div>
           <h1>{name}</h1>
           <p>
-            {data?.system.description ?? 'KI-Server'}
-            {info && ` · ${info.os.name}`}
+            {/* Untertitel: Rolle – außer sie ist zugleich der Name (kein Name konfiguriert) */}
+            {[name !== role && role, info?.os.name].filter(Boolean).join(' · ')}
           </p>
         </div>
       </div>
 
       <Card className="hero-card">
         <div className="hero-card__image">
-          <DevicePhoto name="odin" alt={`Server ${name}`} fallback={<ServerTower />} />
+          <DevicePhoto name="ki-server" alt={name} fallback={<ServerTower label={name} />} />
         </div>
         <div className="hero-card__content">
           <div className="hero-card__title">

@@ -5,11 +5,11 @@ import { MiraLogo, MiraWordmark } from '../brand/MiraLogo';
 import { StatusDot } from '../ui/Primitives';
 import { GlowWave } from '../illustrations/GlowWaves';
 import { getNavigation, type NavChild, type NavGroupItem } from './navigation';
-import { usePolling } from '../../lib/usePolling';
-import { systemsService } from '../../services/systemsService';
+import { useSystems } from './Systems';
 import type { OnlineStatus } from '../../types/models';
 
-const SYSTEMS_POLL_MS = 30000;
+/** Live-Angaben eines angebundenen Systems je Kennung (Slug) */
+type LiveSystems = Record<string, { status: OnlineStatus; name: string }>;
 
 interface SidebarProps {
   collapsed: boolean;
@@ -23,10 +23,10 @@ function isWithin(pathname: string, basePath: string) {
 
 export function Sidebar({ collapsed, onToggle, onAbout }: SidebarProps) {
   const items = useMemo(() => getNavigation(), []);
-  // Live-Zustand der angebundenen Systeme (Stufe 2: Odin); übrige Einträge behalten ihre Demo-Werte
-  const { data: systems } = usePolling(systemsService.listSystems, SYSTEMS_POLL_MS);
-  const liveStatus = useMemo(
-    () => Object.fromEntries((systems?.systems ?? []).map((sys) => [sys.slug, sys.status.state])) as Record<string, OnlineStatus>,
+  // Name und Zustand der angebundenen Systeme (seit Stufe 2: KI-Server); übrige Einträge behalten ihre Demo-Werte
+  const systems = useSystems();
+  const liveSystems = useMemo(
+    () => Object.fromEntries((systems?.systems ?? []).map((sys) => [sys.slug, { status: sys.status.state, name: sys.name }])) as LiveSystems,
     [systems],
   );
   const { pathname } = useLocation();
@@ -118,7 +118,7 @@ export function Sidebar({ collapsed, onToggle, onAbout }: SidebarProps) {
                 {open && (
                   <ul className="subnav" id={submenuId}>
                     {item.children.map((child) => (
-                      <SubNavItem key={child.to} child={child} liveStatus={liveStatus} />
+                      <SubNavItem key={child.to} child={child} live={liveSystems} />
                     ))}
                   </ul>
                 )}
@@ -128,7 +128,7 @@ export function Sidebar({ collapsed, onToggle, onAbout }: SidebarProps) {
                     <span className="nav-flyout__title">{item.label}</span>
                     <ul className="nav-flyout__list">
                       {item.children.map((child) => (
-                        <SubNavItem key={child.to} child={child} liveStatus={liveStatus} />
+                        <SubNavItem key={child.to} child={child} live={liveSystems} />
                       ))}
                     </ul>
                   </div>
@@ -152,15 +152,17 @@ export function Sidebar({ collapsed, onToggle, onAbout }: SidebarProps) {
 
 const statusLabel: Record<OnlineStatus, string> = { online: 'online', offline: 'nicht erreichbar', unknown: 'Status unbekannt' };
 
-function SubNavItem({ child, liveStatus }: { child: NavChild; liveStatus: Record<string, OnlineStatus> }) {
+function SubNavItem({ child, live }: { child: NavChild; live: LiveSystems }) {
   const ChildIcon = child.icon;
-  const status = (child.slug && liveStatus[child.slug]) || child.status;
+  const current = child.slug ? live[child.slug] : undefined;
+  const status = current?.status ?? child.status;
+  const label = current?.name ?? child.label;
   return (
     <li className="subnav__entry">
       <NavLink to={child.to} className={({ isActive }) => ['subnav__item', isActive && 'is-active'].filter(Boolean).join(' ')}>
-        {status && <StatusDot status={status} label={`${child.label}: ${statusLabel[status]}`} />}
+        {status && <StatusDot status={status} label={`${label}: ${statusLabel[status]}`} />}
         {ChildIcon && <ChildIcon size={20} strokeWidth={1.8} className="subnav__icon" />}
-        <span>{child.label}</span>
+        <span>{label}</span>
       </NavLink>
     </li>
   );

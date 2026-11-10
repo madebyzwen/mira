@@ -4,11 +4,11 @@ import { HISTORY_GRID } from '@mira/shared';
  *
  * Phase 1: Alle Funktionen liefern synchron die zentralen Demo-Daten aus
  * `src/data/demoData.ts`. Es finden KEINE Netzwerkanfragen statt – weder an
- * ein Backend noch an Odin oder den Shelly Plug.
+ * ein Backend noch an den KI-Server oder den Shelly Plug.
  *
  * Später: Diese Datei ist die einzige Stelle, die auf die MIRA-Backend-API
- * umgestellt wird (z. B. `fetch('/api/systems/odin')`). Das Frontend spricht
- * dabei nie direkt mit Odin, sondern immer nur mit dem MIRA-Backend.
+ * umgestellt wird (z. B. `fetch('/api/v1/systems/ai-server')`). Das Frontend spricht
+ * dabei nie direkt mit dem KI-Server, sondern immer nur mit dem MIRA-Backend.
  */
 import * as demo from '../data/demoData';
 import type {
@@ -33,12 +33,12 @@ export const isDemoMode = true;
 export const dataService = {
   getSystems: (): SystemEntry[] => demo.demoSystems,
 
-  getOdin: (): ServerInfo => demo.demoOdin,
-  getOdinUtilization: (): ServerUtilization => demo.demoOdinUtilization,
-  getOdinDisks: (): Disk[] => demo.demoOdinDisks,
-  getOdinNetworkShare: (): NetworkShare => demo.demoOdinNas,
-  getOdinNetworkInterfaces: (): NetworkInterface[] => demo.demoOdinNetwork,
-  getOdinTemperatures: (): Temperature[] => demo.demoOdinTemperatures,
+  getAiServer: (): ServerInfo => demo.demoAiServer,
+  getAiServerUtilization: (): ServerUtilization => demo.demoAiServerUtilization,
+  getAiServerDisks: (): Disk[] => demo.demoAiServerDisks,
+  getAiServerNetworkShare: (): NetworkShare => demo.demoAiServerNas,
+  getAiServerNetworkInterfaces: (): NetworkInterface[] => demo.demoAiServerNetwork,
+  getAiServerTemperatures: (): Temperature[] => demo.demoAiServerTemperatures,
 
   getDockerContainers: (): DockerContainer[] => demo.demoDockerContainers,
 

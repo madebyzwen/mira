@@ -35,7 +35,7 @@ export function ShellyPlugPage() {
   ];
 
   return (
-    <Page breadcrumb={[{ label: 'Systeme', to: '/systeme/odin' }, { label: plug.name }]} className="system-page">
+    <Page breadcrumb={[{ label: 'Systeme', to: '/systeme/ki-server' }, { label: plug.name }]} className="system-page">
       <div className="page-header">
         <IconTile>
           <Plug size={32} strokeWidth={1.6} />
