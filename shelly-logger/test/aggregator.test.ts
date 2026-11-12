@@ -192,6 +192,100 @@ describe('30-Sekunden-Verdichtung', () => {
     fs.rmSync(dir, { recursive: true, force: true });
   });
 
+  it('Lücke innerhalb eines einzigen 30-s-Intervalls wird als rekonstruiert verbucht (F-02)', () => {
+    const { store, agg } = setup();
+    const start = t('2026-11-10T10:00:00Z');
+    // 10:00:00–10:00:04 gemessen, Ausfall bis 10:00:20, dann bis 10:00:29 gemessen – alles im selben Intervall
+    let wh = constant(agg, start, 5, 360, 100); // 0,1 Wh je Sekunde
+    const lastBefore = wh - 0.1;
+    wh = lastBefore + 1.6; // im Ausfall läuft der Zähler im Shelly weiter (16 s × 0,1 Wh)
+    wh = constant(agg, start + 20_000, 10, 360, wh);
+    agg.flushDue(start + 40_000);
+
+    const s = store.sample(start)!;
+    expect(s.energyWh).toBeCloseTo((4 + 9) * 0.1, 6); // nur die sekündlichen Schritte
+    expect(s.quality).toBe('partial');
+    const day = store.dailyEnergy('2026-11-10', '2026-11-11')[0];
+    expect(day.reconstructedWh).toBeCloseTo(1.6, 6);
+    // gemessen + rekonstruiert = Zählerfortschritt von der ersten bis zur letzten Messung
+    expect(day.measuredWh + day.reconstructedWh).toBeCloseTo(wh - 0.1 - 100, 6);
+    expect(store.counts().gaps).toBe(1);
+  });
+
+  it('kurze Abstände (bis zur Lückengrenze) bleiben gemessene Energie', () => {
+    const { store, agg } = setup({ staleAfterMs: 5000 });
+    const start = t('2026-11-10T10:00:00Z');
+    // alle 5 s ein Messwert – genau an der Grenze, keine Lücke
+    for (let i = 0; i < 6; i++) agg.add(reading(start + i * 5000, 360, 100 + i * 0.5));
+    agg.flushDue(start + 40_000);
+    expect(store.sample(start)!.energyWh).toBeCloseTo(2.5, 6);
+    expect(store.counts().gaps).toBe(0);
+  });
+
+  it('Neustart mit Pause mitten im Intervall: Pause wird rekonstruiert, nichts doppelt gezählt', () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'shelly-logger-'));
+    const file = path.join(dir, 'db.sqlite');
+    const start = t('2026-11-10T10:00:00Z');
+    const a = setup({ file });
+    let wh = constant(a.agg, start, 10, 360, 1000); // 10:00:00–10:00:09
+    a.agg.flushAll();
+    a.store.close();
+
+    // Neustart dauert 12 s: weiter ab 10:00:21 im selben Intervall, Zähler lief weiter
+    const b = setup({ file });
+    wh = wh - 0.1 + 1.2;
+    wh = constant(b.agg, start + 21_000, 9, 360, wh);
+    b.agg.add(reading(start + 30_000, 360, wh));
+    b.agg.flushDue(start + 40_000);
+
+    const day = b.store.dailyEnergy('2026-11-10', '2026-11-11')[0];
+    expect(day.reconstructedWh).toBeCloseTo(1.2, 6);
+    // 9 Schritte vor, 8 nach dem Neustart (die Messung um 10:00:30 gehört zum nächsten Intervall)
+    expect(day.measuredWh).toBeCloseTo((9 + 8) * 0.1, 6);
+    expect(day.measuredWh + day.reconstructedWh).toBeCloseTo(wh - 0.1 - 1000, 6);
+    fs.rmSync(dir, { recursive: true, force: true });
+  });
+
+  it('Lücke über die Zeitumstellung und Mitternacht: Aufteilung nach Ortszeit, Summe bleibt erhalten', () => {
+    const { store, agg } = setup();
+    // 25.10.2026 (25-Stunden-Tag), Ausfall von 23:30 bis 00:30 Ortszeit (Winterzeit, UTC+1)
+    const before = t('2026-10-25T22:29:30Z');
+    const end = constant(agg, before, 30, 360, 0);
+    agg.flushDue(before + 40_000);
+    const lastTs = before + 29_000;
+    const after = t('2026-10-25T23:30:00Z');
+    agg.add(reading(after, 360, end - 0.1 + 360));
+    agg.flushDue(after + 40_000);
+    const days = store.dailyEnergy('2026-10-25', '2026-10-27');
+    const share25 = (t('2026-10-25T23:00:00Z') - lastTs) / (after - lastTs);
+    expect(days.map((d) => d.day)).toEqual(['2026-10-25', '2026-10-26']);
+    expect(days[0].reconstructedWh).toBeCloseTo(360 * share25, 6);
+    expect(days[1].reconstructedWh).toBeCloseTo(360 * (1 - share25), 6);
+    expect(days[0].reconstructedWh + days[1].reconstructedWh).toBeCloseTo(360, 6);
+  });
+
+  it('Summe aus gemessener und rekonstruierter Energie entspricht dem Zählerfortschritt (gemischte Lücken)', () => {
+    const { store, agg } = setup();
+    const start = t('2026-11-10T08:00:00Z');
+    let wh = 50;
+    const first = wh;
+    let ts = start;
+    // Abwechselnd lückenlos und mit Lücken unterschiedlicher Länge (innerhalb und über Intervallgrenzen)
+    for (const pauseMs of [0, 7_000, 0, 45_000, 12_000, 0, 600_000, 9_000]) {
+      ts += pauseMs;
+      wh += (pauseMs / 1000) * 0.05;
+      for (let i = 0; i < 20; i++) {
+        agg.add(reading(ts, 180, wh));
+        ts += 1000;
+        wh += 0.05;
+      }
+    }
+    agg.flushAll();
+    const day = store.dailyEnergy('2026-11-10', '2026-11-11')[0];
+    expect(day.measuredWh + day.reconstructedWh).toBeCloseTo(wh - 0.05 - first, 6);
+    expect(day.reconstructedWh).toBeCloseTo(((7_000 + 45_000 + 12_000 + 600_000 + 9_000) / 1000 + 5) * 0.05, 6);
+  });
+
   it('anderes Gerät: alter Zählerstand wird nicht verrechnet', () => {
     const { store, agg } = setup();
     agg.setDevice('shelly-a');
