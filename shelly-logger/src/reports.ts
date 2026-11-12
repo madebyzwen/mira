@@ -20,17 +20,37 @@ interface Sum {
   coverage: number;
 }
 
+/** Summen eines Abschnitts ohne zeitabhängige Felder – stabil, solange keine neuen Daten geschrieben werden */
+interface RawSum {
+  measuredWh: number;
+  reconstructedWh: number;
+  coveredMs: number;
+  /** Abschnitt [start, end) in UTC-Millisekunden */
+  start: number;
+  end: number;
+}
+
+interface RawConsumption {
+  period: ConsumptionPeriod;
+  first: DayKey;
+  next: DayKey;
+  total: RawSum;
+  breakdown: (RawSum & { label: string })[];
+}
+
 /**
  * Auswertungen für die API. Verbrauchssummen kommen aus den Tagessummen
  * (`daily_energy`) und werden zwischengespeichert, bis das nächste 30-s-Intervall
- * geschrieben ist. Live-Abfragen berühren diese Klasse nicht.
+ * geschrieben ist. Zeitabhängige Felder (`coverage`, `complete`) werden bei jeder
+ * Anfrage neu berechnet – auch wenn wegen eines Ausfalls keine Intervalle entstehen.
+ * Live-Abfragen berühren diese Klasse nicht.
  */
 export class Reports {
   private readonly store: Store;
   private readonly aggregator: Aggregator;
   private readonly timeZone: string;
   private readonly now: () => number;
-  private cache = new Map<string, { version: number; value: ConsumptionResponse }>();
+  private cache = new Map<string, { version: number; value: RawConsumption }>();
   private dbStats: DatabaseStatsResponse | null = null;
 
   constructor(store: Store, aggregator: Aggregator, timeZone: string, now: () => number = Date.now) {
@@ -45,55 +65,65 @@ export class Reports {
     const now = this.now();
     const today = dayKeyOf(now, this.timeZone);
     const key = `${period}:${date ?? today}`;
-    const cached = this.cache.get(key);
-    const base = cached && cached.version === this.aggregator.version ? cached.value : this.computeConsumption(period, date ?? today, now);
-    if (!cached || cached.value !== base) this.cache.set(key, { version: this.aggregator.version, value: base });
-    if (this.cache.size > 200) this.cache.clear();
+    let cached = this.cache.get(key);
+    if (!cached || cached.version !== this.aggregator.version) {
+      if (this.cache.size >= 200) this.cache.clear();
+      cached = { version: this.aggregator.version, value: this.computeConsumption(period, date ?? today) };
+      this.cache.set(key, cached);
+    }
+    const raw = cached.value;
 
     // laufendes, noch nicht geschriebenes Intervall nur für den aktuellen Zeitraum ergänzen
-    const { first, next } = periodOf(period, date ?? today);
-    if (today < first || today >= next) return base;
-    const pending = this.aggregator.pendingEnergyWh();
-    if (pending <= 0) return base;
-    const add = (s: Sum & { label?: string }) => ({ ...s, energyWh: round(s.energyWh + pending), measuredWh: round(s.measuredWh + pending) });
+    const current = today >= raw.first && today < raw.next;
+    const pending = current ? this.aggregator.pendingEnergyWh() : 0;
+    const currentLabel = period === 'year' ? today.slice(0, 7) : today;
+    const finish = (s: RawSum, addPending: boolean): Sum => {
+      const extra = addPending && pending > 0 ? pending : 0;
+      const elapsed = Math.max(0, Math.min(now, s.end) - s.start);
+      return {
+        energyWh: round(s.measuredWh + s.reconstructedWh + extra),
+        measuredWh: round(s.measuredWh + extra),
+        reconstructedWh: round(s.reconstructedWh),
+        coverage: elapsed > 0 ? round(Math.min(1, s.coveredMs / elapsed), 4) : 0,
+      };
+    };
     return {
-      ...add(base),
-      breakdown: base.breakdown.map((b) => (b.label === (period === 'year' ? today.slice(0, 7) : today) ? add(b) : b)),
-    } as ConsumptionResponse;
+      period,
+      timezone: this.timeZone,
+      from: iso(raw.total.start),
+      to: iso(raw.total.end),
+      complete: now >= raw.total.end,
+      ...finish(raw.total, true),
+      breakdown: raw.breakdown.map((b) => ({ label: b.label, from: iso(b.start), to: iso(b.end), ...finish(b, b.label === currentLabel) })),
+    };
   }
 
-  private computeConsumption(period: ConsumptionPeriod, date: DayKey, now: number): ConsumptionResponse {
+  private computeConsumption(period: ConsumptionPeriod, date: DayKey): RawConsumption {
     const { first, next } = periodOf(period, date);
     const from = startOfDay(first, this.timeZone);
     const to = startOfDay(next, this.timeZone);
     const rows = new Map(this.store.dailyEnergy(first, next).map((r) => [r.day, r]));
-    const sumDays = (days: DayKey[], start: number, end: number): Sum => {
-      let measured = 0;
-      let reconstructed = 0;
-      let covered = 0;
+    const sumDays = (days: DayKey[], start: number, end: number): RawSum => {
+      let measuredWh = 0;
+      let reconstructedWh = 0;
+      let coveredMs = 0;
       for (const d of days) {
         const r: DailyEnergy | undefined = rows.get(d);
         if (!r) continue;
-        measured += r.measuredWh;
-        reconstructed += r.reconstructedWh;
-        covered += r.coveredMs;
+        measuredWh += r.measuredWh;
+        reconstructedWh += r.reconstructedWh;
+        coveredMs += r.coveredMs;
       }
-      const elapsed = Math.max(0, Math.min(now, end) - start);
-      return {
-        energyWh: round(measured + reconstructed),
-        measuredWh: round(measured),
-        reconstructedWh: round(reconstructed),
-        coverage: elapsed > 0 ? round(Math.min(1, covered / elapsed), 4) : 0,
-      };
+      return { measuredWh, reconstructedWh, coveredMs, start, end };
     };
 
     const days = daysBetween(first, next);
-    let breakdown: ConsumptionResponse['breakdown'] = [];
+    let breakdown: RawConsumption['breakdown'] = [];
     if (period === 'week' || period === 'month') {
       breakdown = days.map((d, i) => {
         const s = startOfDay(d, this.timeZone);
         const e = i + 1 < days.length ? startOfDay(days[i + 1], this.timeZone) : to;
-        return { label: d, from: iso(s), to: iso(e), ...sumDays([d], s, e) };
+        return { label: d, ...sumDays([d], s, e) };
       });
     } else if (period === 'year') {
       const { year } = parseDayKey(first);
@@ -101,18 +131,10 @@ export class Reports {
         const month = periodOf('month', `${year}-${String(m + 1).padStart(2, '0')}-01`);
         const s = startOfDay(month.first, this.timeZone);
         const e = startOfDay(month.next, this.timeZone);
-        return { label: month.first.slice(0, 7), from: iso(s), to: iso(e), ...sumDays(daysBetween(month.first, month.next), s, e) };
+        return { label: month.first.slice(0, 7), ...sumDays(daysBetween(month.first, month.next), s, e) };
       });
     }
-    return {
-      period,
-      timezone: this.timeZone,
-      from: iso(from),
-      to: iso(to),
-      complete: now >= to,
-      ...sumDays(days, from, to),
-      breakdown,
-    };
+    return { period, first, next, total: sumDays(days, from, to), breakdown };
   }
 
   /** Leistungsverlauf im Raster von MIRA (`HISTORY_GRID`). */

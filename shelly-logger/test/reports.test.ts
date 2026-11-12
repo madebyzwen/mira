@@ -113,6 +113,43 @@ describe('Verbrauchsstatistik (Europe/Berlin)', () => {
     expect(reports.consumption('day').measuredWh).toBeCloseTo(before + 0.2, 6);
   });
 
+  it('Messausfall ohne neue Intervalle: Datenabdeckung sinkt mit der Zeit, statt im Zwischenspeicher stehen zu bleiben (F-03)', () => {
+    // Von 10:00 bis 10:10 Uhr (UTC) lückenlos gemessen, danach fällt der Shelly zehn Minuten aus
+    const { reports, intervalAt, clock } = setup(t('2026-11-10T10:10:00Z'));
+    for (let i = 0; i < 20; i++) intervalAt(new Date(t('2026-11-10T10:00:00Z') + i * 30_000).toISOString());
+    const sinceTen = (now: number) => {
+      clock.now = now;
+      return reports.consumption('week').breakdown.find((b) => b.label === '2026-11-10')!;
+    };
+    const before = sinceTen(t('2026-11-10T10:10:00Z'));
+    const after = sinceTen(t('2026-11-10T10:20:00Z'));
+    // Abdeckung bezogen auf die verstrichene Zeit des Tages: zehn Minuten mehr ohne Messwerte
+    const dayStart = t('2026-11-09T23:00:00Z');
+    expect(before.coverage).toBeCloseTo((20 * 30_000) / (t('2026-11-10T10:10:00Z') - dayStart), 4);
+    expect(after.coverage).toBeCloseTo((20 * 30_000) / (t('2026-11-10T10:20:00Z') - dayStart), 4);
+    expect(after.coverage).toBeLessThan(before.coverage);
+    expect(after.energyWh).toBe(before.energyWh);
+  });
+
+  it('Messausfall: ein Tag nur mit Ausfall zeigt keine 100 % Abdeckung', () => {
+    const { reports, intervalAt, clock } = setup(t('2026-11-10T10:00:30Z'));
+    intervalAt('2026-11-10T10:00:00Z');
+    clock.now = t('2026-11-10T10:00:30Z');
+    const day = reports.consumption('day');
+    clock.now = t('2026-11-10T10:10:30Z');
+    expect(reports.consumption('day').coverage).toBeLessThan(day.coverage);
+  });
+
+  it('„abgeschlossen“ wechselt am Ende des Zeitraums – auch ohne neue Messwerte', () => {
+    const { reports, intervalAt, clock } = setup(t('2026-11-10T22:00:00Z'));
+    intervalAt('2026-11-10T21:00:00Z');
+    expect(reports.consumption('day', '2026-11-10').complete).toBe(false);
+    clock.now = t('2026-11-10T23:00:00Z'); // Mitternacht Ortszeit
+    const day = reports.consumption('day', '2026-11-10');
+    expect(day.complete).toBe(true);
+    expect(day.measuredWh).toBeCloseTo(PER_INTERVAL, 6);
+  });
+
   it('Verlauf im Raster von MIRA mit Lücken als null', () => {
     const { reports, intervalAt } = setup(t('2026-11-10T10:30:00Z'));
     intervalAt('2026-11-10T10:00:00Z');

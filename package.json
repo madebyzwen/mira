@@ -1,7 +1,7 @@
 {
   "name": "mira",
   "private": true,
-  "version": "0.8.1",
+  "version": "0.9.0",
   "description": "MIRA – Management, Infrastructure, Resources & Automation",
   "type": "module",
   "engines": {
@@ -20,7 +20,7 @@
     "build": "npm run build -w @mira/shared && npm run build -w @mira/backend && npm run build -w @mira/frontend",
     "typecheck": "npm run typecheck --workspaces",
     "check:naming": "sh scripts/check-naming.sh",
-    "test": "npm test -w @mira/backend -w @mira/agent -w @mira/shelly-logger",
+    "test": "npm test -w @mira/backend -w @mira/agent -w @mira/shelly-logger -w @mira/frontend",
     "start": "node backend/dist/server.js",
     "build:agent": "npm run build -w @mira/agent",
     "package:agent": "npm run package -w @mira/agent",

@@ -289,7 +289,7 @@ Vorhandene MIRA-, Nginx-Proxy-Manager- und Odin-Verbindungen dürfen nicht beein
 
 Deployment-Anpassungen am produktiven Stack müssen separat dokumentiert werden.
 
-Nimm keine eigenständigen Änderungen an Asgard, Odin, OPNsense oder dem Shelly vor.
+Nimm keine eigenständigen Änderungen an Asgard, Odin, der Firewall oder dem Shelly vor.
 
 ## 12. Umsetzung in getrennten Entwicklungsstufen
 

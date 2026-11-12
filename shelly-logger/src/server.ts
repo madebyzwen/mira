@@ -17,6 +17,8 @@ import { isValidDayKey } from './time.ts';
 export interface AppOptions {
   /** gesetzt = Bearer-Token für alle Endpunkte außer /health */
   apiToken?: string;
+  /** Token verlangt, aber nicht nutzbar → alle Endpunkte außer /health gesperrt */
+  apiTokenError?: string;
   logger?: boolean | { level: string };
 }
 
@@ -44,12 +46,17 @@ function cpuSampler() {
 
 /** Fastify-Instanz mit Zugriffsschutz (nur GET, optional Token) und Fehlerbehandlung. */
 export function createApp(options: AppOptions = {}): FastifyInstance {
-  const app = Fastify({ logger: options.logger ?? false });
+  // Nur kleine GET-Anfragen: Zeit- und Größenlimits eng halten
+  const app = Fastify({ logger: options.logger ?? false, requestTimeout: 15_000, bodyLimit: 1024 });
   const expected = options.apiToken ? digest(options.apiToken) : null;
+  const locked = Boolean(options.apiTokenError);
 
   app.addHook('onRequest', async (request, reply) => {
     if (request.method !== 'GET' && request.method !== 'HEAD') return reply.code(405).send({ error: 'method_not_allowed' });
-    if (!expected || request.url === '/health') return;
+    if (request.url.split('?')[0] === '/health') return;
+    // Token verlangt, aber nicht lesbar: lieber sperren als ungeschützt antworten
+    if (locked) return reply.code(401).send({ error: 'unauthorized' });
+    if (!expected) return;
     const m = request.headers.authorization?.match(/^Bearer\s+(\S+)$/);
     if (!m || !timingSafeEqual(digest(m[1]), expected)) return reply.code(401).send({ error: 'unauthorized' });
   });

@@ -2,7 +2,7 @@
 
 - Status: ⏳ Konzept, Freigabe ausstehend (notiert 2026-11-11)
 - Baut auf: [Stufe 4a](stufe-04a-shelly-logger.md) (Shelly-Logger), [Stufe 4b](stufe-04b-shelly-mira-integration.md) (Anzeige in MIRA)
-- Zielversionen: Shelly-Logger 0.2.0, MIRA 0.9.0 (der Agent bleibt unverändert)
+- Zielversionen: Shelly-Logger 0.3.0, MIRA 0.10.0 (der Agent bleibt unverändert)
 - Reihenfolge: **vor** [Stufe 5a](stufe-05a-schlafen-aufwecken-neustart.md) – siehe unten
 
 ## Ziel
@@ -58,7 +58,8 @@ Festlegungen:
 - `GET /api/v1/consumption`: zusätzlich `byMode` (`linux`, `standby`, `windows`, `unknown`) – im Gesamtwert
   und je Eintrag der Aufteilung; die bisherigen Felder bleiben (abwärtsverträglich)
 - `GET /health`: Zustand der Agent-Prüfung sowie die Schwelle Bereitschaft mit „gilt seit“ (nur lesend –
-  die Logger-API bleibt rein lesend, [ADR 0010](../adr/0010-shelly-logger-als-eigener-container.md) unverändert)
+  die Logger-API bleibt rein lesend, [ADR 0010](../adr/0010-shelly-logger-als-eigener-container.md) unverändert;
+  Zugriff wie seit Logger 0.2.0 nur mit Token, `/health` ohne)
 - Mit erledigt: **[A-007](../aufgaben/a-007-shelly-ip-in-konfiguration.md)** – Adresse des Shelly in `device`
 
 ## Anzeige (MIRA)
@@ -76,7 +77,7 @@ Festlegungen:
 | --- | --- |
 | Logger-Stack | `LOGGER_AGENT_PROBE` = Adresse und Port des Agents (`<KI_SERVER_IP>:8443`), `LOGGER_STANDBY_POWER_W` (5; einzige Stelle, an der die Schwelle geändert wird), `LOGGER_OS_SWITCH_DELAY_S` (120) |
 | MIRA | keine neue Einstellung – zeigt die Schwelle des Loggers nur an |
-| KI-Server | Agent-Konfiguration: Logger-Adresse `<LOGGER_IP>` zusätzlich in `allowedClients`, dann `sudo ./install.sh` (Firewall-Regel); keine OPNsense-Regel nötig (gleiches Netz) |
+| KI-Server | Agent-Konfiguration: Logger-Adresse `<LOGGER_IP>` zusätzlich in `allowedClients`, dann `sudo ./install.sh` (Firewall-Regel des Agents); keine Regel in der Firewall des Netzes nötig (gleiches Netz) |
 
 ## Tests
 

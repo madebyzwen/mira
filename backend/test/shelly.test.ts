@@ -1,3 +1,4 @@
+import fs from 'node:fs';
 import path from 'node:path';
 import type { AddressInfo } from 'node:net';
 import { afterEach, describe, expect, it } from 'vitest';
@@ -19,7 +20,7 @@ import { systemsMigrations } from '../modules/systems/migrations.ts';
 import { SystemsModule } from '../modules/systems/index.ts';
 import { EnergyPrices } from '../modules/systems/shelly/energyPrices.ts';
 import type { LoggerClient } from '../modules/systems/shelly/loggerClient.ts';
-import { ShellyService } from '../modules/systems/shelly/shellyService.ts';
+import { COMPLETE_PERIOD_TTL_MS, ShellyService } from '../modules/systems/shelly/shellyService.ts';
 import { createShellyLogger } from '../../shelly-logger/src/logger.ts';
 import type { LoggerConfig } from '../../shelly-logger/src/config.ts';
 import { FakeShelly } from '../../shelly-logger/test/fakeShelly.ts';
@@ -32,7 +33,7 @@ afterEach(async () => {
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 /** Echter Shelly-Logger (in-process) gegen einen simulierten Shelly */
-async function startLogger(powerW = 360) {
+async function startLogger(powerW = 360, extra: Partial<LoggerConfig> = {}) {
   const shelly = new FakeShelly({ powerW });
   await shelly.listen();
   cleanup.push(() => shelly.close());
@@ -50,6 +51,7 @@ async function startLogger(powerW = 360) {
     port: 0,
     backup: { time: '03:45', keep: 7 },
     logLevel: 'silent',
+    ...extra,
   };
   const logger = createShellyLogger(cfg, { logger: false, version: '0.1.1' });
   await logger.app.listen({ host: '127.0.0.1', port: 0 });
@@ -61,9 +63,9 @@ async function startLogger(powerW = 360) {
   return { url: `http://127.0.0.1:${(logger.app.server.address() as AddressInfo).port}`, shelly, logger };
 }
 
-async function startMira(loggerUrl?: string) {
+async function startMira(loggerUrl?: string, tokenFile?: string) {
   const config = testConfig();
-  if (loggerUrl) config.shellyLogger = { url: loggerUrl };
+  if (loggerUrl) config.shellyLogger = { url: loggerUrl, tokenFile };
   const systems = new SystemsModule();
   const { app, db } = await buildApp(config, { logger: false, modules: [systems] });
   await app.ready();
@@ -149,6 +151,47 @@ describe('Shelly Plug in MIRA (über den Shelly-Logger)', () => {
   });
 });
 
+describe('Token zwischen MIRA und Shelly-Logger (S-06)', () => {
+  const TOKEN = 'b'.repeat(64);
+  const tokenFile = (content?: string) => {
+    const f = path.join(tempDir(), 'shelly_logger_token.txt');
+    if (content !== undefined) fs.writeFileSync(f, content);
+    return f;
+  };
+
+  it('gleiches Token auf beiden Seiten: verbunden', async () => {
+    const logger = await startLogger(100, { apiToken: TOKEN });
+    await sleep(400);
+    const { get } = await startMira(logger.url, tokenFile(`${TOKEN}\n`));
+    const status = shellyStatusResponseSchema.parse((await get('/api/v1/systems/shelly-plug')).json());
+    expect(status.logger).toMatchObject({ reachable: true, lastError: null });
+    expect((await get('/api/v1/systems/shelly-plug/summary')).statusCode).toBe(200);
+  });
+
+  it('Logger verlangt ein Token, MIRA hat keines: klarer Zustand „Token abgelehnt“', async () => {
+    const logger = await startLogger(100, { apiToken: TOKEN });
+    const { get } = await startMira(logger.url, tokenFile());
+    const status = shellyStatusResponseSchema.parse((await get('/api/v1/systems/shelly-plug')).json());
+    expect(status.logger).toMatchObject({ configured: true, reachable: false, lastError: 'unauthorized' });
+  });
+
+  it('Umstellung in sicherer Reihenfolge: MIRA sendet das Token schon, bevor der Logger es verlangt', async () => {
+    const logger = await startLogger(100);
+    await sleep(400);
+    const { get } = await startMira(logger.url, tokenFile(TOKEN));
+    const status = shellyStatusResponseSchema.parse((await get('/api/v1/systems/shelly-plug')).json());
+    expect(status.logger).toMatchObject({ reachable: true, lastError: null });
+  });
+
+  it('fehlende Token-Datei in MIRA trennt einen Logger ohne Token nicht', async () => {
+    const logger = await startLogger(100);
+    await sleep(400);
+    const { get } = await startMira(logger.url, tokenFile());
+    const status = shellyStatusResponseSchema.parse((await get('/api/v1/systems/shelly-plug')).json());
+    expect(status.logger).toMatchObject({ configured: true, reachable: true });
+  });
+});
+
 describe('Kosten mit Gültigkeitsdatum', () => {
   function prices() {
     const db = openDatabase(':memory:');
@@ -196,5 +239,54 @@ describe('Kosten mit Gültigkeitsdatum', () => {
     expect(r.breakdown[0]).toMatchObject({ costEur: null, costComplete: true });
     expect(calls).toEqual(['year:', 'month:2026-11-01']); // nur Monate mit Verbrauch
   });
-});
 
+  it('abgeschlossene Zeiträume: nachträglich rekonstruierte Energie erscheint mit aktualisierten Kosten (F-01)', async () => {
+    const p = prices();
+    p.set('2026-01-01', 30);
+    const clock = { now: Date.parse('2026-11-12T10:00:00Z') };
+    const dayItem = (label: string, wh: number) => ({ label, from: '', to: '', energyWh: wh, measuredWh: wh, reconstructedWh: 0, coverage: 1 });
+    // abgeschlossener Tag 10.11.: zuerst 1 kWh, nach der Rekonstruktion eines Ausfalls über Mitternacht 1,5 kWh
+    let reconstructed = 0;
+    const day = (): ConsumptionResponse => ({
+      period: 'day', timezone: 'Europe/Berlin', from: '2026-11-09T23:00:00.000Z', to: '2026-11-10T23:00:00.000Z', complete: true,
+      energyWh: 1000 + reconstructed, measuredWh: 1000, reconstructedWh: reconstructed, coverage: 0.9, breakdown: [],
+    });
+    const october = (): ConsumptionResponse => ({
+      period: 'month', timezone: 'Europe/Berlin', from: '2026-09-30T22:00:00.000Z', to: '2026-10-31T23:00:00.000Z', complete: true,
+      energyWh: 2000 + reconstructed, measuredWh: 2000, reconstructedWh: reconstructed, coverage: 1, breakdown: [dayItem('2026-10-31', 2000 + reconstructed)],
+    });
+    const year = (): ConsumptionResponse => ({
+      period: 'year', timezone: 'Europe/Berlin', from: '2025-12-31T23:00:00.000Z', to: '2026-12-31T23:00:00.000Z', complete: false,
+      energyWh: 2000 + reconstructed, measuredWh: 2000, reconstructedWh: reconstructed, coverage: 0.1,
+      breakdown: Array.from({ length: 12 }, (_, m) => dayItem(`2026-${String(m + 1).padStart(2, '0')}`, m === 9 ? 2000 + reconstructed : 0)),
+    });
+    let calls = 0;
+    const stub = {
+      consumption: async (period: string) => {
+        calls += 1;
+        return period === 'day' ? day() : period === 'month' ? october() : year();
+      },
+      close: () => undefined,
+    } as unknown as LoggerClient;
+    const service = new ShellyService({ client: stub, prices: p, system: { slug: 'shelly-plug', name: 'Shelly Plug', description: '' }, log: Fastify({ logger: false }).log, now: () => clock.now });
+
+    const first = await service.consumption('day', '2026-11-10');
+    expect(first).toMatchObject({ energyWh: 1000, costEur: 0.3 });
+    const firstYear = await service.consumption('year');
+    expect(firstYear.breakdown[9].costEur).toBeCloseTo(0.6, 6);
+
+    // Der Logger rekonstruiert nachträglich 500 Wh
+    reconstructed = 500;
+    clock.now += 10_000;
+    expect((await service.consumption('day', '2026-11-10')).energyWh).toBe(1000); // kurz zwischengespeichert
+    clock.now += COMPLETE_PERIOD_TTL_MS;
+    const updated = await service.consumption('day', '2026-11-10');
+    expect(updated).toMatchObject({ energyWh: 1500, reconstructedWh: 500, costEur: 0.45 });
+    // Jahreskosten: Monatssumme des abgeschlossenen Oktobers ebenfalls neu gelesen
+    const updatedYear = await service.consumption('year');
+    expect(updatedYear.breakdown[9].costEur).toBeCloseTo(0.75, 6);
+    expect(updatedYear.costEur).toBeCloseTo(0.75, 6);
+    // Tag, Jahr + Oktober, Tag (neu), Jahr + Oktober (neu)
+    expect(calls).toBe(6);
+  });
+});

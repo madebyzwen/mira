@@ -15,9 +15,19 @@ function errorMessage(err: unknown): string {
       return `Zu viele Fehlversuche. Bitte in ${minutes} ${minutes === 1 ? 'Minute' : 'Minuten'} erneut versuchen.`;
     }
     if (err.code === 'validation_error') return 'Bitte Benutzername und Passwort eingeben.';
+    if (err.code === 'https_required') {
+      const url = typeof err.details?.url === 'string' ? err.details.url : null;
+      return url ? `MIRA ist nur über HTTPS erreichbar: ${url}` : 'MIRA ist nur über HTTPS erreichbar.';
+    }
     if (err.code === 'network_error') return 'MIRA ist nicht erreichbar.';
   }
   return 'Die Anmeldung ist fehlgeschlagen.';
+}
+
+/** Unverschlüsselte Verbindung außerhalb der lokalen Entwicklung? */
+function insecureConnection(): boolean {
+  const { protocol, hostname } = window.location;
+  return protocol === 'http:' && !['localhost', '127.0.0.1', '[::1]'].includes(hostname);
 }
 
 export function LoginPage() {
@@ -72,6 +82,13 @@ export function LoginPage() {
             <h2>Anmeldung</h2>
           </div>
           <p className="login__hint">Bitte mit deinem MIRA-Account anmelden.</p>
+
+          {insecureConnection() && (
+            <div className="login__error" role="note">
+              <AlertCircle size={22} aria-hidden />
+              <span>Unverschlüsselte Verbindung: Benutzername und Passwort würden im Klartext übertragen. Bitte MIRA über die HTTPS-Adresse aufrufen.</span>
+            </div>
+          )}
 
           {error && (
             <div className="login__error" role="alert">

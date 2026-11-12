@@ -47,7 +47,12 @@ COPY --from=build /app/backend/package.json backend/
 COPY --from=build /app/backend/dist backend/dist
 COPY --from=build /app/frontend/dist frontend/dist
 # Datenverzeichnis gehört dem unprivilegierten Benutzer „node“
-RUN mkdir -p /data && chown node:node /data
+# npm, npx und corepack werden zur Laufzeit nicht gebraucht (Start direkt mit node) – entfernt,
+# damit das Image nur enthält, was MIRA braucht. Vorher die Alpine-Pakete aktualisieren.
+RUN apk upgrade --no-cache \
+ && rm -rf /usr/local/lib/node_modules/npm /usr/local/lib/node_modules/corepack \
+           /usr/local/bin/npm /usr/local/bin/npx /usr/local/bin/corepack \
+ && mkdir -p /data && chown node:node /data
 USER node
 VOLUME ["/data"]
 EXPOSE 8080

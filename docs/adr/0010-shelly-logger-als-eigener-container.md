@@ -7,7 +7,7 @@
 - Ergänzt: [ADR 0001](0001-modularer-monolith-typescript-fastify.md) (modularer Monolith) um eine begründete Ausnahme
 
 > **Nachtrag 2026-11-10 (vor der Inbetriebnahme):** Der Netzweg zum Shelly wurde geändert. Der Logger
-> erhält – wie MIRA – eine **eigene feste IP im macvlan-Netz** des Server-VLANs; die OPNsense-Regel gilt
+> erhält – wie MIRA – eine **eigene feste IP im macvlan-Netz** des Server-VLANs; die Firewall-Regel gilt
 > nur für diese Adresse (`<LOGGER_IP>` → `<SHELLY_IP>`, TCP 80) statt für ganz Asgard. Damit auf der
 > macvlan-Adresse kein Port offen ist, lauscht die API nur auf ihrer festen Adresse im internen Netz
 > `mira-intern` (`LOGGER_HOST`). Das eigene Bridge-Netz entfällt. Ab Logger 0.1.1.
@@ -40,7 +40,7 @@ Ein Update von MIRA (Stack neu starten) unterbräche die Messung jedes Mal.
   mit eigener Versionsnummer (Tags `shelly-logger-vX.Y.Z`).
 - Netz: keine veröffentlichten Ports. Die API ist nur im internen Docker-Netz `mira-intern`
   (`internal: true`) erreichbar; der Weg zum Shelly führt über ein eigenes Bridge-Netz und
-  Asgards Adresse. In der OPNsense genau eine Regel `<ASGARD_IP>` → `<SHELLY_IP>`, TCP 80.
+  Asgards Adresse. In der Firewall genau eine Regel `<ASGARD_IP>` → `<SHELLY_IP>`, TCP 80.
 - Zugriff auf den Shelly nur lokal und nur lesend (Status-Abfragen); keine Cloud, keine
   Schaltbefehle, keine Zähler-Resets, keine Konfigurationsänderungen.
 

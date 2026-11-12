@@ -1,4 +1,5 @@
 import { randomBytes, scrypt, timingSafeEqual, type ScryptOptions } from 'node:crypto';
+import { PASSWORD_MIN_LENGTH } from '@mira/shared';
 
 /**
  * Passwort-Hashing mit scrypt (Node-Bordmittel, keine native Zusatzbibliothek).
@@ -8,7 +9,7 @@ import { randomBytes, scrypt, timingSafeEqual, type ScryptOptions } from 'node:c
 const PARAMS = { N: 2 ** 15, r: 8, p: 1 } as const;
 const KEY_LENGTH = 64;
 const SALT_BYTES = 16;
-export const MIN_PASSWORD_LENGTH = 12;
+export const MIN_PASSWORD_LENGTH = PASSWORD_MIN_LENGTH;
 
 function derive(password: string, salt: Buffer, N: number, r: number, p: number): Promise<Buffer> {
   const options: ScryptOptions = { N, r, p, maxmem: 128 * N * r * 2 };

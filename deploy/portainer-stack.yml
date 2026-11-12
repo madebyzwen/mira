@@ -2,9 +2,14 @@
 #
 # Nutzt das fertige Image aus der GitHub Container Registry. MIRA erhält über
 # ein vorhandenes macvlan-Netz eine eigene IP im Server-Netz (dort liegt auch
-# der KI-Server) und ist unter http://<MIRA_IP> (Port 80) erreichbar. HTTPS übernimmt der
+# der KI-Server) – vor allem für Verbindungen von MIRA zum KI-Server. HTTPS übernimmt der
 # Reverse Proxy (Nginx Proxy Manager): Er erreicht MIRA über sein Backend-Netz
 # unter http://mira:80 – macvlan-Adressen sind für Bridge-Container nicht erreichbar.
+#
+# HTTPS-Pflicht (empfohlen, ab MIRA 0.9.0): MIRA_PUBLIC_URL auf die HTTPS-Adresse setzen und
+# MIRA_TRUST_PROXY auf die Adresse des Proxys. Dann leitet http://<MIRA_IP> nur noch auf
+# HTTPS um; Anmeldungen werden nur über HTTPS angenommen.
+# Reihenfolge und Rückweg: docs/entwicklung/security-hardening-review.md, Abschnitt „Deployment“.
 #
 # In Portainer: Stacks → Add stack → Web editor → diesen Inhalt einfügen,
 # darunter die Umgebungsvariablen setzen (siehe README, „Betrieb auf dem Homeserver“).
@@ -14,6 +19,8 @@
 #   data/backups/               tägliche Sicherungen der Datenbank (die letzten 7)
 #   secrets/admin_password.txt  Startpasswort – nur für den allerersten Start
 #   secrets/ai_server_token.txt Zugriffstoken des MIRA-Agents auf dem KI-Server
+#   secrets/shelly_logger_token.txt  Token der Shelly-Logger-API (gleicher Inhalt wie
+#                               api_token.txt im Logger-Stack; fehlt sie, fragt MIRA ohne Token)
 services:
   mira:
     image: ghcr.io/madebyzwen/mira:${MIRA_VERSION:-latest}
@@ -35,8 +42,11 @@ services:
       MIRA_ADMIN_USER: ${MIRA_ADMIN_USER:-admin}
       MIRA_ADMIN_DISPLAY_NAME: ${MIRA_ADMIN_DISPLAY_NAME:-Admin}
       MIRA_ADMIN_PASSWORD_FILE: /secrets/admin_password.txt
-      # Subnetz des Proxy-Netzes (z. B. 172.20.0.0/16), damit MIRA HTTPS und die echte Client-IP erkennt
+      # Adresse des Reverse Proxys im Proxy-Netz (möglichst feste IP, z. B. 172.20.0.5, oder ein
+      # kleines Netz), damit MIRA HTTPS und die echte Client-IP erkennt. Nie „true“.
       MIRA_TRUST_PROXY: ${MIRA_TRUST_PROXY:-false}
+      # HTTPS-Adresse über den Reverse Proxy, z. B. https://mira.example.org – gesetzt = HTTPS-Pflicht
+      MIRA_PUBLIC_URL: ${MIRA_PUBLIC_URL:-}
       MIRA_LOG_LEVEL: ${MIRA_LOG_LEVEL:-info}
       # Prüfung auf neue Versionen bei GitHub (täglich 04:00 + erster Aufruf am Tag); false = kein Internetzugriff
       MIRA_UPDATE_CHECK: ${MIRA_UPDATE_CHECK:-true}
@@ -50,12 +60,22 @@ services:
       # (macvlan und mira-intern) – der Name könnte sonst zur macvlan-Adresse aufgelöst werden,
       # auf der der Logger bewusst keinen Port öffnet. Wert = LOGGER_INTERN_IP des Logger-Stacks.
       MIRA_SHELLY_LOGGER_URL: ${MIRA_SHELLY_LOGGER_URL:-http://172.31.250.10:8090}
+      # Token der Logger-API (ab MIRA 0.9.0); fehlt die Datei, fragt MIRA ohne Token
+      MIRA_SHELLY_LOGGER_TOKEN_FILE: ${MIRA_SHELLY_LOGGER_TOKEN_FILE-/secrets/shelly_logger_token.txt}
+      # Optional: zweite Kopie jeder Sicherung auf einem getrennten Speicher (Volume unten ergänzen)
+      MIRA_BACKUP_COPY_DIR: ${MIRA_BACKUP_COPY_DIR:-}
     volumes:
       - ${MIRA_APPDATA:?MIRA_APPDATA setzen, z. B. /volume2/…/appdata/mira}/data:/data
       - ${MIRA_APPDATA}/secrets:/secrets:ro
+      # Optional für MIRA_BACKUP_COPY_DIR=/backup-copy – Ordner auf einem anderen Volume, gehört UID 1000:
+      # - /volumeX/…/mira-backup:/backup-copy
     read_only: true
     tmpfs:
       - /tmp
+    # Keine Linux-Capabilities nötig: Port 80 über die sysctl oben, ausgehende TCP-Verbindungen
+    # und (später) UDP-Broadcast für Wake-on-LAN brauchen keine Rechte
+    cap_drop:
+      - ALL
     security_opt:
       - no-new-privileges:true
 

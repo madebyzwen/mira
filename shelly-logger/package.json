@@ -1,7 +1,7 @@
 {
   "name": "@mira/shelly-logger",
   "private": true,
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "MIRA Shelly-Logger: erfasst den Stromverbrauch des KI-Servers über einen Shelly Plug (lokal, nur lesend) mit eigener SQLite-Datenbank und interner Lese-API",
   "type": "module",
   "engines": {

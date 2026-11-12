@@ -114,6 +114,20 @@ describe('Interne Lese-API', () => {
     expect((await get(logger, '/api/v1/live', 'interner-schluessel-1234567890')).statusCode).toBe(200);
   });
 
+  it('Token verlangt, aber nicht nutzbar: API gesperrt (außer /health), die Messung läuft weiter (S-06)', async () => {
+    const s = await shelly({ powerW: 50 });
+    const logger = await start(config(s.url, tempDir(), { apiTokenError: 'LOGGER_API_TOKEN_FILE: Datei fehlt' }));
+    await sleep(500);
+    expect((await get(logger, '/health')).statusCode).toBe(200);
+    expect((await get(logger, '/health?probe=1')).statusCode).toBe(200);
+    for (const url of ['/api/v1/live', '/api/v1/consumption?period=day', '/api/v1/history?range=1h', '/api/v1/database/stats']) {
+      expect((await get(logger, url)).statusCode, url).toBe(401);
+      expect((await get(logger, url, 'irgendein-token-aaaaaaaaaaaaaaaaaaaaaaaaa')).statusCode, url).toBe(401);
+    }
+    // gemessen wird trotzdem
+    expect(logger.poller.live()).toMatchObject({ state: 'online', powerW: 50 });
+  });
+
   it('Live-Abfragen brauchen keine Datenbank (kommen aus dem Speicher)', async () => {
     const s = await shelly({ powerW: 77 });
     const logger = await start(config(s.url, tempDir()));

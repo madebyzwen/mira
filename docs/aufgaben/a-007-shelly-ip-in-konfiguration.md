@@ -1,6 +1,6 @@
 # A-007 – Konfiguration › Systeme › Shelly Plug: Adresse des Shelly statt des Loggers anzeigen
 
-- Status: 📝 notiert – wird mit [Stufe 4c](../entwicklung/stufe-04c-betriebsart.md) (Logger 0.2.0) umgesetzt
+- Status: 📝 notiert – wird mit [Stufe 4c](../entwicklung/stufe-04c-betriebsart.md) (Logger 0.3.0) umgesetzt
 - Notiert: 2026-11-10
 
 ## Ziel
@@ -25,7 +25,7 @@ Gewünscht: Die Zeile heißt **„Shelly-IP“** und zeigt die Adresse des eigen
 
 1. **Shelly-Logger:** In `device` (Vertrag `meterDeviceSchema` in `shared/src/shellyLogger.ts`)
    zusätzlich die Adresse aus `LOGGER_SHELLY_URL` liefern (z. B. Feld `address`, nur Host,
-   ohne Zugangsdaten). Als optionales Feld abwärtsverträglich → Logger 0.2.0.
+   ohne Zugangsdaten). Als optionales Feld abwärtsverträglich → Logger 0.3.0.
 2. **MIRA:** Zeile „Shelly-Logger“ in „Shelly-IP“ umbenennen und `live.device.address` anzeigen;
    solange ein älterer Logger keine Adresse meldet: „–“. Die interne Logger-Adresse wird in der
    Oberfläche **nirgends** mehr angezeigt (Entscheidung 2026-11-10) – sie ist eine reine

@@ -4,6 +4,11 @@
 - Notiert: 2026-11-07
 - Verwandt: [Stufe 3](../entwicklung/stufe-03-messwert-historie.md) (tägliche Sicherung), [A-002](a-002-erste-sicherung-pruefen.md) (manuelle Prüfung per SSH)
 
+> **Stand 2026-11-12 ([Wartung W1](../entwicklung/security-hardening-review.md#sicherungen-mira-und-logger)):** Sicherungen werden
+> geprüft (Integrität, Migrationsstand), optional auf ein getrenntes Ziel kopiert, und eine
+> fehlgeschlagene Sicherung erscheint als Meldung in der Glocke. Offen bleibt die Ansicht
+> (vorhandene Sicherungen, letzter Erfolg) in der Oberfläche.
+
 ## Ziel
 
 Der Zustand der Datensicherung soll direkt in der MIRA-Oberfläche sichtbar sein,

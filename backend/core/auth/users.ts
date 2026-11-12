@@ -52,6 +52,15 @@ export class UserRepository {
     return { id: Number(info.lastInsertRowid), username, displayName, passwordHash };
   }
 
+  /**
+   * Passwort-Hash ersetzen, nur wenn der bisherige Hash noch gilt (verhindert, dass zwei
+   * gleichzeitige Änderungen sich gegenseitig überschreiben).
+   * @returns `false`, wenn sich das Passwort inzwischen geändert hat
+   */
+  replacePasswordHash(id: number, expectedHash: string, newHash: string): boolean {
+    return this.db.prepare('UPDATE users SET password_hash = ? WHERE id = ? AND password_hash = ?').run(newHash, id, expectedHash).changes === 1;
+  }
+
   touchLogin(id: number): void {
     this.db.prepare('UPDATE users SET last_login_at = ? WHERE id = ?').run(nowIso(), id);
   }

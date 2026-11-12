@@ -1,6 +1,6 @@
 # Stufe 4a – Shelly-Logger
 
-- Status: 🔍 in Betrieb seit 2026-11-10 (Logger 0.1.1), Abnahme nach 24 h ausstehend
+- Status: ✅ abgenommen 2026-11-12 (in Betrieb seit 2026-11-10 mit Logger 0.1.1, inzwischen 0.2.0)
 - Entscheidung: [ADR 0010](../adr/0010-shelly-logger-als-eigener-container.md) – ersetzt die Planung in [Stufe 4](stufe-04-shelly.md)
 - Code: [`shelly-logger/`](../../shelly-logger/) · Betriebshandbuch: [`shelly-logger/README.md`](../../shelly-logger/README.md)
 - Folgt: [Stufe 4b – MIRA-Integration](stufe-04b-shelly-mira-integration.md) (eigene Freigabe)
@@ -24,7 +24,7 @@ einer kleinen internen Lese-API. Die MIRA-Oberfläche bleibt in dieser Stufe unv
 | Neustart | laufendes Intervall wird beim Beenden geschrieben; der zuletzt verbuchte Zählerstand liegt in derselben Transaktion – keine Doppelzählung |
 | Statistik | Tagessummen in `Europe/Berlin` (DST-sicher); Woche ab Montag, Monat, Jahr aus den Tagessummen; auch abgeschlossene Zeiträume (`date=`) |
 | Aufbewahrung | keine automatische Löschung; tägliche Sicherung (SQLite-Backup-API), die letzten 7 |
-| Netz | keine veröffentlichten Ports; eigene macvlan-IP `<LOGGER_IP>` im Server-Netz nur für den Weg zum Shelly (dort kein Port offen); API nur im internen Netz `mira-intern`; OPNsense: `<LOGGER_IP>` → `<SHELLY_IP>`, TCP 80 (Änderung 2026-11-10, siehe Nachtrag in ADR 0010) |
+| Netz | keine veröffentlichten Ports; eigene macvlan-IP `<LOGGER_IP>` im Server-Netz nur für den Weg zum Shelly (dort kein Port offen); API nur im internen Netz `mira-intern`; Firewall: `<LOGGER_IP>` → `<SHELLY_IP>`, TCP 80 (Änderung 2026-11-10, siehe Nachtrag in ADR 0010) |
 | Betrieb | eigenes Image `ghcr.io/madebyzwen/mira-shelly-logger`, Tags `shelly-logger-vX.Y.Z`; unprivilegiert (UID 1000), read-only, keine Capabilities, Healthcheck |
 
 ## Umsetzung
@@ -79,7 +79,7 @@ Lasttest mit `--shelly http://<SHELLY_IP>` laufen, auch er nur lesend.
 | Firmware | 2.1.1 |
 | Messkomponente | `pm1:0` → `GET /rpc/PM1.GetStatus?id=0` (Felder `apower`, `voltage`, `current`, `aenergy.total` wie erwartet) |
 | Anmeldung | Passwort gesetzt (`auth_en: true`), Digest mit Anmeldedomäne = Geräte-ID |
-| Netz | IoT-VLAN, feste Adresse (`<SHELLY_IP>`, nur im Stack und in der OPNsense) |
+| Netz | IoT-VLAN, feste Adresse (`<SHELLY_IP>`, nur im Stack und in der Firewall) |
 
 Die aufgezeichneten Antworten liegen anonymisiert als Testfall in
 `shelly-logger/test/fixtures/plug-pm-gen3.json`.
@@ -102,11 +102,11 @@ Werte aus `/health` nach 4 Minuten Betrieb (Abfrage alle 1000 ms):
 
 - [x] Gerät erkannt (Modell, Generation, Komponente) und Live-Werte plausibel
 - [x] Messung am echten Shelly: Frequenz 1 Hz, Fehlerrate 0, Antwortzeiten deutlich unter 800 ms
-- [ ] Nach 24 h: Tagesverbrauch entspricht dem Zählerfortschritt des Shelly
+- [x] Nach 24 h: Tagesverbrauch entspricht dem Zählerfortschritt des Shelly
 - [x] Neustart des Containers ohne Doppelzählung (2026-11-10: Zähler +1,688 Wh, Logger +1,688 Wh über den Neustart)
-- [ ] Neustart des Homeservers ohne Doppelzählung (bei Gelegenheit)
-- [ ] Sicherung vorhanden (`data/backups/`)
-- [ ] KI-Server im Ruhezustand: Messung läuft weiter, Zustand „online“
+- [ ] Neustart des Homeservers ohne Doppelzählung (bei Gelegenheit – keine Voraussetzung für die Abnahme)
+- [x] Sicherung vorhanden (`data/backups/`)
+- [x] KI-Server im Ruhezustand: Messung läuft weiter, Zustand „online“
 
 ## Offene Angaben (vom Betreiber)
 

@@ -2,7 +2,7 @@
 
 - Status: angenommen
 - Datum: 2026-11-10
-- Ergänzt: [ADR 0005](0005-odin-http-api-statt-ssh.md) (Bezeichnung des Dienstes)
+- Ergänzt: [ADR 0005](0005-agent-http-api-statt-ssh.md) (Bezeichnung des Dienstes)
 
 ## Kontext
 

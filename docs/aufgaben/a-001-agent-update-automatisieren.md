@@ -15,7 +15,7 @@ Neue Versionen des MIRA-Agents sollen ohne manuelle Schritte auf dem KI-Server
 - Ein Update ist heute: Paket laden, Prüfsumme prüfen, `sudo ./install.sh` ohne Parameter.
   Konfiguration, Zertifikat und Token bleiben erhalten (getestet 0.1.1 → 0.1.2).
 - Die Installation braucht root-Rechte; der Agent selbst läuft bewusst ohne Rechte
-  und ist nur lesend ([ADR 0005](../adr/0005-odin-http-api-statt-ssh.md)).
+  und ist nur lesend ([ADR 0005](../adr/0005-agent-http-api-statt-ssh.md)).
 
 ## Später zu klären
 

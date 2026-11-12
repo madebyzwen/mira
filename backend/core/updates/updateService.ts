@@ -15,14 +15,11 @@ import type { SettingsStore } from '../settings.ts';
 import { AGENT_GUIDE_URL, UpdateCheckFailure, type LatestRelease, type ReleaseFetcher } from './github.ts';
 import { isNewer, parseVersion } from './semver.ts';
 
-/** Vorgesehene Sperrfrist für die Prüfung von Hand: höchstens einmal je Stunde. */
+/** Sperrfrist für die Prüfung von Hand: höchstens einmal je Stunde (A-004, A-005). */
 export const MANUAL_CHECK_LOCK_MS = 60 * 60 * 1000;
 
-/**
- * ENTWICKLUNGSPHASE – vorübergehend keine Sperrfrist: Jeder Klick auf „Jetzt prüfen“ prüft.
- * Nach der Entwicklung wieder auf `MANUAL_CHECK_LOCK_MS` setzen (Aufgabe A-005).
- */
-export const MANUAL_CHECK_INTERVAL_MS = 0;
+/** Standard-Sperrfrist der Prüfung von Hand (Tests können sie über die Optionen ändern). */
+export const MANUAL_CHECK_INTERVAL_MS = MANUAL_CHECK_LOCK_MS;
 
 /** Letzte Version des Agents, die ihre Version noch nicht meldet – meldet der Agent keine Version, ist er höchstens so alt. */
 export const LAST_UNVERSIONED_AGENT = '0.1.3';
@@ -96,8 +93,7 @@ function formatDate(iso: string): string {
  * Auslöser (je eigene Zählung, siehe `byTrigger`):
  * - `scheduled`: täglich zur eingestellten Uhrzeit (Scheduler)
  * - `visit`: beim ersten Aufruf der Oberfläche an einem Kalendertag
- * - `manual`: von Hand, höchstens einmal je Stunde (in der Entwicklungsphase ohne Sperre, A-005) –
- *   zählt nicht gegen die automatischen
+ * - `manual`: von Hand, höchstens einmal je Stunde – zählt nicht gegen die automatischen
  *
  * Die Zählung wird **vor** der Abfrage gespeichert: Auch ein fehlgeschlagener Versuch
  * zählt, und gleichzeitige Aufrufe lösen keine zweite Prüfung aus.
@@ -161,8 +157,12 @@ export class UpdateService {
   nextManualCheckAt(state = this.load()): Date | null {
     const last = state.byTrigger.manual?.at;
     if (!last) return null;
-    const next = new Date(new Date(last).getTime() + this.manualCheckIntervalMs);
-    return next.getTime() > this.now().getTime() ? next : null;
+    const now = this.now().getTime();
+    const lastMs = new Date(last).getTime();
+    // Liegt die letzte Prüfung in der Zukunft (Uhr zurückgestellt), sperrt sie nicht dauerhaft
+    if (!Number.isFinite(lastMs) || lastMs > now) return null;
+    const next = lastMs + this.manualCheckIntervalMs;
+    return next > now ? new Date(next) : null;
   }
 
   /**

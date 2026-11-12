@@ -115,7 +115,7 @@ dafür **allgemein** gemacht, sodass KI-Server und Shelly denselben Code nutzen
 
 ## Netz und Infrastruktur
 
-- Liegt der Shelly in einem anderen VLAN: Regel in der OPNsense `<MIRA_IP>` → `<SHELLY_IP>`,
+- Liegt der Shelly in einem anderen VLAN: Regel in der Firewall `<MIRA_IP>` → `<SHELLY_IP>`,
   TCP 80 (Einrichtung durch den Betreiber nach Anleitung).
 - Shelly: feste Adresse (DHCP-Reservierung) und – empfohlen – ein Passwort für die lokale Oberfläche.
 - Keine Änderung am KI-Server.
