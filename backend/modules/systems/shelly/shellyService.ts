@@ -42,6 +42,17 @@ interface Cached<T> {
   value: T;
 }
 
+/** Laufende Zeiträume ändern sich alle 30 s (neues Intervall im Logger) */
+export const CURRENT_PERIOD_TTL_MS = 15_000;
+/**
+ * Abgeschlossene Zeiträume ändern sich nur noch selten – etwa wenn der Logger nach einem
+ * Ausfall über Mitternacht Energie für den Vortag rekonstruiert. Deshalb nicht dauerhaft,
+ * sondern höchstens so lange zwischengespeichert.
+ */
+export const COMPLETE_PERIOD_TTL_MS = 5 * 60_000;
+/** Obergrenze der Zwischenspeicher (beliebige Datumsangaben in Anfragen) */
+const MAX_CACHE_ENTRIES = 300;
+
 export interface ShellyServiceOptions {
   client: LoggerClient | null;
   prices: EnergyPrices;
@@ -53,7 +64,8 @@ export interface ShellyServiceOptions {
 /**
  * Shelly Plug in MIRA: liest ausschließlich die Lese-API des Shelly-Loggers und
  * ergänzt die Kosten aus dem Strompreis in MIRA. Der Live-Wert wird nur durchgereicht;
- * Verbrauch und Verlauf werden kurz zwischengespeichert, abgeschlossene Zeiträume dauerhaft.
+ * Verbrauch und Verlauf werden kurz zwischengespeichert, abgeschlossene Zeiträume höchstens
+ * `COMPLETE_PERIOD_TTL_MS` (nachträglich rekonstruierte Energie erscheint danach).
  */
 export class ShellyService {
   private readonly client: LoggerClient | null;
@@ -150,20 +162,28 @@ export class ShellyService {
     return this.client;
   }
 
-  /** Verbrauch eines Monats (für die Kosten im Jahr); abgeschlossene Monate dauerhaft zwischengespeichert */
+  /** Noch gültig? Laufende Zeiträume kurz, abgeschlossene länger – nie dauerhaft. */
+  private fresh(cached: Cached<{ complete: boolean }> | undefined): boolean {
+    if (!cached) return false;
+    const age = this.now() - cached.at;
+    return age >= 0 && age < (cached.value.complete ? COMPLETE_PERIOD_TTL_MS : CURRENT_PERIOD_TTL_MS);
+  }
+
+  /** Verbrauch eines Monats (für die Kosten im Jahr) */
   private async month(firstDay: string): Promise<ConsumptionResponse> {
     const cached = this.monthCache.get(firstDay);
-    if (cached && (cached.value.complete || this.now() - cached.at < 30_000)) return cached.value;
+    if (cached && this.fresh(cached)) return cached.value;
     const value = await this.requireClient().consumption('month', firstDay);
+    if (this.monthCache.size >= MAX_CACHE_ENTRIES) this.monthCache.clear();
     this.monthCache.set(firstDay, { at: this.now(), value });
     return value;
   }
 
-  /** Verbrauch mit Kosten; laufende Zeiträume 15 s, abgeschlossene dauerhaft zwischengespeichert */
+  /** Verbrauch mit Kosten; laufende Zeiträume 15 s, abgeschlossene 5 min zwischengespeichert */
   async consumption(period: ConsumptionPeriod, date?: string): Promise<ShellyConsumptionResponse> {
     const key = `${period}:${date ?? 'aktuell'}`;
     const cached = this.consumptionCache.get(key);
-    if (cached && (cached.value.complete || this.now() - cached.at < 15_000)) return cached.value;
+    if (cached && this.fresh(cached)) return cached.value;
     const raw = await this.requireClient().consumption(period, date);
     const tz = raw.timezone;
     let breakdown: ShellyConsumptionResponse['breakdown'];
@@ -197,8 +217,8 @@ export class ShellyService {
       total = { costEur: priced ? Math.round(eur * 10_000) / 10_000 : null, costComplete: complete };
     }
     const value: ShellyConsumptionResponse = { ...raw, ...total, breakdown };
+    if (this.consumptionCache.size >= MAX_CACHE_ENTRIES) this.consumptionCache.clear();
     this.consumptionCache.set(key, { at: this.now(), value });
-    if (this.consumptionCache.size > 300) this.consumptionCache.clear();
     return value;
   }
 
