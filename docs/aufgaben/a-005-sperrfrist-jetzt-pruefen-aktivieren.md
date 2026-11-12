@@ -1,6 +1,6 @@
 # A-005 – Sperrfrist für „Jetzt prüfen“ nach der Entwicklungsphase wieder aktivieren
 
-- Status: ✅ erledigt (2026-11-12, MIRA 0.9.0, [Wartung W1](../entwicklung/security-hardening-review.md#b-02--sperrfrist-jetzt-prüfen))
+- Status: ✅ erledigt (2026-11-12, MIRA 0.9.0, [Wartung W1](../entwicklung/security-hardening-review.md#messwerte-und-anzeige))
 - Notiert: 2026-11-07
 - Verwandt: [A-004](a-004-update-hinweis-benachrichtigungen.md) (Update-Hinweis und Benachrichtigungen)
 
@@ -31,7 +31,7 @@ häufiges Klicken erreicht, zeigt MIRA „GitHub hat die Anfrage vorübergehend 
 
 ## Ergebnis (2026-11-12)
 
-Umgesetzt in der [Wartung W1](../entwicklung/security-hardening-review.md) (Befund B-02 des Code-Reviews):
+Umgesetzt in der [Wartung W1](../entwicklung/security-hardening-review.md):
 `MANUAL_CHECK_INTERVAL_MS = MANUAL_CHECK_LOCK_MS` (1 Stunde), Kommentar „ENTWICKLUNGSPHASE“ entfernt,
 der Test der Entwicklungsphase ersetzt durch Tests für die Sperrfrist ab Werk, gleichzeitige Klicks
 (genau eine Abfrage), fehlgeschlagene Prüfungen (starten die Sperrfrist, Audit „failure“) und eine

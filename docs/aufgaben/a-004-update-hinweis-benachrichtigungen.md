@@ -144,7 +144,7 @@ der KI-Server längere Zeit offline. In diesem Schritt gibt es nur die Quellen �
 
 ## Netz
 
-MIRA braucht **ausgehend** HTTPS (TCP 443) zu `api.github.com`. Erlaubt die OPNsense für
+MIRA braucht **ausgehend** HTTPS (TCP 443) zu `api.github.com`. Erlaubt die Firewall für
 `<MIRA_IP>` bzw. das Proxy-Netz keinen Internetzugang, ist eine Regel nötig – oder die
 Prüfung wird abgeschaltet. Der KI-Server braucht **keinen** Internetzugang.
 
@@ -161,7 +161,7 @@ Aufräumen; Prüfung von Hand (zählt nicht gegen die automatischen, höchstens 
 
 | Frage | Vorschlag |
 | --- | --- |
-| Hat MIRA auf dem Homeserver Internetzugang (OPNsense)? | prüfen; sonst Regel `<MIRA_IP>` → any, TCP 443 |
+| Hat MIRA auf dem Homeserver Internetzugang (Firewall)? | prüfen; sonst Regel `<MIRA_IP>` → any, TCP 443 |
 | Einordnung | als kleiner eigener Schritt vor Stufe 4 (Shelly wartet auf Geräteangaben) |
 
 ## Nicht enthalten

@@ -48,8 +48,7 @@ COPY --from=build /app/backend/dist backend/dist
 COPY --from=build /app/frontend/dist frontend/dist
 # Datenverzeichnis gehört dem unprivilegierten Benutzer „node“
 # npm, npx und corepack werden zur Laufzeit nicht gebraucht (Start direkt mit node) – entfernt,
-# damit ihre mitgelieferten Abhängigkeiten keine Angriffsfläche und keine Scanner-Befunde bilden.
-# Vorher Sicherheitsupdates der Alpine-Pakete des Basisimages einspielen.
+# damit das Image nur enthält, was MIRA braucht. Vorher die Alpine-Pakete aktualisieren.
 RUN apk upgrade --no-cache \
  && rm -rf /usr/local/lib/node_modules/npm /usr/local/lib/node_modules/corepack \
            /usr/local/bin/npm /usr/local/bin/npx /usr/local/bin/corepack \

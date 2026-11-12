@@ -5,7 +5,7 @@
 # Der Logger läuft unabhängig von MIRA und vom KI-Server und erfasst den Stromverbrauch
 # über den Shelly Plug (lokale HTTP-API, nur lesend). Netze:
 # - „server“ (vorhandenes macvlan-Netz, wie MIRA): eigene feste IP <LOGGER_IP> im Server-Netz.
-#   Nur darüber erreicht der Logger den Shelly. In der OPNsense genau eine Regel:
+#   Nur darüber erreicht der Logger den Shelly. In der Firewall genau eine Regel:
 #   <LOGGER_IP> → <SHELLY_IP>, TCP 80. Auf dieser Adresse ist KEIN Port offen.
 # - „mira-intern“ (internal: true, festes Subnetz): Nur hier lauscht die Lese-API
 #   (LOGGER_HOST = feste Adresse in diesem Netz). MIRA tritt diesem Netz in Stufe 4b bei.

@@ -8,7 +8,7 @@
 #
 # HTTPS-Pflicht (empfohlen, ab MIRA 0.9.0): MIRA_PUBLIC_URL auf die HTTPS-Adresse setzen und
 # MIRA_TRUST_PROXY auf die Adresse des Proxys. Dann leitet http://<MIRA_IP> nur noch auf
-# HTTPS um; Anmeldungen über unverschlüsseltes HTTP werden abgelehnt.
+# HTTPS um; Anmeldungen werden nur über HTTPS angenommen.
 # Reihenfolge und Rückweg: docs/entwicklung/security-hardening-review.md, Abschnitt „Deployment“.
 #
 # In Portainer: Stacks → Add stack → Web editor → diesen Inhalt einfügen,

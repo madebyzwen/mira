@@ -15,7 +15,7 @@
 | Passwörter | scrypt (N=2¹⁵, r=8, p=1), Salt pro Passwort, Parameter im Hash gespeichert |
 | Sessions | Zufallstoken (256 Bit) im Cookie, in der DB nur SHA-256-Hash; gleitender Ablauf (`MIRA_SESSION_TTL_HOURS`, Standard 7 Tage) |
 | Cookie | `HttpOnly`, `SameSite=Strict`, `Path=/`; `Secure` immer mit HTTPS-Pflicht (`MIRA_PUBLIC_URL`), sonst automatisch bei HTTPS (`MIRA_COOKIE_SECURE=auto`) |
-| HTTPS-Pflicht | mit `MIRA_PUBLIC_URL`: Seiten über HTTP → `308` auf HTTPS, API über HTTP → `403 https_required` (ohne Verarbeitung, Audit `auth.insecure_transport`), HSTS; `/health` ausgenommen ([ADR 0011](../adr/0011-https-pflicht-und-enges-proxy-vertrauen.md)) |
+| HTTPS-Pflicht | mit `MIRA_PUBLIC_URL`: Seiten über HTTP → `308` auf HTTPS, API über HTTP → `403 https_required` (Audit `auth.insecure_transport`), HSTS; `/health` ausgenommen ([ADR 0011](../adr/0011-https-pflicht-und-enges-proxy-vertrauen.md)) |
 | Passwort ändern | Konfiguration › MIRA › Konto: aktuelles Passwort nötig (Login-Sperre gilt), mind. 12 Zeichen, neuer Hash und Beenden **aller** Sessions in einer Transaktion; „Alle Sitzungen beenden“ einzeln möglich |
 | Login-Sperre | nach `MIRA_LOGIN_MAX_FAILURES` (5) Fehlversuchen in `MIRA_LOGIN_WINDOW_MINUTES` (15), getrennt nach IP und Benutzername; Speicher begrenzt (10 000 Einträge) |
 | Benutzer-Enumeration | unbekannte Benutzer werden genauso geprüft und beantwortet wie falsche Passwörter |
@@ -68,9 +68,6 @@ zweite Kopie auf ein getrenntes Ziel (`MIRA_BACKUP_COPY_DIR`, `LOGGER_BACKUP_COP
 Fehlgeschlagene Sicherungen meldet MIRA in der Glocke. Sicherungen enthalten Passwort- und
 Session-Hashes und sind wie Geheimnisse zu behandeln.
 
-## Offene Punkte
+## Hinweise
 
-- Direkter Zugang `http://<MIRA_IP>` bleibt als Umleitung offen; ein Client, der Zugangsdaten
-  ohne Seitenaufruf direkt per HTTP sendet, überträgt sie im Klartext (wird abgelehnt und
-  protokolliert). Siehe [Wartung W1](../entwicklung/security-hardening-review.md#verbleibende-risiken).
 - Die Secrets (`/secrets`) sind nicht Teil der Sicherung durch MIRA – sie gehören in die Sicherung des Homeservers.

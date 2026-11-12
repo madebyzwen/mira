@@ -27,7 +27,7 @@ Auf Odin läuft eine kleine **HTTP-API als nativer systemd-Dienst** (nicht in Do
 
 - Lauscht nur auf der LAN-Schnittstelle im Server-VLAN; die 10-GbE-Direktverbindung
   bleibt ausschließlich für den Fileshare.
-- Zugriff nur von Asgard: Regel in der OPNsense und lokale Firewall auf Odin.
+- Zugriff nur von Asgard: Regel in der Firewall und lokale Firewall auf Odin.
 - **TLS mit festgelegtem Zertifikat** und **Token pro Anfrage** (auf Odin nur der Hash).
 - Nur fest definierte Endpunkte, unprivilegierter Benutzer, privilegierte Aktionen
   ausschließlich über exakte sudo-Regeln.

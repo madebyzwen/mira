@@ -109,8 +109,7 @@ Image baut GitHub bei jedem Push automatisch (`ghcr.io/madebyzwen/mira`,
 Netzwerk: MIRA erhält über ein vorhandenes **macvlan-Netz eine eigene IP im
 Server-Netz** (`<MIRA_IP>`), in dem auch der KI-Server liegt – vor allem für die Verbindungen
 von MIRA zum KI-Server. Aufgerufen wird MIRA über den Reverse Proxy (`https://<MIRA_HOSTNAME>`).
-Mit HTTPS-Pflicht (`MIRA_PUBLIC_URL`, empfohlen) leitet `http://<MIRA_IP>` nur noch dorthin
-um; ohne sie ist MIRA dort weiterhin unverschlüsselt erreichbar (Warnung in der Glocke).
+Mit HTTPS-Pflicht (`MIRA_PUBLIC_URL`, empfohlen) leitet `http://<MIRA_IP>` dorthin um.
 Port 80 ist ohne Root-Rechte und ohne Capabilities möglich, weil der Stack ihn nur im
 Netzwerk-Namensraum des Containers freigibt (`cap_drop: ALL`).
 
@@ -230,12 +229,11 @@ Wiederherstellen (per SSH auf dem Homeserver):
   Bridge-Netz (und für den Docker-Host) nicht erreichbar.
 - `MIRA_TRUST_PROXY` auf die **Adresse des Proxys** setzen (mehrere Einträge durch Komma; IP oder
   Netz in CIDR-Schreibweise). Dann erkennt MIRA HTTPS und die echte Client-IP (Login-Sperre,
-  Audit-Log). Weiterleitungs-Header von anderen Absendern werden ignoriert. Ein großes Netz
-  (z. B. das ganze Proxy-Subnetz `/16`) funktioniert, aber jeder Container darin könnte HTTPS und
-  Client-Adressen vortäuschen – MIRA warnt dann beim Start. Besser: feste Adresse für den Proxy
-  oder ein eigenes kleines Netz nur für Proxy und MIRA.
-- `MIRA_PUBLIC_URL=https://<MIRA_HOSTNAME>` schaltet die **HTTPS-Pflicht** ein: unverschlüsselte
-  Seitenaufrufe werden umgeleitet, Anmeldungen und API-Anfragen über HTTP abgelehnt, das Cookie
+  Audit-Log). Weiterleitungs-Header von anderen Absendern werden ignoriert. Den Eintrag möglichst
+  eng wählen: feste Adresse des Proxys oder ein eigenes kleines Netz nur für Proxy und MIRA;
+  bei großen Netzen gibt MIRA beim Start einen Hinweis aus.
+- `MIRA_PUBLIC_URL=https://<MIRA_HOSTNAME>` schaltet die **HTTPS-Pflicht** ein: Seitenaufrufe über
+  HTTP werden umgeleitet, Anmeldungen und API-Anfragen nur über HTTPS angenommen, das Cookie
   ist immer `Secure`, dazu HSTS. Setzt `MIRA_TRUST_PROXY` voraus (sonst startet MIRA nicht).
 
 ### Konfiguration (Umgebungsvariablen)

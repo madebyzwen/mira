@@ -70,17 +70,17 @@ Geheimnisse nur als Datei ([ADR 0006](../docs/adr/0006-geheimnisse-als-dateien.m
 
 ## Inbetriebnahme
 
-> Erst nach ausdrücklicher Freigabe. Änderungen an Shelly, OPNsense und Homeserver nimmt der Betreiber selbst vor.
+> Erst nach ausdrücklicher Freigabe. Änderungen an Shelly, Firewall und Homeserver nimmt der Betreiber selbst vor.
 
 ### 1. Shelly vorbereiten
 
-1. **Feste Adresse** im IoT-VLAN (DHCP-Reservierung in der OPNsense).
+1. **Feste Adresse** im IoT-VLAN (DHCP-Reservierung in der Firewall).
 2. **Passwort** für die lokale Oberfläche setzen (Weboberfläche des Shelly → Einstellungen →
    Authentifizierung). Der Logger meldet sich als `admin` an.
 3. Geräteinfo prüfen – ohne Anmeldung: `http://<SHELLY_IP>/shelly`. Erwartet: `"gen": 2` oder höher;
    `"auth_en": true`, wenn ein Passwort gesetzt ist.
 
-### 2. OPNsense: genau eine Regel
+### 2. Firewall: genau eine Regel
 
 | Feld | Wert |
 | --- | --- |

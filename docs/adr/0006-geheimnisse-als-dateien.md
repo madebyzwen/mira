@@ -7,7 +7,7 @@
 
 MIRA benötigt Geheimnisse: Startpasswort, ab Stufe 2 das Token und den
 Zertifikats-Fingerprint für die Odin-API, später ggf. Shelly-Passwort und
-OPNsense-API-Schlüssel. Das Briefing verlangt, sie nicht ungeschützt in SQLite
+API-Schlüssel der Firewall. Das Briefing verlangt, sie nicht ungeschützt in SQLite
 abzulegen.
 
 ## Entscheidung
