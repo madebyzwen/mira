@@ -306,8 +306,12 @@ Alle Läufe in `node:22` (Node 22.23), Stand nach allen Änderungen:
 | `npm audit` | 0 Schwachstellen |
 | `docker build` (beide Images) | erfolgreich |
 
-Der GitHub-Workflow selbst (insbesondere der neue Prüfjob) läuft erst nach dem Push. Lokal wurden
-seine Schritte mit denselben Befehlen und derselben Trivy-Version nachgestellt.
+Auf GitHub ist der Workflow für den Pull-Request #10 am 2026-11-12 durchgelaufen
+([Lauf 43304816650](https://github.com/madebyzwen/mira/actions/runs/43304816650)):
+
+- „Typecheck und Tests“ grün (237 Tests, `npm audit` 0 Schwachstellen).
+- „Sicherheitsprüfung der Images“ grün (Trivy, beide Images ohne HIGH/CRITICAL mit verfügbarer Korrektur).
+- Die Jobs zum Veröffentlichen laufen bei Pull-Requests bewusst nicht.
 
 ### Docker-Tests
 
@@ -379,8 +383,8 @@ Ausnahmen: keine. Hinweis: Scan-Ergebnisse hängen vom Stand der Schwachstellend
 - **F-01:** Nachträglich rekonstruierte Energie erscheint mit bis zu 5 Minuten Verzögerung.
 - **Login-Sperre im Speicher:** Ein Neustart setzt die Zählung zurück (wie bisher, bewusst).
 - **Polling-Hook:** Getestet ist die Logik (`Poller`), nicht die React-Einbindung im Browser.
-- **CI:** Der neue Prüfjob ist noch nicht auf GitHub gelaufen, und neue Einträge in der
-  Schwachstellendatenbank können künftig Läufe scheitern lassen.
+- **CI:** Neue Einträge in der Schwachstellendatenbank können künftig Läufe scheitern lassen
+  (dann aktualisieren oder begründete Ausnahme in `.trivyignore`).
 - **Token-Wechsel** (Logger-API) erfordert einen Neustart beider Container. Eine Rotation gibt es nur von Hand.
 
 ## Maßnahmen des Betreibers
