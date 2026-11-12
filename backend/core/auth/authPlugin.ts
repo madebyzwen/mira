@@ -1,10 +1,11 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
-import { loginRequestSchema, type SessionResponse, type SessionUser } from '@mira/shared';
+import { changePasswordRequestSchema, loginRequestSchema, type SessionResponse, type SessionUser } from '@mira/shared';
 import type { AppConfig } from '../config.ts';
 import type { AuditLog } from '../audit.ts';
+import type { Db } from '../db/database.ts';
 import { AppError } from '../errors.ts';
 import { LoginLimiter } from './loginLimiter.ts';
-import { getDummyHash, verifyPassword } from './passwords.ts';
+import { getDummyHash, hashPassword, verifyPassword } from './passwords.ts';
 import { SESSION_COOKIE, SessionStore } from './sessions.ts';
 import type { UserRepository } from './users.ts';
 
@@ -20,13 +21,14 @@ const PUBLIC_API_ROUTES = new Set(['POST /api/v1/auth/login', 'POST /api/v1/auth
 
 interface AuthDeps {
   config: AppConfig;
+  db: Db;
   users: UserRepository;
   sessions: SessionStore;
   audit: AuditLog;
 }
 
 export function registerAuth(app: FastifyInstance, deps: AuthDeps): void {
-  const { config, users, sessions, audit } = deps;
+  const { config, db, users, sessions, audit } = deps;
   const limiter = new LoginLimiter(config.loginMaxFailures, config.loginWindowMs);
 
   const setSessionCookie = (request: FastifyRequest, reply: FastifyReply, token: string) => {
@@ -96,4 +98,56 @@ export function registerAuth(app: FastifyInstance, deps: AuthDeps): void {
   });
 
   app.get('/api/v1/auth/session', async (request): Promise<SessionResponse> => ({ user: request.user! }));
+
+  /**
+   * Passwort ändern: aktuelles Passwort erforderlich (gleiche Fehlversuch-Sperre wie die
+   * Anmeldung). Neuer Hash und das Beenden aller Sessions des Benutzers in einer Transaktion –
+   * danach ist eine neue Anmeldung nötig, auch auf allen anderen Geräten.
+   */
+  app.post('/api/v1/auth/password', async (request, reply) => {
+    const me = request.user!;
+    const { currentPassword, newPassword } = changePasswordRequestSchema.parse(request.body);
+    const ip = request.ip;
+    const fail = (reason: string) =>
+      audit.write({ actor: me.username, module: 'core', action: 'auth.password_change', result: 'failure', ip, details: { reason } });
+
+    const wait = limiter.retryAfterSeconds(ip, me.username);
+    if (wait > 0) {
+      fail('rate_limited');
+      reply.header('Retry-After', String(wait));
+      throw new AppError('rate_limited', 429, 'Zu viele fehlgeschlagene Versuche.', { retryAfterSeconds: wait });
+    }
+    const stored = users.findById(me.id);
+    if (!stored || !(await verifyPassword(currentPassword, stored.passwordHash))) {
+      limiter.recordFailure(ip, me.username);
+      fail('invalid_current_password');
+      // 403 statt 401: die Session bleibt gültig, die Oberfläche meldet nicht „abgemeldet“
+      throw new AppError('invalid_credentials', 403, 'Das aktuelle Passwort ist falsch.');
+    }
+
+    const newHash = await hashPassword(newPassword);
+    let revoked = 0;
+    const changed = db.transaction(() => {
+      if (!users.replacePasswordHash(me.id, stored.passwordHash, newHash)) return false;
+      revoked = sessions.revokeAllForUser(me.id);
+      return true;
+    })();
+    if (!changed) {
+      fail('concurrent_change');
+      throw new AppError('invalid_credentials', 409, 'Das Passwort wurde inzwischen geändert. Bitte erneut anmelden.');
+    }
+    limiter.reset(ip, me.username);
+    audit.write({ actor: me.username, module: 'core', action: 'auth.password_change', result: 'success', ip, details: { revokedSessions: revoked } });
+    reply.clearCookie(SESSION_COOKIE, { path: '/' });
+    return reply.status(204).send();
+  });
+
+  /** Alle Sessions des eigenen Kontos beenden (alle Geräte, auch diese Sitzung). */
+  app.post('/api/v1/auth/sessions/revoke', async (request, reply) => {
+    const me = request.user!;
+    const revoked = sessions.revokeAllForUser(me.id);
+    audit.write({ actor: me.username, module: 'core', action: 'auth.sessions_revoke', result: 'success', ip: request.ip, details: { revokedSessions: revoked } });
+    reply.clearCookie(SESSION_COOKIE, { path: '/' });
+    return reply.status(204).send();
+  });
 }

@@ -1,6 +1,6 @@
-# 0007 – Wake-on-LAN über die OPNsense-API
+# 0007 – Wake-on-LAN über die Firewall-API
 
-- Status: ersetzt durch [0011](0011-energiesteuerung-polkit-und-direktes-wake-on-lan.md) (2026-11-10, sobald 0011 angenommen ist)
+- Status: ersetzt durch [0012](0012-energiesteuerung-polkit-und-direktes-wake-on-lan.md) (2026-11-10, sobald 0012 angenommen ist)
 - Datum: 2026-11-05
 
 > **Nachtrag 2026-11-06:** MIRA erhält per macvlan eine eigene IP im Server-Netz
@@ -12,12 +12,12 @@
 Ein schlafender KI-Server ist nur per Wake-on-LAN erreichbar. Das Magic Packet ist ein
 Broadcast und bleibt in seinem VLAN. Asgard liegt in einem anderen VLAN als der KI-Server;
 außerdem erreicht ein Broadcast aus einem Docker-Container im Bridge-Netz das LAN
-nicht. Im Netz läuft eine OPNsense.
+nicht. Im Netz läuft eine Firewall mit API.
 
 ## Vorschlag
 
-MIRA löst Wake-on-LAN über die API des OPNsense-Plugins **os-wol** aus. Dafür wird
-in der OPNsense ein eigener API-Benutzer angelegt, der ausschließlich die
+MIRA löst Wake-on-LAN über die Wake-on-LAN-Funktion der Firewall (API) aus. Dafür wird
+in der Firewall ein eigener API-Benutzer angelegt, der ausschließlich die
 WoL-Berechtigung hat; Schlüssel und Secret liegen als Dateien auf Asgard
 ([ADR 0006](0006-geheimnisse-als-dateien.md)).
 
@@ -30,4 +30,4 @@ WoL-Berechtigung hat; Schlüssel und Secret liegen als Dateien auf Asgard
 ## Konsequenzen (bei Annahme)
 
 - Keine Änderung an Asgards Netzwerk und keine Sonderrechte für den Container.
-- Abhängigkeit von der OPNsense-API; MIRA benötigt Zugriff `<ASGARD_IP>` → OPNsense, TCP 443.
+- Abhängigkeit von der Firewall-API; MIRA benötigt Zugriff `<ASGARD_IP>` → Firewall, TCP 443.

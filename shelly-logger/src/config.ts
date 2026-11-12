@@ -37,6 +37,8 @@ const envSchema = z.object({
   /** Uhrzeit der täglichen Sicherung (Ortszeit `LOGGER_TIMEZONE`) */
   LOGGER_BACKUP_TIME: withDefault(time.default('03:45')),
   LOGGER_BACKUP_KEEP: withDefault(z.coerce.number().int().min(1).max(365).default(7)),
+  /** Optional: zweites, getrenntes Ziel für eine Kopie jeder Sicherung */
+  LOGGER_BACKUP_COPY_DIR: opt(z.string()),
   LOGGER_LOG_LEVEL: withDefault(z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent']).default('info')),
 });
 
@@ -52,7 +54,12 @@ export interface LoggerConfig {
   host: string;
   port: number;
   apiToken?: string;
-  backup: { time: string; keep: number };
+  /**
+   * Token verlangt (`LOGGER_API_TOKEN_FILE` gesetzt), aber nicht nutzbar (Datei fehlt, leer, zu kurz):
+   * Die Messung läuft weiter, die API lehnt bis zur Korrektur alles außer `/health` ab.
+   */
+  apiTokenError?: string;
+  backup: { time: string; keep: number; copyDir?: string };
   logLevel: string;
 }
 
@@ -63,10 +70,33 @@ function readSecret(file: string | undefined, name: string): string | undefined 
   return value;
 }
 
+/** Mindestlänge des API-Tokens (z. B. `openssl rand -hex 32` = 64 Zeichen) */
+export const MIN_API_TOKEN_LENGTH = 32;
+
+/**
+ * Token der Lese-API lesen – fehlertolerant für die Messung, sicher für die API:
+ * Probleme mit der Datei beenden den Logger nicht, sperren aber die API.
+ */
+export function readApiToken(file: string | undefined): { token?: string; error?: string } {
+  if (!file) return {};
+  let value: string;
+  try {
+    value = fs.readFileSync(path.resolve(file), 'utf8').trim();
+  } catch (err) {
+    const code = (err as NodeJS.ErrnoException).code ?? 'Fehler';
+    return { error: `LOGGER_API_TOKEN_FILE: Datei ${file} nicht lesbar (${code})` };
+  }
+  if (!value) return { error: `LOGGER_API_TOKEN_FILE: Datei ${file} ist leer` };
+  if (/\s/.test(value)) return { error: 'LOGGER_API_TOKEN_FILE: Das Token darf keine Leerzeichen oder Zeilenumbrüche enthalten' };
+  if (value.length < MIN_API_TOKEN_LENGTH) return { error: `LOGGER_API_TOKEN_FILE: Das Token ist zu kurz (mindestens ${MIN_API_TOKEN_LENGTH} Zeichen)` };
+  return { token: value };
+}
+
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): LoggerConfig {
   const e = envSchema.parse(env);
   assertTimeZone(e.LOGGER_TIMEZONE);
   const dataDir = path.resolve(e.LOGGER_DATA_DIR);
+  const api = readApiToken(e.LOGGER_API_TOKEN_FILE);
   return {
     shelly: {
       url: e.LOGGER_SHELLY_URL.replace(/\/+$/, ''),
@@ -82,8 +112,9 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): LoggerConfig {
     dbFile: path.join(dataDir, 'shelly-logger.db'),
     host: e.LOGGER_HOST,
     port: e.LOGGER_PORT,
-    apiToken: readSecret(e.LOGGER_API_TOKEN_FILE, 'LOGGER_API_TOKEN_FILE'),
-    backup: { time: e.LOGGER_BACKUP_TIME, keep: e.LOGGER_BACKUP_KEEP },
+    apiToken: api.token,
+    apiTokenError: api.error,
+    backup: { time: e.LOGGER_BACKUP_TIME, keep: e.LOGGER_BACKUP_KEEP, copyDir: e.LOGGER_BACKUP_COPY_DIR ? path.resolve(e.LOGGER_BACKUP_COPY_DIR) : undefined },
     logLevel: e.LOGGER_LOG_LEVEL,
   };
 }

@@ -92,6 +92,35 @@ const MIGRATIONS: { version: number; name: string; sql: string }[] = [
   },
 ];
 
+const BACKUP_PATTERN = /^shelly-logger-\d{4}-\d{2}-\d{2}\.db$/;
+
+/** Sicherungsdatei prüfen: Integrität und Migrationsstand des Loggers. Wirft bei einem Fehler. */
+export function verifyBackup(file: string): void {
+  const copy = new Database(file, { readonly: true, fileMustExist: true });
+  try {
+    const result = copy.pragma('integrity_check') as { integrity_check: string }[];
+    if (result.length !== 1 || result[0].integrity_check !== 'ok') {
+      throw new Error(`Integritätsprüfung fehlgeschlagen: ${result.map((r) => r.integrity_check).join('; ').slice(0, 500)}`);
+    }
+    const n = copy.prepare<[], { n: number }>('SELECT COUNT(*) AS n FROM schema_migrations').get();
+    if (!n || n.n < 1) throw new Error('Sicherung enthält keinen Migrationsstand des Loggers');
+  } finally {
+    copy.close();
+  }
+}
+
+/** Nur die neuesten `keep` Sicherungen in `dir` behalten (nur Dateien des Loggers). */
+function rotateBackups(dir: string, keep: number): string[] {
+  const removed = fs
+    .readdirSync(dir)
+    .filter((f) => BACKUP_PATTERN.test(f))
+    .sort()
+    .reverse()
+    .slice(keep);
+  for (const f of removed) fs.rmSync(path.join(dir, f), { force: true });
+  return removed;
+}
+
 const QUALITY_RANK: Record<SampleQuality, number> = { ok: 0, partial: 1, counter_reset: 2, implausible: 3 };
 
 export function worstQuality(a: SampleQuality, b: SampleQuality): SampleQuality {
@@ -322,28 +351,55 @@ export class Store {
   /**
    * Konsistente Sicherung im laufenden Betrieb (SQLite-Backup-API) nach
    * `<dir>/shelly-logger-JJJJ-MM-TT.db`; die neuesten `keep` bleiben erhalten.
+   * Jede Sicherung wird vor dem Übernehmen geprüft (Integrität, Migrationsstand) – schlägt das
+   * fehl, bleiben vorhandene Sicherungen unverändert. Optional zusätzlich eine geprüfte Kopie
+   * nach `copyDir` (getrenntes Speicherziel); ein Fehler dort lässt die lokale Sicherung gültig.
    */
-  async backup(dir: string, keep: number, now = Date.now()): Promise<{ file: string; bytes: number; removed: string[] }> {
+  async backup(
+    dir: string,
+    keep: number,
+    now = Date.now(),
+    copyDir?: string,
+  ): Promise<{ file: string; bytes: number; removed: string[]; copy?: { file: string; removed: string[] } | { error: string } }> {
     fs.mkdirSync(dir, { recursive: true });
     const file = path.join(dir, `shelly-logger-${dayKeyOf(now, this.timeZone)}.db`);
     const tmp = `${file}.tmp`;
-    await this.db.backup(tmp);
-    const copy = new Database(tmp);
     try {
-      copy.pragma('journal_mode = DELETE');
+      await this.db.backup(tmp);
+      const copy = new Database(tmp);
+      try {
+        copy.pragma('journal_mode = DELETE');
+      } finally {
+        copy.close();
+      }
+      verifyBackup(tmp);
+      fs.renameSync(tmp, file);
     } finally {
-      copy.close();
+      fs.rmSync(tmp, { force: true });
     }
-    fs.renameSync(tmp, file);
-    const pattern = /^shelly-logger-\d{4}-\d{2}-\d{2}\.db$/;
-    const removed = fs
-      .readdirSync(dir)
-      .filter((f) => pattern.test(f))
-      .sort()
-      .reverse()
-      .slice(keep);
-    for (const f of removed) fs.rmSync(path.join(dir, f), { force: true });
-    return { file, bytes: fs.statSync(file).size, removed };
+    const result: { file: string; bytes: number; removed: string[]; copy?: { file: string; removed: string[] } | { error: string } } = {
+      file,
+      bytes: fs.statSync(file).size,
+      removed: rotateBackups(dir, keep),
+    };
+    if (copyDir) {
+      try {
+        fs.mkdirSync(copyDir, { recursive: true });
+        const target = path.join(copyDir, path.basename(file));
+        const part = `${target}.tmp`;
+        try {
+          fs.copyFileSync(file, part);
+          verifyBackup(part);
+          fs.renameSync(part, target);
+        } finally {
+          fs.rmSync(part, { force: true });
+        }
+        result.copy = { file: target, removed: rotateBackups(copyDir, keep) };
+      } catch (err) {
+        result.copy = { error: err instanceof Error ? err.message : String(err) };
+      }
+    }
+    return result;
   }
 
   close(): void {

@@ -1,4 +1,4 @@
-import type { LoginRequest, SessionResponse, SessionUser } from '@mira/shared';
+import type { ChangePasswordRequest, LoginRequest, SessionResponse, SessionUser } from '@mira/shared';
 import { api, ApiError } from './apiClient';
 
 export const authService = {
@@ -24,5 +24,15 @@ export const authService = {
 
   async logout(): Promise<void> {
     await api<void>('/api/v1/auth/logout', { method: 'POST', silentUnauthorized: true });
+  },
+
+  /** Passwort ändern – beendet alle Sessions, danach ist eine neue Anmeldung nötig. */
+  async changePassword(request: ChangePasswordRequest): Promise<void> {
+    await api<void>('/api/v1/auth/password', { method: 'POST', body: request });
+  },
+
+  /** Alle Sessions des eigenen Kontos beenden (alle Geräte). */
+  async revokeAllSessions(): Promise<void> {
+    await api<void>('/api/v1/auth/sessions/revoke', { method: 'POST' });
   },
 };

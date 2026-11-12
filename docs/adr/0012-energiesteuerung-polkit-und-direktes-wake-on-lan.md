@@ -1,8 +1,8 @@
-# 0011 – Energiesteuerung: polkit statt sudo, Wake-on-LAN direkt aus MIRA
+# 0012 – Energiesteuerung: polkit statt sudo, Wake-on-LAN direkt aus MIRA
 
 - Status: vorgeschlagen (Entscheidung mit Freigabe von [Stufe 5a](../entwicklung/stufe-05a-schlafen-aufwecken-neustart.md))
 - Datum: 2026-11-10
-- Ersetzt: [ADR 0007](0007-wake-on-lan-ueber-opnsense.md) (Wake-on-LAN über die OPNsense-API)
+- Ersetzt: [ADR 0007](0007-wake-on-lan-ueber-die-firewall.md) (Wake-on-LAN über die Firewall-API)
 - Ändert: die in [MIRA-Agent](../architektur/agent.md) geplanten sudo-Regeln für Energieaktionen
 
 ## Kontext
@@ -13,7 +13,7 @@ Annahmen passen nicht mehr:
 1. **sudo für den Agent:** Geplant waren exakte Regeln in `/etc/sudoers.d/mira-agent`. Der
    Agent läuft aber als gehärteter systemd-Dienst mit `NoNewPrivileges=yes` – damit kann er
    kein setuid-Programm wie `sudo` nutzen. Die Härtung aufzuweichen, wäre ein Rückschritt.
-2. **Wake-on-LAN über die OPNsense:** Nötig, solange MIRA in einem anderen Netz als der
+2. **Wake-on-LAN über die Firewall:** Nötig, solange MIRA in einem anderen Netz als der
    KI-Server lag. Seit 2026-11-06 hat MIRA per macvlan eine eigene Adresse im selben Netz.
 
 ## Entscheidung
@@ -29,7 +29,7 @@ Annahmen passen nicht mehr:
   Jobs, verhindert den Schlaf) und das Ausschalten (`power-off`, späterer Ausbau).
   Der Dienst behält `NoNewPrivileges=yes` und alle übrigen Härtungen.
 - **Wake-on-LAN direkt aus MIRA:** MIRA sendet das Magic Packet selbst als UDP-Broadcast ins
-  Server-Netz (macvlan). Keine OPNsense-API, keine zusätzlichen Zugangsdaten.
+  Server-Netz (macvlan). Keine Firewall-API, keine zusätzlichen Zugangsdaten.
 - Schreibende Endpunkte des Agents (`POST /v1/power/…`) nutzen dasselbe Token und dieselbe
   Netzfreigabe wie die lesenden; MIRA protokolliert jede Aktion im Audit-Log.
 
@@ -38,7 +38,7 @@ Annahmen passen nicht mehr:
 - **sudo mit exakten Regeln:** erfordert `NoNewPrivileges=no` für den ganzen Dienst – verworfen.
 - **Eigener, privilegierter Hilfsdienst** (z. B. per systemd-Socket): mehr bewegliche Teile für
   zwei Aktionen – verworfen; polkit ist genau für diese Freigabe gedacht.
-- **Wake-on-LAN über die OPNsense-API (ADR 0007):** zusätzlicher API-Schlüssel mit Rechten an
+- **Wake-on-LAN über die Firewall-API (ADR 0007):** zusätzlicher API-Schlüssel mit Rechten an
   der Firewall – nicht mehr nötig.
 
 ## Konsequenzen

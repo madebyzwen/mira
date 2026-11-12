@@ -1,6 +1,6 @@
 # Stufe 4b – Shelly: Anbindung in MIRA
 
-- Status: 🔍 umgesetzt, Ausrollen und Abnahme ausstehend (2026-11-10, Ziel MIRA 0.8.0)
+- Status: ✅ abgenommen 2026-11-12 (MIRA 0.8.0/0.8.1, inzwischen 0.9.0)
 - Voraussetzung: [Stufe 4a – Shelly-Logger](stufe-04a-shelly-logger.md) in Betrieb (seit 2026-11-10)
 - Entscheidung: [ADR 0010](../adr/0010-shelly-logger-als-eigener-container.md)
 
@@ -53,7 +53,7 @@ Die Beispieldaten auf der Shelly-Seite und im Dashboard-Widget „Verbrauch“ e
 
 ## Abnahme
 
-- [ ] Shelly-Seite: Live-Leistung jede Sekunde, Werte passend zur Shelly-App
-- [ ] Verbrauch heute/Woche/Monat/Jahr und Kosten plausibel (Strompreis eingetragen)
-- [ ] Verlauf und Dashboard-Kachel zeigen echte Werte
-- [ ] Logger kurz stoppen: MIRA zeigt „nicht erreichbar“ statt alter Werte; danach wieder normal
+- [x] Shelly-Seite: Live-Leistung jede Sekunde, Werte passend zur Shelly-App
+- [x] Verbrauch heute/Woche/Monat/Jahr und Kosten plausibel (Strompreis eingetragen)
+- [x] Verlauf und Dashboard-Kachel zeigen echte Werte
+- [x] Logger kurz stoppen: MIRA zeigt „nicht erreichbar“ statt alter Werte; danach wieder normal

@@ -19,7 +19,7 @@ und die [ADRs](../adr/).
 │   └─ SQLite /data/mira.db                  └─ SQLite /data/shelly-logger.db    │
 └───────┬────────────────────────────────────────────────────┬──────────────────┘
         │ HTTPS + Token (ab Stufe 2)                          │ HTTP, lokal, nur lesend
-        ▼                                                     ▼ (eigene macvlan-IP, OPNsense-Regel)
+        ▼                                                     ▼ (eigene macvlan-IP, Firewall-Regel)
   KI-Server: MIRA-Agent                               Shelly Plug PM (IoT-VLAN)
   (systemd-Dienst)
         ▲
@@ -34,7 +34,7 @@ und die [ADRs](../adr/).
 | Backend | Node.js 22, TypeScript, Fastify ([ADR 0001](../adr/0001-modularer-monolith-typescript-fastify.md)) | `backend/` |
 | API-Verträge | zod-Schemas, gemeinsam für alle Teile | `shared/` |
 | Datenbank | SQLite, WAL, Migrationen pro Modul ([ADR 0003](../adr/0003-sqlite-mit-modulmigrationen.md)) | `/data/mira.db` |
-| MIRA-Agent | HTTP-Dienst auf dem KI-Server ([ADR 0005](../adr/0005-odin-http-api-statt-ssh.md), [ADR 0009](../adr/0009-ki-server-als-rolle-agent-mira-agent.md)) | ab Stufe 2: `agent/` |
+| MIRA-Agent | HTTP-Dienst auf dem KI-Server ([ADR 0005](../adr/0005-agent-http-api-statt-ssh.md), [ADR 0009](../adr/0009-ki-server-als-rolle-agent-mira-agent.md)) | ab Stufe 2: `agent/` |
 | Shelly-Logger | eigener Container mit eigener SQLite-Datenbank, erfasst den Stromverbrauch des KI-Servers ([ADR 0010](../adr/0010-shelly-logger-als-eigener-container.md)) | ab Stufe 4a: `shelly-logger/` |
 | Deployment | ein Container für API + Oberfläche ([ADR 0002](../adr/0002-ein-container-fuer-api-und-frontend.md)); Shelly-Logger als eigener Stack | `Dockerfile`, `shelly-logger/Dockerfile`, `deploy/` |
 

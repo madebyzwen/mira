@@ -61,25 +61,26 @@ Firewall-Regel zum Shelly gilt nur für die Adresse des Loggers, nicht für den 
 | `LOGGER_TIMEZONE` | `Europe/Berlin` | Zeitzone für Tage, Wochen, Monate, Jahre und die Sicherungszeit |
 | `LOGGER_DATA_DIR` | `/data` | Datenbank `shelly-logger.db`, Sicherungen in `backups/` |
 | `LOGGER_HOST` / `LOGGER_PORT` | `0.0.0.0` / `8090` | Adresse der API im Container; im Stack die feste Adresse im internen Netz, damit auf der macvlan-Adresse kein Port offen ist |
-| `LOGGER_API_TOKEN_FILE` | – | Datei mit einem Token; gesetzt = alle Endpunkte außer `/health` verlangen `Authorization: Bearer <Token>` |
+| `LOGGER_API_TOKEN_FILE` | – (Stack: `/secrets/api_token.txt`) | Datei mit einem Token (mind. 32 Zeichen); gesetzt = alle Endpunkte außer `/health` verlangen `Authorization: Bearer <Token>`. Ist die Datei nicht lesbar, leer oder das Token zu kurz, **misst der Logger weiter**, die API ist aber gesperrt (`401`) – Fehlermeldung im Protokoll |
 | `LOGGER_BACKUP_TIME` / `LOGGER_BACKUP_KEEP` | `03:45` / `7` | tägliche Sicherung (Ortszeit) und Anzahl aufbewahrter Sicherungen |
+| `LOGGER_BACKUP_COPY_DIR` | – | optional: zweites, getrenntes Ziel für eine geprüfte Kopie jeder Sicherung (eigenes Volume) |
 | `LOGGER_LOG_LEVEL` | `info` | Protokollierungsstufe |
 
 Geheimnisse nur als Datei ([ADR 0006](../docs/adr/0006-geheimnisse-als-dateien.md)), nie im Repository.
 
 ## Inbetriebnahme
 
-> Erst nach ausdrücklicher Freigabe. Änderungen an Shelly, OPNsense und Homeserver nimmt der Betreiber selbst vor.
+> Erst nach ausdrücklicher Freigabe. Änderungen an Shelly, Firewall und Homeserver nimmt der Betreiber selbst vor.
 
 ### 1. Shelly vorbereiten
 
-1. **Feste Adresse** im IoT-VLAN (DHCP-Reservierung in der OPNsense).
+1. **Feste Adresse** im IoT-VLAN (DHCP-Reservierung in der Firewall).
 2. **Passwort** für die lokale Oberfläche setzen (Weboberfläche des Shelly → Einstellungen →
    Authentifizierung). Der Logger meldet sich als `admin` an.
 3. Geräteinfo prüfen – ohne Anmeldung: `http://<SHELLY_IP>/shelly`. Erwartet: `"gen": 2` oder höher;
    `"auth_en": true`, wenn ein Passwort gesetzt ist.
 
-### 2. OPNsense: genau eine Regel
+### 2. Firewall: genau eine Regel
 
 | Feld | Wert |
 | --- | --- |
@@ -103,6 +104,19 @@ chmod 600 "$APPDATA/secrets/shelly_password.txt"
 sudo chown -R 1000:1000 "$APPDATA"
 ```
 
+**Token der Lese-API** (ab Logger 0.2.0, zusätzlich zur Netztrennung): einmal erzeugen und mit
+**gleichem Inhalt** beim Logger (`api_token.txt`) und bei MIRA (`shelly_logger_token.txt`) ablegen.
+Reihenfolge bei einer Umstellung: zuerst die Dateien, dann MIRA, dann den Logger aktualisieren
+([Anleitung](../docs/entwicklung/security-hardening-review.md#deployment)).
+
+```bash
+T=$(openssl rand -hex 32)
+printf '%s\n' "$T" > "$APPDATA/secrets/api_token.txt"
+printf '%s\n' "$T" > "<APPDATA_PFAD>/mira/secrets/shelly_logger_token.txt"; unset T
+chmod 600 "$APPDATA/secrets/api_token.txt" "<APPDATA_PFAD>/mira/secrets/shelly_logger_token.txt"
+sudo chown 1000:1000 "$APPDATA/secrets/api_token.txt" "<APPDATA_PFAD>/mira/secrets/shelly_logger_token.txt"
+```
+
 ### 4. Image
 
 Das Image `ghcr.io/madebyzwen/mira-shelly-logger` entsteht bei jedem Push auf `main` (`:main`)
@@ -120,7 +134,7 @@ Stacks → Add stack → Name `mira-shelly-logger` → Web editor: Inhalt von
 | `LOGGER_IP` | `<LOGGER_IP>` – feste Adresse im Server-Netz (Pflicht) |
 | `LOGGER_NETWORK` | `macvlan_server` – Name des vorhandenen macvlan-Netzes (wie `MIRA_NETWORK`) |
 | `LOGGER_SHELLY_URL` | `http://<SHELLY_IP>` |
-| `LOGGER_VERSION` | `0.1.1` (Standard `latest`) |
+| `LOGGER_VERSION` | `0.2.0` (Standard `latest`) |
 | `LOGGER_POLL_INTERVAL_MS` | `1000` |
 | `MIRA_INTERN_SUBNET` / `LOGGER_INTERN_IP` | `172.31.250.0/28` / `172.31.250.10` – nur ändern, falls das Subnetz auf dem Homeserver schon belegt ist |
 
@@ -130,9 +144,9 @@ Der macvlan-Container kann – wie MIRA – den Homeserver selbst nicht erreiche
 ### 6. Prüfen
 
 ```bash
-docker logs mira-shelly-logger                     # „Shelly erkannt“, keine Warnungen
-docker exec mira-shelly-logger sh -c 'wget -qO- http://$LOGGER_HOST:8090/api/v1/live'
-docker exec mira-shelly-logger sh -c 'wget -qO- http://$LOGGER_HOST:8090/health'
+docker logs mira-shelly-logger                     # „Shelly erkannt“, auth: "token", keine Warnungen
+docker exec mira-shelly-logger sh -c 'wget -qO- --header "Authorization: Bearer $(cat /secrets/api_token.txt)" http://$LOGGER_HOST:8090/api/v1/live'
+docker exec mira-shelly-logger sh -c 'wget -qO- http://$LOGGER_HOST:8090/health'   # ohne Token
 ```
 
 Live-Werte mit der Shelly-App vergleichen. Nach 24 Stunden muss der Tagesverbrauch
@@ -260,8 +274,20 @@ Ein 30-Tage-Verlauf aus 86 400 Intervallen ist in rund 30 ms berechnet.
 
 Täglich um `LOGGER_BACKUP_TIME` (Standard 03:45, Ortszeit) erzeugt der Logger im laufenden Betrieb
 eine konsistente Kopie (SQLite-Backup-API) unter `data/backups/shelly-logger-JJJJ-MM-TT.db`. Die
-letzten 7 bleiben erhalten. Jede Sicherung ist eine einzelne, eigenständige Datei. Für zusätzliche
-Sicherheit `backups/` in die Sicherung des Homeservers aufnehmen.
+letzten 7 bleiben erhalten. Jede Sicherung ist eine einzelne, eigenständige Datei.
+
+Jede Sicherung wird vor dem Übernehmen geprüft (`PRAGMA integrity_check`, Migrationsstand). Schlägt
+das fehl, bleiben die vorhandenen Sicherungen unverändert. Im Protokoll steht dann
+„Hintergrundaufgabe fehlgeschlagen“ (Job `backup`) mit dem Grund, die nächste tägliche Sicherung
+läuft automatisch.
+
+Die Sicherungen liegen auf demselben Speicher wie die Datenbank. Für einen Schaden am Speicher:
+
+- **Getrenntes Ziel** (empfohlen): Ordner auf einem anderen Volume anlegen (UID 1000, `chmod 700`),
+  im Stack als Volume `…:/backup-copy` einhängen und `LOGGER_BACKUP_COPY_DIR=/backup-copy` setzen.
+  Dorthin geht eine zusätzliche, geprüfte Kopie mit eigener Aufbewahrung. Ein Fehler dort wird
+  protokolliert, die lokale Sicherung bleibt gültig.
+- zusätzlich `backups/` in die Sicherung des Homeservers aufnehmen.
 
 Wiederherstellen:
 

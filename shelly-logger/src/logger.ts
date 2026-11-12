@@ -48,7 +48,10 @@ export function createShellyLogger(config: LoggerConfig, options: { logger?: boo
   const client = new ShellyClient({ baseUrl: config.shelly.url, password: config.shelly.password, timeoutMs: config.requestTimeoutMs });
 
   // Ein Logger (Fastify/pino) für API, Abfrage und Hintergrundaufgaben
-  const app = createApp({ apiToken: config.apiToken, logger: options.logger ?? { level: config.logLevel } });
+  const app = createApp({ apiToken: config.apiToken, apiTokenError: config.apiTokenError, logger: options.logger ?? { level: config.logLevel } });
+  if (config.apiTokenError) {
+    app.log.error({ reason: config.apiTokenError }, 'API-Token nicht nutzbar – die Lese-API ist bis zur Korrektur gesperrt (außer /health), die Messung läuft weiter');
+  }
   const poller = new Poller({
     client,
     intervalMs: config.pollIntervalMs,
@@ -75,8 +78,9 @@ export function createShellyLogger(config: LoggerConfig, options: { logger?: boo
     const delay = nextLocalTime(config.backup.time, Date.now(), config.timeZone) - Date.now();
     const t = setTimeout(async () => {
       await guard('backup', async () => {
-        const r = await store.backup(path.join(config.dataDir, 'backups'), config.backup.keep);
-        app.log.info({ file: r.file, bytes: r.bytes, removed: r.removed }, 'Datenbank gesichert');
+        const r = await store.backup(path.join(config.dataDir, 'backups'), config.backup.keep, Date.now(), config.backup.copyDir);
+        app.log.info({ file: r.file, bytes: r.bytes, removed: r.removed, copy: r.copy }, 'Datenbank gesichert');
+        if (r.copy && 'error' in r.copy) app.log.error({ reason: r.copy.error, dir: config.backup.copyDir }, 'Kopie der Sicherung auf das getrennte Ziel fehlgeschlagen');
       })();
       scheduleBackup();
     }, delay);

@@ -7,6 +7,8 @@ export const ERROR_CODES = [
   'invalid_credentials',
   'rate_limited',
   'forbidden_origin',
+  /** Anfrage kam unverschlüsselt (HTTP), MIRA verlangt HTTPS (`MIRA_PUBLIC_URL`) */
+  'https_required',
   'not_found',
   /** Ein angebundener Dienst (z. B. der Shelly-Logger) ist nicht erreichbar */
   'service_unavailable',

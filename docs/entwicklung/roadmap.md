@@ -10,12 +10,13 @@ Status: ✅ abgeschlossen · 🔍 umgesetzt, Abnahme ausstehend · 🚧 in Umset
 | --- | --- | --- | --- |
 | [0](stufe-00-weboberflaeche.md) | Klickbare Weboberfläche nach Mockups, Demo-Daten | nein | ✅ |
 | [1](stufe-01-fundament.md) | Fundament: Backend-Kern, SQLite + Migrationen, echte Anmeldung, ein Container, Tests | nein | ✅ |
-| [2](stufe-02-odin-lesen.md) | KI-Server lesen: Agent (`health`, `system/info`, `system/metrics`), Online-Zustand, Ansicht mit Live-Daten; zuerst gegen den Test-KI-Server | KI-Server: Dienst, Benutzer, Firewall · Homeserver: macvlan-IP für MIRA | ✅ |
+| [2](stufe-02-ki-server-lesen.md) | KI-Server lesen: Agent (`health`, `system/info`, `system/metrics`), Online-Zustand, Ansicht mit Live-Daten; zuerst gegen den Test-KI-Server | KI-Server: Dienst, Benutzer, Firewall · Homeserver: macvlan-IP für MIRA | ✅ |
 | [3](stufe-03-messwert-historie.md) | Messwert-Historie: Scheduler, Speicherung, Verdichtung, Aufbewahrung; echte Diagramme des KI-Servers; Backup-Konzept | nein | ✅ |
 | [3a](stufe-03a-ki-server-bereinigung.md) | Bereinigung: durchgängig „KI-Server“, Name konfigurierbar (`MIRA_AI_SERVER_NAME`), Agent `mira-agent` ([ADR 0009](../adr/0009-ki-server-als-rolle-agent-mira-agent.md)); **Voraussetzung für Stufe 4** | KI-Server: Agent neu installieren (übernimmt die Altinstallation) · Homeserver: Stack-Variablen, Secret umbenennen | ✅ |
-| [4a](stufe-04a-shelly-logger.md) | Shelly-Logger: eigener Container mit eigener SQLite-Datenbank, Abfrage 1 s (lokal, nur lesend), 30-s-Verdichtung, Tag/Woche/Monat/Jahr, interne Lese-API ([ADR 0010](../adr/0010-shelly-logger-als-eigener-container.md)); ersetzt die Planung in [Stufe 4](stufe-04-shelly.md) | Homeserver: eigener Stack mit macvlan-IP · OPNsense: `<LOGGER_IP>` → `<SHELLY_IP>`, TCP 80 | 🔍 |
-| [4b](stufe-04b-shelly-mira-integration.md) | Shelly in MIRA: Anbindung an den Logger, Live-Leistung, Verbrauch, Kosten (Strompreis mit Gültigkeitsdatum), Verlauf, Dashboard-Widget „Verbrauch“ | MIRA-Stack: internes Netz `mira-intern` | 🔍 |
-| [5a](stufe-05a-schlafen-aufwecken-neustart.md) | Vorgezogen: KI-Server per Knopf schlafen legen, aufwecken (Wake-on-LAN direkt aus MIRA), neu starten; Zustand „schläft“ ([ADR 0011](../adr/0011-energiesteuerung-polkit-und-direktes-wake-on-lan.md)) | KI-Server: polkit-Regel, Wake-on-LAN (BIOS, `eno1`) | ⏳ |
+| [4a](stufe-04a-shelly-logger.md) | Shelly-Logger: eigener Container mit eigener SQLite-Datenbank, Abfrage 1 s (lokal, nur lesend), 30-s-Verdichtung, Tag/Woche/Monat/Jahr, interne Lese-API ([ADR 0010](../adr/0010-shelly-logger-als-eigener-container.md)); ersetzt die Planung in [Stufe 4](stufe-04-shelly.md) | Homeserver: eigener Stack mit macvlan-IP · Firewall: `<LOGGER_IP>` → `<SHELLY_IP>`, TCP 80 | ✅ |
+| [4b](stufe-04b-shelly-mira-integration.md) | Shelly in MIRA: Anbindung an den Logger, Live-Leistung, Verbrauch, Kosten (Strompreis mit Gültigkeitsdatum), Verlauf, Dashboard-Widget „Verbrauch“ | MIRA-Stack: internes Netz `mira-intern` | ✅ |
+| [W1](security-hardening-review.md) | Wartung: Härtung und Stabilität – HTTPS-Pflicht, enges Proxy-Vertrauen, Passwort ändern, Token für die Logger-API, Container-Härtung, Prüfung von Abhängigkeiten und Images in der CI, Zwischenspeicher, Lückenerkennung und Polling überarbeitet, geprüfte Sicherungen (MIRA 0.9.0, Logger 0.2.0) | Homeserver: Stacks, Token-Dateien, `MIRA_PUBLIC_URL` · NPM/Firewall/KI-Server: keine Pflichtänderung | ✅ |
+| [5a](stufe-05a-schlafen-aufwecken-neustart.md) | Vorgezogen: KI-Server per Knopf schlafen legen, aufwecken (Wake-on-LAN direkt aus MIRA), neu starten; Zustand „schläft“ ([ADR 0012](../adr/0012-energiesteuerung-polkit-und-direktes-wake-on-lan.md)) | KI-Server: polkit-Regel, Wake-on-LAN (BIOS, `eno1`) | ⏳ |
 | 5 | Energiesteuerung (Rest): Herunterfahren, Neustart in Windows, Verfügbarkeitsprüfung | KI-Server: polkit-Regel, GRUB | ⏳ |
 | 6 | Dashboard mit echten Daten: Docker-Status, Ressourcen, Strom, LLMs | KI-Server: sudo-Regel `docker ps` | ⏳ |
 | 7 | LLM-Übersicht: auflisten, Info, löschen mit Sicherheitsabfrage | KI-Server: Leserechte Modellverzeichnis | ⏳ |
@@ -38,6 +39,9 @@ Konfigurations-Widgets entstehen jeweils **mit ihrer Stufe** (z. B. Verbindung z
   vorerst nicht umgesetzt; Stufe 10 bleibt als Platzhalter stehen und wird bei Bedarf neu bewertet.
   Die Platzhalter aus Stufe 0 (Menü, Seite, Dashboard-Widget, Konfiguration) sind über den
   Schalter `features.agents` in `frontend/src/lib/features.ts` ausgeblendet.
+- **Wartung W1 vor Stufe 4c/5 (2026-11-12):** Härtung und Stabilität der bestehenden Grundlage,
+  bevor weitere Funktionen entstehen. Abgeschlossene Stufen bleiben abgeschlossen; W1 ist eine
+  eigene Wartungsstufe ohne neue Roadmap-Funktionen.
 - **Schlafmodus zuletzt:** braucht Energiesteuerung, Jobs und Aktivitätserkennung;
   Suspend/Resume mit AMD-GPU und ROCm muss vorher manuell als zuverlässig bestätigt sein.
 
@@ -45,7 +49,7 @@ Konfigurations-Widgets entstehen jeweils **mit ihrer Stufe** (z. B. Verbindung z
 
 | Thema | Benötigt bis |
 | --- | --- |
-| Suspend/Resume mit GPU geprüft, MAC und `Wake-on` von `eno1`, Leistung im Schlaf ([Stufe 5a](stufe-05a-schlafen-aufwecken-neustart.md#offene-angaben-vom-betreiber)) | Stufe 5a |
+| Suspend/Resume mit GPU geprüft, MAC und `Wake-on` von `eno1` ([Stufe 5a](stufe-05a-schlafen-aufwecken-neustart.md#offene-angaben-vom-betreiber)) | Stufe 5a |
 | GRUB-Eintrag für Windows, Wake-on-LAN aus dem ausgeschalteten Zustand | Stufe 5 |
 | Modellverzeichnis, Aufbau von llama.cpp/Containern auf dem KI-Server | Stufe 6–8 |
 | Automatisches Aufwecken bei Anfragen aus Open WebUI (neue Funktion) | vor Stufe 9 |

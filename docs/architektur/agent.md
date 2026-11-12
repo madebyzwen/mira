@@ -1,6 +1,6 @@
 # MIRA-Agent (Konzept)
 
-Status: **Stufe 2 umgesetzt** (lesende Endpunkte). Code: `agent/`, Installation: [`agent/install/README.md`](../../agent/install/README.md). Entscheidungen: [ADR 0005](../adr/0005-odin-http-api-statt-ssh.md), [ADR 0009](../adr/0009-ki-server-als-rolle-agent-mira-agent.md).
+Status: **Stufe 2 umgesetzt** (lesende Endpunkte). Code: `agent/`, Installation: [`agent/install/README.md`](../../agent/install/README.md). Entscheidungen: [ADR 0005](../adr/0005-agent-http-api-statt-ssh.md), [ADR 0009](../adr/0009-ki-server-als-rolle-agent-mira-agent.md).
 
 Der MIRA-Agent ist die einzige Schnittstelle zwischen MIRA und dem KI-Server.
 Dessen Anzeigename ist in MIRA frei wählbar (`MIRA_AI_SERVER_NAME`); Paket, Dienst und
@@ -26,13 +26,13 @@ Entscheidungen (z. B. „nach 45 Minuten schlafen“) trifft ausschließlich MIR
   (`<KI_SERVER_IP>`). Die 10-GbE-Direktverbindung ist ausschließlich für den
   Fileshare und wird nicht verwendet.
 - Der MIRA-Container hat über macvlan eine **eigene IP im Server-Netz** (`<MIRA_IP>`)
-  und spricht den KI-Server direkt an – ohne Umweg über die OPNsense (Stand 2026-11-06;
+  und spricht den KI-Server direkt an – ohne Umweg über die Firewall (Stand 2026-11-06;
   ursprünglich war die Adresse des Homeservers in einem anderen VLAN vorgesehen).
 - Freigaben:
   - Auf dem KI-Server (ufw ist dort inaktiv und bleibt unverändert): eigene nftables-Tabelle
     `inet mira_agent`, die **nur** Port 8443 betrifft und nur `<MIRA_IP>` zulässt
     (systemd-Unit `mira-agent-firewall`).
-  - Eine OPNsense-Regel ist nur nötig, wenn MIRA und der KI-Server in verschiedenen Netzen liegen.
+  - Eine Firewall-Regel ist nur nötig, wenn MIRA und der KI-Server in verschiedenen Netzen liegen.
   - Zusätzlich trennt der Agent selbst jede Verbindung von nicht erlaubten Adressen
     noch vor dem TLS-Handshake – auch wenn die nftables-Regel fehlt.
 
@@ -43,7 +43,7 @@ Entscheidungen (z. B. „nach 45 Minuten schlafen“) trifft ausschließlich MIR
 | TLS mit selbst erstelltem Zertifikat, Fingerprint in MIRA hinterlegt | Verschlüsselung und Schutz vor untergeschobenem Server |
 | Langes Zufallstoken pro Anfrage; auf dem KI-Server nur der Hash, auf dem Homeserver als Secret-Datei | Nur MIRA darf den Agent nutzen |
 | Nur fest definierte Endpunkte, keine Ausführung beliebiger Befehle | Kleine Angriffsfläche |
-| Energieaktionen (Schlafen, Neustart) über logind mit einer eng begrenzten **polkit-Regel** für `mira-agent` ([ADR 0011](../adr/0011-energiesteuerung-polkit-und-direktes-wake-on-lan.md)); der Dienst bleibt bei `NoNewPrivileges` | Keine pauschalen Root-Rechte, kein sudo |
+| Energieaktionen (Schlafen, Neustart) über logind mit einer eng begrenzten **polkit-Regel** für `mira-agent` ([ADR 0012](../adr/0012-energiesteuerung-polkit-und-direktes-wake-on-lan.md)); der Dienst bleibt bei `NoNewPrivileges` | Keine pauschalen Root-Rechte, kein sudo |
 | Docker-Status über exakte sudo-Regel für `docker ps --all --format json` statt Gruppe `docker` | Gruppe `docker` wäre faktisch Root |
 | Protokollierung im systemd-Journal (KI-Server) und im Audit-Log (MIRA) | Nachvollziehbarkeit |
 
@@ -98,5 +98,5 @@ Die Installation auf dem KI-Server führt der Betreiber nach Anleitung selbst au
 
 Ein schlafender KI-Server hat keinen erreichbaren Agent. Wake-on-LAN ist daher ein eigener Weg. Da
 MIRA per macvlan im selben Netz wie der KI-Server liegt, kann es das Magic Packet direkt
-senden – vorgesehen in [ADR 0011](../adr/0011-energiesteuerung-polkit-und-direktes-wake-on-lan.md),
-die den Umweg über die OPNsense ([ADR 0007](../adr/0007-wake-on-lan-ueber-opnsense.md)) ersetzt.
+senden – vorgesehen in [ADR 0012](../adr/0012-energiesteuerung-polkit-und-direktes-wake-on-lan.md),
+die den Umweg über die Firewall ([ADR 0007](../adr/0007-wake-on-lan-ueber-die-firewall.md)) ersetzt.

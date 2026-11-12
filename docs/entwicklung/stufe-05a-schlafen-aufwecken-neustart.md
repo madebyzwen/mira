@@ -2,8 +2,9 @@
 
 - Status: ⏳ Konzept, Freigabe ausstehend (notiert 2026-11-10)
 - Vorgezogener Teil von Stufe 5 (Energiesteuerung). Der **automatische** Schlafmodus bleibt Stufe 9.
-- Entscheidung: [ADR 0011](../adr/0011-energiesteuerung-polkit-und-direktes-wake-on-lan.md) (ersetzt ADR 0007)
-- Zielversionen: MIRA 0.9.0, MIRA-Agent 0.3.0
+- Entscheidung: [ADR 0012](../adr/0012-energiesteuerung-polkit-und-direktes-wake-on-lan.md) (ersetzt ADR 0007)
+- Zielversionen: MIRA 0.11.0, MIRA-Agent 0.3.0
+- Baut auf: [Stufe 4c](stufe-04c-betriebsart.md) – der Zustand „schläft“ nutzt die Betriebsart `standby` des Shelly-Loggers (Festlegung 2026-11-11)
 
 ## Ziel
 
@@ -28,7 +29,7 @@ Dashboard ── Bestätigung ──▶ MIRA POST /api/v1/systems/ai-server/powe
 
 | Aktion | Ablauf | Erfolg | Fehler |
 | --- | --- | --- | --- |
-| Schlafen | Agent bestätigt, löst nach ≈ 1 s `systemctl suspend` aus | Agent innerhalb von 60 s nicht mehr erreichbar; Shelly-Leistung fällt unter die Schwelle | Agent nach 60 s noch erreichbar (z. B. Sperre durch laufenden Job) → Meldung mit Grund aus dem Agent |
+| Schlafen | Agent bestätigt, löst nach ≈ 1 s `systemctl suspend` aus | Agent innerhalb von 60 s nicht mehr erreichbar; Logger meldet die Betriebsart `standby` | Agent nach 60 s noch erreichbar (z. B. Sperre durch laufenden Job) → Meldung mit Grund aus dem Agent |
 | Aufwecken | Magic Packet 3× im Abstand von 1 s | Agent innerhalb von 120 s wieder erreichbar | sonst Meldung „nicht aufgewacht“ |
 | Neustart | Agent bestätigt, löst nach ≈ 1 s `systemctl reboot` aus | Agent nach dem Neustart innerhalb von 5 min wieder erreichbar | sonst Meldung |
 
@@ -37,7 +38,7 @@ Dashboard ── Bestätigung ──▶ MIRA POST /api/v1/systems/ai-server/powe
 | Zustand | Bedeutung | Erkennung |
 | --- | --- | --- |
 | `online` | Agent antwortet | wie bisher |
-| `sleeping` | schläft | MIRA hat ihn schlafen gelegt **oder** Agent nicht erreichbar und Shelly misst weniger als `MIRA_AI_SERVER_SLEEP_POWER_W` |
+| `sleeping` | schläft | MIRA hat ihn schlafen gelegt **oder** Agent nicht erreichbar und der Logger meldet die Betriebsart `standby` (Stufe 4c) |
 | `offline` | nicht erreichbar, Ursache unklar | Agent nicht erreichbar und Leistung hoch bzw. keine Shelly-Messung |
 | Übergänge | „schläft ein …“, „wacht auf …“, „startet neu …“ | nur in der Oberfläche, bis Erfolg oder Zeitüberschreitung |
 
@@ -62,10 +63,10 @@ Dashboard ── Bestätigung ──▶ MIRA POST /api/v1/systems/ai-server/powe
 | --- | --- |
 | Agent 0.3.0 | `POST /v1/power/suspend`, `POST /v1/power/reboot` (202, Ausführung danach); `/v1/health` meldet die letzte Energieaktion samt Fehler; Sperre 30 s; Tests mit nachgebildetem `systemctl` |
 | `install.sh` | legt `/etc/polkit-1/rules.d/50-mira-agent.rules` an, prüft polkit-Version; `uninstall.sh` entfernt sie. Zusammen mit [A-006](../aufgaben/a-006-uebergang-ki-server-aufraeumen.md) (Übergangsregeln entfernen) |
-| MIRA 0.9.0 | `POST /api/v1/systems/ai-server/power` (`suspend`/`reboot`/`wake`), Magic Packet, Zustand `sleeping` (Migration), langsamere Abfrage im Schlaf, Audit-Log, Sperre |
+| MIRA 0.11.0 | `POST /api/v1/systems/ai-server/power` (`suspend`/`reboot`/`wake`), Magic Packet, Zustand `sleeping` (Migration), langsamere Abfrage im Schlaf, Audit-Log, Sperre |
 | Oberfläche | Dashboard-Knöpfe mit Bestätigungsdialog und Fortschritt; Zustand „schläft“ in Navigation, Dashboard und KI-Server-Seite |
-| Konfiguration | `MIRA_AI_SERVER_MAC`, `MIRA_AI_SERVER_WOL_BROADCAST` (z. B. `<SERVER_NETZ>.255`), `MIRA_AI_SERVER_SLEEP_POWER_W` (Standard 20 W) – ohne MAC kein „Aufwecken“-Knopf |
-| Tests | Agent (Aktion, Sperre, Fehler von `systemctl`), MIRA (Ablauf, Zeitüberschreitungen, Audit, Zustände inkl. Shelly-Schwelle), Magic-Packet-Format; Test-KI-Server mit nachgebildetem `systemctl suspend` |
+| Konfiguration | `MIRA_AI_SERVER_MAC`, `MIRA_AI_SERVER_WOL_BROADCAST` (z. B. `<SERVER_NETZ>.255`) – ohne MAC kein „Aufwecken“-Knopf; keine eigene Leistungsschwelle in MIRA (Schwelle Bereitschaft im Logger, Stufe 4c) |
+| Tests | Agent (Aktion, Sperre, Fehler von `systemctl`), MIRA (Ablauf, Zeitüberschreitungen, Audit, Zustände inkl. Betriebsart des Loggers), Magic-Packet-Format; Test-KI-Server mit nachgebildetem `systemctl suspend` |
 
 ## Vorab-Prüfung am KI-Server (Betreiber)
 
@@ -90,8 +91,8 @@ funktionieren – mit AMD-GPU (ROCm) ist das nicht selbstverständlich.
    ```
    `<MAC>` aus Prüfung 1 (Format `aa:bb:cc:dd:ee:ff`), `<SERVER_NETZ_BROADCAST>` z. B. die `.255`-Adresse
    des Server-Netzes. Genau so sendet MIRA später selbst.
-4. **Leistung im Schlaf:** Wert in der Shelly-App bzw. MIRA notieren – daraus ergibt sich die
-   Schwelle `MIRA_AI_SERVER_SLEEP_POWER_W`.
+4. **Leistung im Schlaf:** bereits gemessen (< 2 W, 2026-11-11) – die Schwelle Bereitschaft liegt im
+   Logger (`LOGGER_STANDBY_POWER_W`, Stufe 4c).
 
 ## Abnahme
 
@@ -108,4 +109,4 @@ funktionieren – mit AMD-GPU (ROCm) ist das nicht selbstverständlich.
 | Ergebnis von Suspend/Resume mit GPU (Prüfung 2) | Voraussetzung |
 | `Wake-on`-Status und MAC von `eno1` | Aufwecken |
 | Broadcast-Adresse des Server-Netzes | Aufwecken |
-| Leistung im Schlaf (W) | Erkennung „schläft“ |
+| ~~Leistung im Schlaf (W)~~ | ✅ < 2 W (2026-11-11), Schwelle im Logger (Stufe 4c) |
