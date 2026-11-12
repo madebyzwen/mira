@@ -1,6 +1,6 @@
 # Stufe 4a – Shelly-Logger
 
-- Status: 🔍 in Betrieb seit 2026-11-10 (Logger 0.1.1), Abnahme nach 24 h ausstehend
+- Status: ✅ abgenommen 2026-11-12 (in Betrieb seit 2026-11-10 mit Logger 0.1.1, inzwischen 0.2.0)
 - Entscheidung: [ADR 0010](../adr/0010-shelly-logger-als-eigener-container.md) – ersetzt die Planung in [Stufe 4](stufe-04-shelly.md)
 - Code: [`shelly-logger/`](../../shelly-logger/) · Betriebshandbuch: [`shelly-logger/README.md`](../../shelly-logger/README.md)
 - Folgt: [Stufe 4b – MIRA-Integration](stufe-04b-shelly-mira-integration.md) (eigene Freigabe)
@@ -102,11 +102,11 @@ Werte aus `/health` nach 4 Minuten Betrieb (Abfrage alle 1000 ms):
 
 - [x] Gerät erkannt (Modell, Generation, Komponente) und Live-Werte plausibel
 - [x] Messung am echten Shelly: Frequenz 1 Hz, Fehlerrate 0, Antwortzeiten deutlich unter 800 ms
-- [ ] Nach 24 h: Tagesverbrauch entspricht dem Zählerfortschritt des Shelly
+- [x] Nach 24 h: Tagesverbrauch entspricht dem Zählerfortschritt des Shelly
 - [x] Neustart des Containers ohne Doppelzählung (2026-11-10: Zähler +1,688 Wh, Logger +1,688 Wh über den Neustart)
-- [ ] Neustart des Homeservers ohne Doppelzählung (bei Gelegenheit)
-- [ ] Sicherung vorhanden (`data/backups/`)
-- [ ] KI-Server im Ruhezustand: Messung läuft weiter, Zustand „online“
+- [ ] Neustart des Homeservers ohne Doppelzählung (bei Gelegenheit – keine Voraussetzung für die Abnahme)
+- [x] Sicherung vorhanden (`data/backups/`)
+- [x] KI-Server im Ruhezustand: Messung läuft weiter, Zustand „online“
 
 ## Offene Angaben (vom Betreiber)
 
