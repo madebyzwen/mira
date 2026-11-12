@@ -1,6 +1,6 @@
 # Wartung W1 – Härtung und Stabilität (MIRA 0.9.0, Shelly-Logger 0.2.0)
 
-- Stand: 2026-11-12
+- Stand: 2026-11-12 – abgenommen und in Betrieb (MIRA 0.9.0, Shelly-Logger 0.2.0)
 - Umsetzung: Pull-Request #10, Tags `v0.9.0` und `shelly-logger-v0.2.0`
 - Art: Wartung – keine neuen Funktionen aus Stufe 4c, 5a oder später
 - MIRA-Agent: unverändert 0.2.0
