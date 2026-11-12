@@ -20,6 +20,7 @@ services:
       MIRA_ADMIN_DISPLAY_NAME: ${MIRA_ADMIN_DISPLAY_NAME:-Admin}
       MIRA_ADMIN_PASSWORD_FILE: /secrets/admin_password.txt
       MIRA_TRUST_PROXY: ${MIRA_TRUST_PROXY:-false}
+      MIRA_PUBLIC_URL: ${MIRA_PUBLIC_URL:-}
       MIRA_LOG_LEVEL: ${MIRA_LOG_LEVEL:-info}
       # KI-Server: optionaler Anzeigename (ohne Angabe „KI-Server“) und Verbindung zum MIRA-Agent
       MIRA_AI_SERVER_NAME: ${MIRA_AI_SERVER_NAME:-}
@@ -34,5 +35,7 @@ services:
     read_only: true
     tmpfs:
       - /tmp
+    cap_drop:
+      - ALL
     security_opt:
       - no-new-privileges:true

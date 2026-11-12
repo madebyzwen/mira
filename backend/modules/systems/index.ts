@@ -144,11 +144,14 @@ function createLoggerClient(cfg: CoreContext['config']['shellyLogger'], app: Fas
   if (!cfg.url) return null;
   let token: string | undefined;
   if (cfg.tokenFile) {
+    // Fehlertolerant: ohne lesbare Datei weiter ohne Token. Verlangt der Logger eines,
+    // zeigt MIRA „Token abgelehnt“ – die Verbindung wird nicht stillschweigend abgeschaltet.
     try {
       token = fs.readFileSync(cfg.tokenFile, 'utf8').trim() || undefined;
+      if (!token) app.log.warn({ file: cfg.tokenFile }, 'Token-Datei für den Shelly-Logger ist leer – Anfragen ohne Token');
     } catch (err) {
-      app.log.error({ err, file: cfg.tokenFile }, 'Token-Datei für den Shelly-Logger nicht lesbar');
-      return null;
+      const code = (err as NodeJS.ErrnoException).code;
+      app.log.warn({ file: cfg.tokenFile, code }, 'Token-Datei für den Shelly-Logger nicht lesbar – Anfragen ohne Token');
     }
   }
   return new LoggerClient({ url: cfg.url, token });

@@ -1,0 +1,23 @@
+# Hält die auf Commit-SHAs festgelegten GitHub Actions, die npm-Abhängigkeiten und die
+# Node.js-Basisimages aktuell (Pull-Requests, wöchentlich). Zusammenführen erst nach grüner CI.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+  - package-ecosystem: docker
+    directories:
+      - /
+      - /shelly-logger
+    schedule:
+      interval: weekly
+    # Node.js-Hauptversion (22 LTS) nur bewusst wechseln
+    ignore:
+      - dependency-name: node
+        update-types: ['version-update:semver-major']

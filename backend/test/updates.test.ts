@@ -67,6 +67,8 @@ async function start({ config, version = '0.5.1', env = {}, manualCheckIntervalM
   cfg.version = version;
   const mira: MiraApp = await buildApp(cfg, { logger: false, modules: [], fetchRelease: gh.fetch, now: clk.now, manualCheckIntervalMs });
   await mira.app.ready();
+  // Diese Tests betrachten nur Update-Meldungen – den HTTPS-Hinweis (eigener Test) ausblenden
+  mira.notifications.remove('security:https');
   let closed = false;
   const close = async () => {
     if (!closed) {
@@ -208,17 +210,54 @@ describe('Update-Prüfung › Zeitpunkte und Zählung', () => {
     expect(m.gh.calls).toBe(1);
   });
 
-  it('Entwicklungsphase (A-005): jeder Klick auf „Jetzt prüfen“ prüft', async () => {
+  it('Sperrfrist ist ab Werk aktiv (A-005): ein zweiter Klick prüft nicht erneut', async () => {
     const m = await start();
-    for (let i = 1; i <= 3; i++) {
-      const res = (await m.req('POST', '/api/v1/system/update/check')).json();
-      expect(res).toMatchObject({ performed: true, status: { nextManualCheckAt: null } });
-      expect(m.gh.calls).toBe(i);
-    }
+    expect((await m.req('POST', '/api/v1/system/update/check')).json()).toMatchObject({ performed: true });
+    const again = (await m.req('POST', '/api/v1/system/update/check')).json();
+    expect(again.performed).toBe(false);
+    expect(new Date(again.status.nextManualCheckAt).getTime()).toBe(m.clk.current.getTime() + MANUAL_CHECK_LOCK_MS);
+    expect(m.gh.calls).toBe(1);
+  });
+
+  it('gleichzeitige Klicks auf „Jetzt prüfen“ lösen genau eine Abfrage bei GitHub aus', async () => {
+    const m = await start();
+    let release!: () => void;
+    m.gh.gate = new Promise((r) => (release = r));
+    const pending = Promise.all([1, 2, 3].map(() => m.req('POST', '/api/v1/system/update/check')));
+    await tick();
+    release();
+    const results = (await pending).map((r) => r.json().performed);
+    expect(results.filter(Boolean)).toHaveLength(1);
+    expect(m.gh.calls).toBe(1);
+  });
+
+  it('auch eine fehlgeschlagene Prüfung von Hand startet die Sperrfrist und wird protokolliert', async () => {
+    const m = await start();
+    m.gh.failWith = 'rate_limited';
+    const res = (await m.req('POST', '/api/v1/system/update/check')).json();
+    expect(res).toMatchObject({ performed: true, status: { lastCheck: { trigger: 'manual', ok: false, error: 'rate_limited' } } });
+    expect(res.status.nextManualCheckAt).not.toBeNull();
+    m.gh.failWith = null;
+    expect((await m.req('POST', '/api/v1/system/update/check')).json().performed).toBe(false);
+    expect(m.gh.calls).toBe(1);
+    m.clk.advance(MANUAL_CHECK_LOCK_MS);
+    expect((await m.req('POST', '/api/v1/system/update/check')).json()).toMatchObject({ performed: true, status: { lastCheck: { ok: true } } });
+    const audit = m.db.prepare("SELECT result, details FROM audit_log WHERE action = 'update.check' ORDER BY id").all();
+    expect(audit).toEqual([
+      { result: 'failure', details: JSON.stringify({ error: 'rate_limited' }) },
+      { result: 'success', details: null },
+    ]);
+  });
+
+  it('eine zurückgestellte Uhr sperrt die Prüfung von Hand nicht dauerhaft', async () => {
+    const m = await start();
+    expect((await m.req('POST', '/api/v1/system/update/check')).json().performed).toBe(true);
+    m.clk.advance(-24 * HOUR);
+    expect((await m.req('POST', '/api/v1/system/update/check')).json().performed).toBe(true);
   });
 
   it('Prüfung von Hand mit Sperrfrist: höchstens einmal je Stunde, zählt nicht gegen die automatischen', async () => {
-    const m = await start({ manualCheckIntervalMs: MANUAL_CHECK_LOCK_MS });
+    const m = await start();
     const first = await m.req('POST', '/api/v1/system/update/check');
     expect(first.json()).toMatchObject({ performed: true, status: { lastCheck: { trigger: 'manual', ok: true } } });
     expect(m.gh.calls).toBe(1);

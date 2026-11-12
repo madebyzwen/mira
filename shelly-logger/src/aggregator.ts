@@ -31,7 +31,8 @@ export const bucketStart = (ts: number) => Math.floor(ts / BUCKET_MS) * BUCKET_M
  * - Rücksprung des Zählers (Neustart/Reset des Shelly) → Zählerstand danach zählt ab 0 weiter
  * - Sprung über der physikalischen Grenze → unplausibel, wird nicht verbucht
  * - längere Lücke (Ausfall, Neustart des Loggers) → Differenz als „rekonstruiert“
- *   (Summe sicher, Verteilung unbekannt), je Kalendertag zeitanteilig aufgeteilt
+ *   (Summe sicher, Verteilung unbekannt), je Kalendertag zeitanteilig aufgeteilt – auch wenn
+ *   die Lücke innerhalb eines einzigen 30-s-Intervalls liegt
  *
  * Der zuletzt verbuchte Zählerstand wird mit jedem Intervall in derselben Transaktion
  * gespeichert – nach einem Neustart wird nichts doppelt gezählt.
@@ -151,7 +152,9 @@ export class Aggregator {
           if (total <= this.plausibleWh(dt)) energy! += total;
         } else if (d > this.plausibleWh(dt)) {
           quality = 'implausible';
-        } else if (dt > this.gapMs && prev.ts < start) {
+        } else if (dt > this.gapMs) {
+          // Lücke zwischen zwei Zählerständen – unabhängig davon, ob sie eine Intervallgrenze
+          // überschreitet: Summe aus dem Zähler sicher, Verteilung unbekannt → rekonstruiert
           gaps.push(...this.splitGap(prev.ts, r.ts, d));
         } else {
           energy! += Math.max(d, 0);

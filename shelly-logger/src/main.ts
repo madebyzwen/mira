@@ -2,6 +2,9 @@ import { z } from 'zod';
 import { loadConfig } from './config.ts';
 import { createShellyLogger, readVersion } from './logger.ts';
 
+// Datenbank und Sicherungen nur für den Logger-Benutzer lesbar
+process.umask(0o077);
+
 function readConfig() {
   try {
     return loadConfig();
@@ -39,7 +42,7 @@ try {
   await app.listen({ host: config.host, port: config.port });
   logger.start();
   app.log.info(
-    { version, pollIntervalMs: config.pollIntervalMs, timeZone: config.timeZone, shelly: config.shelly.url, auth: Boolean(config.apiToken) },
+    { version, pollIntervalMs: config.pollIntervalMs, timeZone: config.timeZone, shelly: config.shelly.url, auth: config.apiTokenError ? 'gesperrt' : config.apiToken ? 'token' : 'aus' },
     'Shelly-Logger gestartet',
   );
 } catch (err) {

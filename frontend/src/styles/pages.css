@@ -1471,3 +1471,23 @@
   gap: var(--space-1);
   min-width: 10rem;
 }
+
+/* Konfiguration › MIRA › Konto */
+.account-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  max-width: 28rem;
+}
+
+.account-form label {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.account-form__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}

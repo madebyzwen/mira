@@ -15,6 +15,7 @@ Status: ✅ abgeschlossen · 🔍 umgesetzt, Abnahme ausstehend · 🚧 in Umset
 | [3a](stufe-03a-ki-server-bereinigung.md) | Bereinigung: durchgängig „KI-Server“, Name konfigurierbar (`MIRA_AI_SERVER_NAME`), Agent `mira-agent` ([ADR 0009](../adr/0009-ki-server-als-rolle-agent-mira-agent.md)); **Voraussetzung für Stufe 4** | KI-Server: Agent neu installieren (übernimmt die Altinstallation) · Homeserver: Stack-Variablen, Secret umbenennen | ✅ |
 | [4a](stufe-04a-shelly-logger.md) | Shelly-Logger: eigener Container mit eigener SQLite-Datenbank, Abfrage 1 s (lokal, nur lesend), 30-s-Verdichtung, Tag/Woche/Monat/Jahr, interne Lese-API ([ADR 0010](../adr/0010-shelly-logger-als-eigener-container.md)); ersetzt die Planung in [Stufe 4](stufe-04-shelly.md) | Homeserver: eigener Stack mit macvlan-IP · OPNsense: `<LOGGER_IP>` → `<SHELLY_IP>`, TCP 80 | 🔍 |
 | [4b](stufe-04b-shelly-mira-integration.md) | Shelly in MIRA: Anbindung an den Logger, Live-Leistung, Verbrauch, Kosten (Strompreis mit Gültigkeitsdatum), Verlauf, Dashboard-Widget „Verbrauch“ | MIRA-Stack: internes Netz `mira-intern` | 🔍 |
+| [W1](security-hardening-review.md) | Wartung: Sicherheitshärtung und Stabilität nach externem Code-Review – HTTPS-Pflicht, enges Proxy-Vertrauen, Passwort ändern, Token für die Logger-API, Container-Härtung, Schwachstellenprüfung in der CI, Korrekturen an Zwischenspeichern, Lückenerkennung und Polling, geprüfte Sicherungen (MIRA 0.9.0, Logger 0.2.0) | Homeserver: Stacks, Token-Dateien, `MIRA_PUBLIC_URL` · NPM/OPNsense/KI-Server: keine Pflichtänderung | 🔍 |
 | 5 | Energiesteuerung: Wake-on-LAN, Suspend, Herunterfahren, Neustart, Windows-Neustart, Verfügbarkeitsprüfung | KI-Server: sudo-Regeln, GRUB · OPNsense: os-wol | ⏳ |
 | 6 | Dashboard mit echten Daten: Docker-Status, Ressourcen, Strom, LLMs | KI-Server: sudo-Regel `docker ps` | ⏳ |
 | 7 | LLM-Übersicht: auflisten, Info, löschen mit Sicherheitsabfrage | KI-Server: Leserechte Modellverzeichnis | ⏳ |
@@ -37,6 +38,9 @@ Konfigurations-Widgets entstehen jeweils **mit ihrer Stufe** (z. B. Verbindung z
   vorerst nicht umgesetzt; Stufe 10 bleibt als Platzhalter stehen und wird bei Bedarf neu bewertet.
   Die Platzhalter aus Stufe 0 (Menü, Seite, Dashboard-Widget, Konfiguration) sind über den
   Schalter `features.agents` in `frontend/src/lib/features.ts` ausgeblendet.
+- **Wartung W1 vor Stufe 4c/5 (2026-11-12):** Befunde eines externen Code-Reviews werden behoben,
+  bevor weitere Funktionen entstehen. Abgeschlossene Stufen bleiben abgeschlossen; W1 ist eine
+  eigene Wartungsstufe ohne neue Roadmap-Funktionen.
 - **Schlafmodus zuletzt:** braucht Energiesteuerung, Jobs und Aktivitätserkennung;
   Suspend/Resume mit AMD-GPU und ROCm muss vorher manuell als zuverlässig bestätigt sein.
 
