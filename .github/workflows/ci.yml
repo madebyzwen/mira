@@ -1,7 +1,8 @@
 # MIRA – Tests, Docker-Image und Releases
 #
-# - Jeder Push/Pull-Request: Typecheck, Tests und Build aller Pakete, Prüfung der npm-Abhängigkeiten
+# - Jeder Push/Pull-Request mit Code-Änderungen: Typecheck, Tests und Build aller Pakete, Prüfung der npm-Abhängigkeiten
 #   (npm audit) und der beiden Images (Trivy) auf bekannte Schwachstellen
+# - Ändert ein Push nur die Doku (docs/, *.md), läuft stattdessen nur der Workflow „Doku“
 # - Images werden nur veröffentlicht, wenn Tests und Sicherheitsprüfung bestanden sind
 # - Actions sind auf Commit-SHAs festgelegt (Kommentar = Version); Aktualisierung über Dependabot
 # - Push auf main:  Image ghcr.io/madebyzwen/mira:main (+ :sha-<commit>)
@@ -15,7 +16,10 @@ on:
   push:
     branches: [main]
     tags: ['v*', 'shelly-logger-v*']
+    # Reine Doku-Änderungen bauen nicht (Tags sind davon ausgenommen – ein Release baut immer)
+    paths-ignore: ['docs/**', '**/*.md']
   pull_request:
+    paths-ignore: ['docs/**', '**/*.md']
   workflow_dispatch:
 
 permissions:

@@ -1,0 +1,31 @@
+# MIRA – Prüfung der Dokumentation
+#
+# Läuft bei Änderungen an docs/ und Markdown-Dateien – ohne Build und ohne Tests (das übernimmt
+# die CI bei Code-Änderungen). Prüft, dass keine Gerätenamen in aktuellen Dateien stehen.
+name: Doku
+
+on:
+  push:
+    branches: [main]
+    paths: ['docs/**', '**/*.md']
+  pull_request:
+    paths: ['docs/**', '**/*.md']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  naming:
+    name: Benennung prüfen
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Benennung prüfen (KI-Server, Homeserver)
+        run: sh scripts/check-naming.sh
