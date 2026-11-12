@@ -73,6 +73,11 @@ export class SessionStore {
     this.db.prepare('DELETE FROM sessions WHERE token_hash = ?').run(hashToken(token));
   }
 
+  /** Alle Sessions eines Benutzers beenden (alle Geräte); liefert die Anzahl. */
+  revokeAllForUser(userId: number): number {
+    return this.db.prepare('DELETE FROM sessions WHERE user_id = ?').run(userId).changes;
+  }
+
   pruneExpired(now = new Date()): number {
     return this.db.prepare('DELETE FROM sessions WHERE expires_at <= ?').run(nowIso(now)).changes;
   }
