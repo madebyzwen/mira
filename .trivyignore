@@ -1,0 +1,3 @@
+# Begründete Ausnahmen für die Trivy-Prüfung der Images (CI, Job „security-scan“).
+# Je Eintrag: CVE-ID, darüber Begründung, betroffenes Paket und Datum der nächsten Prüfung.
+# Aktuell keine Ausnahmen.

@@ -15,6 +15,9 @@
 #   data/                         Datenbank shelly-logger.db (wird angelegt)
 #   data/backups/                 tägliche Sicherungen (die letzten 7)
 #   secrets/shelly_password.txt   Passwort der lokalen Shelly-Oberfläche (Benutzer admin)
+#   secrets/api_token.txt         Token der Lese-API (ab Logger 0.2.0; mind. 32 Zeichen, gleicher Inhalt
+#                                 wie shelly_logger_token.txt bei MIRA). Fehlt die Datei, misst der
+#                                 Logger weiter, die API ist aber gesperrt (nur /health antwortet).
 services:
   shelly-logger:
     image: ghcr.io/madebyzwen/mira-shelly-logger:${LOGGER_VERSION:-latest}
@@ -34,10 +37,16 @@ services:
       LOGGER_TIMEZONE: Europe/Berlin
       # API nur im internen Netz – auf der macvlan-Adresse ist kein Port offen
       LOGGER_HOST: ${LOGGER_INTERN_IP:-172.31.250.10}
+      # Zusätzlich zur Netztrennung: jede Anfrage außer /health braucht dieses Token (leer = aus)
+      LOGGER_API_TOKEN_FILE: ${LOGGER_API_TOKEN_FILE-/secrets/api_token.txt}
+      # Optional: zweite Kopie jeder Sicherung auf einem getrennten Speicher (Volume unten ergänzen)
+      LOGGER_BACKUP_COPY_DIR: ${LOGGER_BACKUP_COPY_DIR:-}
       LOGGER_LOG_LEVEL: ${LOGGER_LOG_LEVEL:-info}
     volumes:
       - ${LOGGER_APPDATA:?LOGGER_APPDATA setzen, z. B. /volume2/…/appdata/mira-shelly-logger}/data:/data
       - ${LOGGER_APPDATA}/secrets:/secrets:ro
+      # Optional für LOGGER_BACKUP_COPY_DIR=/backup-copy – Ordner auf einem anderen Volume, gehört UID 1000:
+      # - /volumeX/…/mira-shelly-logger-backup:/backup-copy
     read_only: true
     tmpfs:
       - /tmp
