@@ -1,7 +1,7 @@
 {
   "name": "@mira/frontend",
   "private": true,
-  "version": "0.8.1",
+  "version": "0.9.0",
   "description": "MIRA – Weboberfläche",
   "type": "module",
   "engines": {

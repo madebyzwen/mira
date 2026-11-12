@@ -92,7 +92,7 @@ für einen Neuanfang `data/` löschen.
 
 | Befehl (Wurzelverzeichnis) | Zweck |
 | --- | --- |
-| `npm test` | Tests von Backend, Agent und Shelly-Logger (Vitest) |
+| `npm test` | Tests von Backend, Agent, Shelly-Logger und Weboberfläche (Vitest) |
 | `npm run package:agent` | Installationspaket für den KI-Server bauen (`agent/release/`) |
 | `npm run build:shelly-logger` | Shelly-Logger bauen; Image: `docker build -f shelly-logger/Dockerfile .` – Betrieb: [`shelly-logger/README.md`](shelly-logger/README.md) |
 | `npm run typecheck` | TypeScript-Prüfung aller Pakete |
@@ -107,10 +107,12 @@ Image baut GitHub bei jedem Push automatisch (`ghcr.io/madebyzwen/mira`,
 [ADR 0008](docs/adr/0008-images-ueber-github-container-registry.md)).
 
 Netzwerk: MIRA erhält über ein vorhandenes **macvlan-Netz eine eigene IP im
-Server-Netz** (`<MIRA_IP>`), in dem auch der KI-Server liegt. Aufgerufen wird MIRA über
-den Reverse Proxy (`https://<MIRA_HOSTNAME>` → `http://<MIRA_IP>`); direkt im
-Server-Netz unter `http://<MIRA_IP>`. Port 80 ist ohne Root-Rechte möglich, weil
-der Stack ihn nur im Netzwerk-Namensraum des Containers freigibt.
+Server-Netz** (`<MIRA_IP>`), in dem auch der KI-Server liegt – vor allem für die Verbindungen
+von MIRA zum KI-Server. Aufgerufen wird MIRA über den Reverse Proxy (`https://<MIRA_HOSTNAME>`).
+Mit HTTPS-Pflicht (`MIRA_PUBLIC_URL`, empfohlen) leitet `http://<MIRA_IP>` nur noch dorthin
+um; ohne sie ist MIRA dort weiterhin unverschlüsselt erreichbar (Warnung in der Glocke).
+Port 80 ist ohne Root-Rechte und ohne Capabilities möglich, weil der Stack ihn nur im
+Netzwerk-Namensraum des Containers freigibt (`cap_drop: ALL`).
 
 ### 1. Ordner und Startpasswort anlegen (einmalig, per SSH)
 
@@ -125,7 +127,12 @@ chmod 600 "$APPDATA/secrets/admin_password.txt"
 
 Die Ordner müssen UID 1000 gehören (ggf. `sudo chown -R 1000 "$APPDATA"`).
 Das Startpasswort wird **nur beim allerersten Start** gelesen; danach kann die
-Datei gelöscht werden – ein Neustart ändert das Passwort nie.
+Datei gelöscht werden – ein Neustart ändert das Passwort nie. Geändert wird das Passwort
+unter Konfiguration › MIRA › Konto (beendet alle Sitzungen).
+
+Token für den Shelly-Logger (gleicher Inhalt wie `api_token.txt` im Logger-Stack, siehe
+[Shelly-Logger](shelly-logger/README.md#3-homeserver-ordner-und-passwort-datei-per-ssh)):
+`secrets/shelly_logger_token.txt`, Rechte 600.
 
 ### 2. Stack in Portainer anlegen
 
@@ -141,18 +148,22 @@ Stacks → Add stack → Name `mira` → Web editor: Inhalt von
 | `MIRA_PROXY_NETWORK` | `npm-server_npm_backend` | Backend-Netz des Reverse Proxys |
 | `MIRA_VERSION` | `0.3.1` | Image-Version (Standard `latest`) |
 | `MIRA_PORT` | `80` | Port von MIRA (Standard 80) |
-| `MIRA_TRUST_PROXY` | `<PROXY_SUBNETZ>` | Subnetz des Proxy-Netzes, z. B. `172.20.0.0/16` |
+| `MIRA_TRUST_PROXY` | `<PROXY_IP>` | Adresse des Reverse Proxys im Proxy-Netz (oder ein kleines Netz) |
+| `MIRA_PUBLIC_URL` | `https://<MIRA_HOSTNAME>` | HTTPS-Pflicht (empfohlen, erst setzen, wenn die Anmeldung über HTTPS funktioniert) |
 | `MIRA_ADMIN_USER` / `MIRA_ADMIN_DISPLAY_NAME` | `sven` / `Sven` | erstes Konto |
 | `MIRA_AI_SERVER_NAME` | `<NAME>` | Anzeigename des KI-Servers (optional, Standard „KI-Server“) |
 | `MIRA_AI_SERVER_URL` / `MIRA_AI_SERVER_CERT_FINGERPRINT` | – | erst nach der Installation des Agents |
 | `TZ` | `Europe/Berlin` | Zeitzone (Uhrzeit der Sicherung, Dateinamen) |
 
-Danach „Deploy the stack“ → `http://<MIRA_IP>` bzw. über den Reverse Proxy.
+Danach „Deploy the stack“ → `https://<MIRA_HOSTNAME>` (Reverse Proxy).
 
 ### Update
 
 `MIRA_VERSION` auf die neue Version setzen → „Update the stack“ mit
 „Re-pull image“. Daten und Einstellungen bleiben in `MIRA_APPDATA` erhalten.
+
+**Update auf 0.9.0** (HTTPS-Pflicht, Token für den Shelly-Logger, Passwort ändern): Reihenfolge,
+Prüfungen und Rückweg in [Wartung W1](docs/entwicklung/security-hardening-review.md#deployment).
 
 ### Verbindung zum KI-Server (MIRA-Agent)
 
@@ -178,8 +189,18 @@ neue Namen. Ablauf in [Stufe 3a, Umstellung im Betrieb](docs/entwicklung/stufe-0
 MIRA sichert die Datenbank täglich um 03:30 Uhr (Ortszeit, `TZ`) im laufenden
 Betrieb nach `MIRA_APPDATA/data/backups/mira-JJJJ-MM-TT.db` und behält die
 letzten 7 Sicherungen. Jede Sicherung ist eine einzelne, vollständige
-SQLite-Datei. Für zusätzliche Sicherheit den Ordner `backups/` in die
-Sicherung des Homeservers (Hyper Backup o. Ä.) aufnehmen.
+SQLite-Datei und wird vor dem Übernehmen geprüft (Integrität, Migrationsstand).
+Schlägt die Sicherung fehl, bleiben vorhandene Sicherungen unverändert und die Glocke meldet
+„Datensicherung fehlgeschlagen“, bis eine Sicherung wieder gelingt.
+
+Die Sicherungen liegen auf demselben Speicher wie die Datenbank. Gegen einen Schaden am Speicher:
+
+- **Getrenntes Ziel** (empfohlen): Ordner auf einem anderen Volume anlegen (UID 1000, `chmod 700`),
+  im Stack als Volume `…:/backup-copy` einhängen (Zeile ist vorbereitet) und
+  `MIRA_BACKUP_COPY_DIR=/backup-copy` setzen. Dorthin geht eine geprüfte Kopie jeder Sicherung.
+- Zusätzlich den Ordner `backups/` in die Sicherung des Homeservers (Hyper Backup o. Ä.) aufnehmen.
+
+Sicherungen enthalten den Passwort-Hash und die Session-Hashes – auch am Kopierziel nur für UID 1000 lesbar ablegen.
 
 Wiederherstellen (per SSH auf dem Homeserver):
 
@@ -205,12 +226,17 @@ Wiederherstellen (per SSH auf dem Homeserver):
 
 - Eigenen Hostnamen für MIRA verwenden (kein Unterpfad).
 - MIRA hängt zusätzlich im Backend-Netz des Proxys (`MIRA_PROXY_NETWORK`); Ziel im
-  Nginx Proxy Manager: `http://mira:80`. Die macvlan-Adresse ist für Container im
+  Nginx Proxy Manager: `http://mira:80` mit „Force SSL“. Die macvlan-Adresse ist für Container im
   Bridge-Netz (und für den Docker-Host) nicht erreichbar.
-- `MIRA_TRUST_PROXY` auf das **Subnetz** des Proxy-Netzes setzen (die Adresse des
-  Proxys darin kann wechseln; mehrere Einträge durch Komma). Dann erkennt MIRA HTTPS
-  (Cookie mit `Secure`) und die echte Client-IP (Login-Sperre, Audit-Log).
-  Weiterleitungs-Header von anderen Absendern werden ignoriert.
+- `MIRA_TRUST_PROXY` auf die **Adresse des Proxys** setzen (mehrere Einträge durch Komma; IP oder
+  Netz in CIDR-Schreibweise). Dann erkennt MIRA HTTPS und die echte Client-IP (Login-Sperre,
+  Audit-Log). Weiterleitungs-Header von anderen Absendern werden ignoriert. Ein großes Netz
+  (z. B. das ganze Proxy-Subnetz `/16`) funktioniert, aber jeder Container darin könnte HTTPS und
+  Client-Adressen vortäuschen – MIRA warnt dann beim Start. Besser: feste Adresse für den Proxy
+  oder ein eigenes kleines Netz nur für Proxy und MIRA.
+- `MIRA_PUBLIC_URL=https://<MIRA_HOSTNAME>` schaltet die **HTTPS-Pflicht** ein: unverschlüsselte
+  Seitenaufrufe werden umgeleitet, Anmeldungen und API-Anfragen über HTTP abgelehnt, das Cookie
+  ist immer `Secure`, dazu HSTS. Setzt `MIRA_TRUST_PROXY` voraus (sonst startet MIRA nicht).
 
 ### Konfiguration (Umgebungsvariablen)
 
@@ -220,8 +246,9 @@ Wiederherstellen (per SSH auf dem Homeserver):
 | `MIRA_DATA_DIR` | `/data` | Datenverzeichnis (Datenbank `mira.db`) |
 | `MIRA_ADMIN_USER` / `MIRA_ADMIN_DISPLAY_NAME` | – | Erstes Konto (nur beim ersten Start) |
 | `MIRA_ADMIN_PASSWORD_FILE` | – | Datei mit dem Startpasswort (mind. 12 Zeichen) |
-| `MIRA_TRUST_PROXY` | `false` | `true` oder Adresse(n) des Reverse Proxys |
-| `MIRA_COOKIE_SECURE` | `auto` | `auto`, `true`, `false` |
+| `MIRA_TRUST_PROXY` | `false` | Adresse(n)/Netz(e) des Reverse Proxys, kommagetrennt; `true` (jeder Absender) nur ohne `MIRA_PUBLIC_URL` |
+| `MIRA_PUBLIC_URL` | – | HTTPS-Adresse über den Proxy (`https://host`); gesetzt = HTTPS-Pflicht |
+| `MIRA_COOKIE_SECURE` | `auto` | `auto`, `true`, `false`; mit `MIRA_PUBLIC_URL` immer `true` |
 | `MIRA_SESSION_TTL_HOURS` | `168` | Gültigkeit einer Anmeldung ohne Nutzung |
 | `MIRA_LOGIN_MAX_FAILURES` / `MIRA_LOGIN_WINDOW_MINUTES` | `5` / `15` | Login-Sperre |
 | `MIRA_AUDIT_RETENTION_DAYS` | `365` | Aufbewahrung des Audit-Logs |
@@ -233,11 +260,12 @@ Wiederherstellen (per SSH auf dem Homeserver):
 | `MIRA_AI_SERVER_POLL_SECONDS` | `2` | Abfrageintervall des Agents (läuft im Backend, auch ohne geöffnete Weboberfläche) |
 | `MIRA_AI_SERVER_OFFLINE_SECONDS` | `10` | Ohne Antwort seit so vielen Sekunden gilt der KI-Server als „offline“ |
 | `MIRA_SHELLY_LOGGER_URL` | – (Stack: `http://172.31.250.10:8090`) | Lese-API des [Shelly-Loggers](shelly-logger/README.md) im internen Netz `mira-intern` |
-| `MIRA_SHELLY_LOGGER_TOKEN_FILE` | – | Datei mit dem Token, falls der Logger eines verlangt (`LOGGER_API_TOKEN_FILE`) |
+| `MIRA_SHELLY_LOGGER_TOKEN_FILE` | – (Stack: `/secrets/shelly_logger_token.txt`) | Datei mit dem Token des Loggers (`LOGGER_API_TOKEN_FILE`); fehlt sie, fragt MIRA ohne Token |
 | `MIRA_HISTORY_RAW_DAYS` | `7` | Aufbewahrung der Minutenwerte |
 | `MIRA_HISTORY_HOURLY_DAYS` | `365` | Aufbewahrung der Stundenwerte |
 | `MIRA_BACKUP_TIME` | `03:30` | Uhrzeit der täglichen Sicherung (Ortszeit, `HH:MM`) |
 | `MIRA_BACKUP_KEEP` | `7` | Anzahl aufbewahrter Sicherungen |
+| `MIRA_BACKUP_COPY_DIR` | – | optional: zweites, getrenntes Ziel für eine geprüfte Kopie jeder Sicherung |
 | `MIRA_UPDATE_CHECK` | `true` | Prüfung auf neue Versionen von MIRA und MIRA-Agent bei GitHub (`false` = keine Verbindung ins Internet) |
 | `MIRA_UPDATE_CHECK_TIME` | `04:00` | Uhrzeit der täglichen Update-Prüfung (zusätzlich einmal beim ersten Aufruf am Tag) |
 | `TZ` | – (Stack: `Europe/Berlin`) | Zeitzone des Containers |
