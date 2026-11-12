@@ -18,6 +18,7 @@ Eine vierte Schnellaktion im Dashboard neben „schlafen legen“, „Dienste ne
   Für „einmalig Windows“ muss zusätzlich vor dem Neustart das Startziel gesetzt werden – das
   braucht root-Rechte und geht nicht über die logind-Freigabe allein.
 - Unter Windows läuft kein MIRA-Agent: MIRA sieht den KI-Server dann als „nicht erreichbar“.
+- Strom im Windows-Betrieb zählt **nicht** zum KI-Verbrauch – Erkennung und getrennte Aufzeichnung: [Stufe 4c](../entwicklung/stufe-04c-betriebsart.md).
 
 ## Lösungswege (zu prüfen)
 
@@ -47,5 +48,5 @@ In beiden Fällen ohne sudo und ohne die Härtung des Agents aufzuweichen:
 
 - Startet der KI-Server per UEFI? Ausgabe von `efibootmgr` (Einträge, z. B. „Windows Boot Manager“).
 - Alternativ: Wie heißt der Windows-Eintrag im GRUB-Menü, und steht `GRUB_DEFAULT` auf `saved`?
-- Liegen Linux und Windows auf getrennten Datenträgern?
+- ~~Liegen Linux und Windows auf getrennten Datenträgern?~~ Nein – beide auf **derselben Festplatte** (2026-11-11); `BootNext` bzw. `grub-reboot` funktionieren dennoch.
 - Soll A-008 gleich in Stufe 5a umgesetzt werden oder später mit Stufe 5?
