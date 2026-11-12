@@ -1,6 +1,6 @@
 # Stufe 4c – Verbrauch nach Betriebsart (KI-Betrieb, Bereitschaft, Windows)
 
-- Status: ⏳ Konzept, Freigabe ausstehend (notiert 2026-11-11)
+- Status: ⏳ Konzept freigegeben 2026-11-12, Umsetzung steht an (notiert 2026-11-11)
 - Baut auf: [Stufe 4a](stufe-04a-shelly-logger.md) (Shelly-Logger), [Stufe 4b](stufe-04b-shelly-mira-integration.md) (Anzeige in MIRA)
 - Zielversionen: Shelly-Logger 0.3.0, MIRA 0.10.0 (der Agent bleibt unverändert)
 - Reihenfolge: **vor** [Stufe 5a](stufe-05a-schlafen-aufwecken-neustart.md) – siehe unten
@@ -102,4 +102,4 @@ Migration bestehender Daten, API-Verträge (alte Felder unverändert), MIRA-Bere
 | --- | --- |
 | ~~Lief seit Messbeginn Windows?~~ | ✅ Nein (2026-11-11) |
 | ~~Umsetzung vor Stufe 5a?~~ | ✅ Ja, siehe Reihenfolge |
-| Freigabe des Konzepts | Umsetzung |
+| ~~Freigabe des Konzepts~~ | ✅ 2026-11-12 |
